@@ -6,8 +6,13 @@ A smart daily companion app with a full timeline flow. Combines alarm, health ti
 -Team Members
 
 Anas Ayman El-Gebaili
+
 Mohamed Yousry Azzam
+
 Eslam Mohamed Fawzy 
+
 Menna Ayman Kamel
+
 Youssef Hany Barakat
+
 Basem Mohamed Abdulsabour
