@@ -38,4 +38,13 @@ Google Drive: https://drive.google.com/drive/u/1/folders/1wfKdQhw-SHuhxipRsIN-85
 ---
 
 ## ⚖️ License
-This project is licensed under [specify your license here].
+
+Custom License - All Rights Reserved  
+
+This software is the property of the DayMate (pentaRae) team.  
+
+No person or organization outside the team is allowed to use, copy,  
+modify, or distribute this code without explicit permission  
+from the authors.  
+
+Unauthorized use is strictly prohibited.  
