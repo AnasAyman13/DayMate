@@ -13,7 +13,7 @@ All in a simple, user-friendly interface designed for the Arab world and beyond.
 
 ---
 
-## 👥 Team Members (pentaRae)
+## 👥 Team Members 
 
 - **Anas Ayman El-Gebaili** – Team Leader  
 - Mohamed Yousry Azzam  
