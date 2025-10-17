@@ -1,4 +1,4 @@
-# 🌙 DayMate
+#  DayMate
 **Your Smart Daily Companion**
 
 DayMate is a smart app that organizes your entire day in one seamless experience.  
