@@ -12,7 +12,7 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 
 ---
 
-# **Team Members (pentaRae)**
+# **Team Members **
 - **Anas Ayman El-Gebaili** – Team Leader  
 - **Mohamed Yousry Azzam**  
 - **Menna Ayman Kamel**  
@@ -86,5 +86,5 @@ You can find the full project files here:
 
 # **License**
 This project is licensed under a **Custom License – All Rights Reserved.**  
-This software is the exclusive property of the **DayMate (pentaRae)** team.  
+This software is the exclusive property of the **DayMate** team.  
 Unauthorized use, copying, or modification is strictly prohibited.
