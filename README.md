@@ -12,7 +12,7 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 
 ---
 
-# **Team Members **
+# **Team Members**
 - **Anas Ayman El-Gebaili** – Team Leader  
 - **Mohamed Yousry Azzam**  
 - **Menna Ayman Kamel**  
