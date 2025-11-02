@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+        <string name="onboarding_title">نظّم يومك بسهولة</string>
+        <string name="onboarding_description">دوّن المهام، حدّد أولوياتك، وراقب إنتاجيتك ترتفع. داي ميت يساعدك تبقى مركز على أهدافك.</string>
+
+        <string name="task_design_mockups">تصميم مخططات المشروع الجديدة</string>
+        <string name="task_call_client">اتصل بالعميل</string>
+        <string name="task_schedule_meeting">جدولة اجتماع الفريق</string>
+
+        <string name="button_continue">متابعة</string>
+        <string name="button_skip">تخطي الآن</string>
+
+        <string name="onboarding2_title">تركيز عميق بلا حدود</string>
+        <string name="onboarding2_description">استخدم المؤقت القابل للتخصيص للعمل بتركيز عالٍ وزيادة الإنتاجية دون إجهاد.</string>
+        <string name="icon_timer_description">أيقونة المؤقت</string>
+
+    <string name="onboarding3_title">خزنة خاصة لوسائطك</string>
+    <string name="onboarding3_description">
+        احفظ صورك وفيديوهاتك ومستنداتك المهمة بأمان، بحيث يمكنك الوصول إليها فقط داخل تطبيق DayMate.
+    </string>
+
+</resources>

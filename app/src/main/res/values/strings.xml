@@ -1,0 +1,31 @@
+<resources>
+<string name="app_name" translatable="false">Day Mate</string>
+        <!-- Onboarding texts -->
+        <string name="onboarding_title">Organize Your Day, Effortlessly.</string>
+        <string name="onboarding_description">Capture tasks, set priorities, and watch your productivity soar. DayMate keeps your goals in sight.</string>
+
+        <!-- Tasks -->
+        <string name="task_design_mockups">Design new project mockups</string>
+        <string name="task_call_client">Call the client</string>
+        <string name="task_schedule_meeting">Schedule team meeting</string>
+
+        <!-- Buttons -->
+        <string name="button_continue">Continue</string>
+        <string name="button_skip">Skip for now</string>
+
+
+
+
+        <string name="onboarding2_title">Deep Focus, Unlocked</string>
+        <string name="onboarding2_description">Use our customizable timer to work in focused bursts. Boost productivity and prevent burnout.</string>
+        <string name="icon_timer_description">Timer icon</string>
+
+
+    <string name="onboarding3_title">A Private Vault for Your Media</string>
+    <string name="onboarding3_description">
+        Safely store your important photos, videos, and documents — accessible only to you, right within DayMate.
+    </string>
+
+
+
+</resources>
