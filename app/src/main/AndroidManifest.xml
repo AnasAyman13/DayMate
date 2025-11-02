@@ -13,7 +13,7 @@
 
         <!-- 🟢 Onboarding: First screen (LAUNCHER) -->
         <activity
-            android:name="com.day.mate.ui.onboardingActivity1.OnboardingActivity1"
+            android:name=".SplashScreen"
             android:exported="true"
             android:theme="@style/Theme.DayMate">
             <intent-filter>
@@ -22,23 +22,27 @@
             </intent-filter>
         </activity>
 
-        <!-- 🟣 Onboarding: Second screen -->
+        <!-- باقي الـ Activities زي ما هي -->
+        <activity
+            android:name="com.day.mate.ui.onboardingActivity1.OnboardingActivity1"
+            android:exported="false"
+            android:theme="@style/Theme.DayMate" />
+
         <activity
             android:name="com.day.mate.ui.onboardingActivity2.OnboardingActivity2"
             android:exported="false"
             android:theme="@style/Theme.DayMate" />
 
-        <!-- 🔵 Onboarding: Third screen -->
         <activity
             android:name="com.day.mate.ui.onboardingActivity3.OnboardingActivity3"
             android:exported="false"
             android:theme="@style/Theme.DayMate" />
 
-        <!-- 🏠 Main app screen -->
         <activity
             android:name="com.day.mate.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.DayMate" />
+
 
     </application>
 

@@ -1,4 +1,5 @@
 package com.day.mate.ui.onboardingActivity3
+
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -35,6 +36,11 @@ class OnboardingActivity3 : ComponentActivity() {
             DayMateDarkTheme {
                 OnboardingScreen3(
                     onStart = {
+                        // حفظ إن المستخدم خلص الـ Onboarding
+                        val sharedPref = getSharedPreferences("DayMatePrefs", MODE_PRIVATE)
+                        sharedPref.edit().putBoolean("isFirstTime", false).apply()
+
+                        // الانتقال إلى الشاشة الرئيسية
                         val intent = Intent(this, MainActivity::class.java)
                         startActivity(intent)
                         finish()
@@ -79,7 +85,7 @@ fun OnboardingScreen3(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_lock), // 🗝️ Replace with your vault icon
+                    painter = painterResource(id = R.drawable.ic_lock),
                     contentDescription = null,
                     tint = accentTeal,
                     modifier = Modifier.size(90.dp)
