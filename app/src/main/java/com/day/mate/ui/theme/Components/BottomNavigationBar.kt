@@ -11,9 +11,6 @@ import com.day.mate.ui.theme.navigation.BottomNavItem
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.day.mate.R
-import com.day.mate.ui.theme.BackgroundDark
-
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {
@@ -26,7 +23,7 @@ fun BottomNavigationBar(navController: NavController) {
     )
 
     NavigationBar(
-        containerColor = Color(0xFF101F22) // لون الخلفية
+        containerColor = Color(0xFF101F22)
     ) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route

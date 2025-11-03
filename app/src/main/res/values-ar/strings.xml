@@ -19,5 +19,20 @@
     <string name="onboarding3_description">
         احفظ صورك وفيديوهاتك ومستنداتك المهمة بأمان، بحيث يمكنك الوصول إليها فقط داخل تطبيق DayMate.
     </string>
+    <string name="focus">تركيز</string>
+    <string name="short_break">استراحة قصيرة</string>
+    <string name="long_break">استراحة طويلة</string>
+    <string name="start">البدء</string>
+    <string name="pause_start">توقف/ بدا</string>
+    <string name="reset">اعادة</string>
+    <string name="skip">تخطي</string>
+    <string name="completed_sessions">عدد الجلسات المكتملة: %1$d</string>
+
+    <string name="settings_title">الاعدادات</string>
+    <string name="focus_time_label">وقت التركيز(بالدقائق)</string>
+    <string name="short_break_label">استراحة قصيرة(بالدقائق)</string>
+    <string name="long_break_label">استراحة طويلة(بالدقائق)</string>
+    <string name="save_button">حفظ</string>
+    <string name="cancel_button">الغاء</string>
 
 </resources>

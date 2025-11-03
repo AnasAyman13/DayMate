@@ -5,5 +5,5 @@ import androidx.compose.runtime.Composable
 
 @Composable
 fun TimeLineScreen() {
-    Text("⏰ Time Line Screen")
+    Text(" Time Line Screen")
 }

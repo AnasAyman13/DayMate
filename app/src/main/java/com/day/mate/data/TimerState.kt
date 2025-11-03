@@ -1,10 +1,13 @@
 package com.day.mate.data
 
 data class TimerState(
-    val totalSeconds: Int = 25 * 60, // 25 دقيقة
-    var secondsLeft: Int =25 * 60,
-    var isRunning: Boolean = false,
     val mode: TimerMode = TimerMode.FOCUS,
-    var completedSessions: Int = 0,
-    val isFinished: Boolean = false
+    val secondsLeft: Int = 25 * 60,
+    val totalSeconds: Int = 25 * 60,
+    val isRunning: Boolean = false,
+    val isFinished: Boolean = false,
+    val completedSessions: Int = 0,
+    val focusTime: Int = 25 * 60,
+    val shortBreakTime: Int = 5 * 60,
+    val longBreakTime: Int = 15 * 60
 )

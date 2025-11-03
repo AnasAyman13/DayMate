@@ -17,277 +17,25 @@ class TimerViewModel : ViewModel() {
 
     private var timerJob: Job? = null
 
-    // المدد الزمنية
-    private val focusTime = 25 * 60
-    private val shortBreakTime = 5 * 60
-    private val longBreakTime = 15 * 60
+    var focusTime = 25 * 60
+    var shortBreakTime = 5 * 60
+    var longBreakTime = 15 * 60
     private val totalFocusSessions = 4
     fun skipTimer() {
-        timerJob?.cancel() // توقف المؤقت لو شغال
-        handleSessionEnd() // تنهي الجلسة الحالية مباشرة وتبدأ الجلسة التالية
+        timerJob?.cancel()
+        handleSessionEnd()
+
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    fun updateTimes(focus: Int, shortBreak: Int, longBreak: Int) {
+        focusTime = focus * 60
+        shortBreakTime = shortBreak * 60
+        longBreakTime = longBreak * 60
+
+        _timerState.value = _timerState.value.copy(
+            secondsLeft = focusTime,
+            totalSeconds = focusTime
+        )
+    }
 
     fun startTimer() {
         val state = _timerState.value
@@ -306,14 +54,14 @@ class TimerViewModel : ViewModel() {
             if (_timerState.value.secondsLeft <= 0) {
                 _timerState.value = _timerState.value.copy(
                     isRunning = false,
-                    isFinished = true // ✅ نعلم إن المؤقت خلص
+                    isFinished = true
                 )
             }
         }
     }
 
 
-    fun handleSessionEnd() {  // بدل private
+    fun handleSessionEnd() {
         val state = _timerState.value
         when (state.mode) {
             TimerMode.FOCUS -> {
@@ -327,7 +75,7 @@ class TimerViewModel : ViewModel() {
                     completedSessions = newCompleted,
                     secondsLeft = if (nextMode == TimerMode.LONG_BREAK) longBreakTime else shortBreakTime,
                     totalSeconds = if (nextMode == TimerMode.LONG_BREAK) longBreakTime else shortBreakTime,
-                    isFinished = false // ✅ نرجّعها false للجولة الجديدة
+                    isFinished = false
                 )
             }
 
@@ -336,7 +84,7 @@ class TimerViewModel : ViewModel() {
                     mode = TimerMode.FOCUS,
                     secondsLeft = focusTime,
                     totalSeconds = focusTime,
-                    isFinished = false // ✅ مهم جدًا
+                    isFinished = false
                 )
             }
         }
@@ -350,10 +98,19 @@ class TimerViewModel : ViewModel() {
 
     fun resetTimer() {
         timerJob?.cancel()
-        _timerState.value = TimerState()
+        val state = _timerState.value
+        val newSeconds = when (state.mode) {
+            TimerMode.FOCUS -> focusTime
+            TimerMode.SHORT_BREAK -> shortBreakTime
+            TimerMode.LONG_BREAK -> longBreakTime
+        }
+        _timerState.value = state.copy(
+            secondsLeft = newSeconds,
+            totalSeconds = newSeconds,
+            isRunning = false,
+            isFinished = false
+        )
     }
-
-
     fun progress(): Float {
         val state = _timerState.value
         return state.secondsLeft.toFloat() / state.totalSeconds

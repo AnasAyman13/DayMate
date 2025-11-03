@@ -12,15 +12,28 @@
         <!-- Buttons -->
         <string name="button_continue">Continue</string>
         <string name="button_skip">Skip for now</string>
+    <!-- Promodoro strings -->
+    <string name="focus">Focus</string>
+    <string name="short_break">Short Break</string>
+    <string name="long_break">Long Break</string>
+    <string name="start">Start</string>
+    <string name="pause_start">Start/Pause</string>
+    <string name="reset">Reset</string>
+    <string name="skip">Skip</string>
 
+    <string name="completed_sessions">Completed Focus Sessions: %1$d</string>
 
+    <!-- settings dialog -->
+    <string name="settings_title">Settings</string>
+    <string name="focus_time_label">Focus Time (minutes)</string>
+    <string name="short_break_label">Short Break (minutes)</string>
+    <string name="long_break_label">Long Break (minutes)</string>
+    <string name="save_button">Save</string>
+    <string name="cancel_button">Cancel</string>
 
-
-        <string name="onboarding2_title">Deep Focus, Unlocked</string>
+    <string name="onboarding2_title">Deep Focus, Unlocked</string>
         <string name="onboarding2_description">Use our customizable timer to work in focused bursts. Boost productivity and prevent burnout.</string>
         <string name="icon_timer_description">Timer icon</string>
-
-
     <string name="onboarding3_title">A Private Vault for Your Media</string>
     <string name="onboarding3_description">
         Safely store your important photos, videos, and documents — accessible only to you, right within DayMate.

@@ -1,9 +1,6 @@
 package com.day.mate.ui.theme.screens
-
-
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -31,14 +28,14 @@ import android.os.Vibrator
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material3.DividerDefaults.color
-import androidx.compose.material3.SnackbarDefaults.color
-
-import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.day.mate.viewmodel.TimerViewModel
 import com.day.mate.R
@@ -49,6 +46,7 @@ fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
     val context = LocalContext.current
     val timerState by viewModel.timerState.collectAsState()
     val progress = remember(timerState) { viewModel.progress() }
+    var showSettings by remember { mutableStateOf(false) }
 
     val mediaPlayer = remember { MediaPlayer.create(context, R.raw.timer_end) }
     val vibrator = remember {
@@ -75,17 +73,19 @@ fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
             viewModel.handleSessionEnd()
         }
     }
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF101F22))
     ) {
-        // 🔹 الشريط العلوي (فوق الشاشة)
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding( top = 8.dp, start = 8.dp, end = 8.dp, bottom = 16.dp)
+                .padding(top = 16.dp, start = 8.dp, end = 8.dp, bottom = 16.dp)
                 .align(Alignment.TopCenter),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
@@ -98,7 +98,7 @@ fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f)),
                 contentAlignment = Alignment.Center
             ) {
-                IconButton(onClick = { /* TODO: Back action */ }) {
+                IconButton(onClick = { /* Back */ }) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
                         contentDescription = "Back",
@@ -109,11 +109,11 @@ fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
 
             Text(
                 text = when (timerState.mode) {
-                    com.day.mate.data.TimerMode.FOCUS -> "Focus"
-                    com.day.mate.data.TimerMode.SHORT_BREAK -> "Short Break"
-                    com.day.mate.data.TimerMode.LONG_BREAK -> "Long Break"
+                    com.day.mate.data.TimerMode.FOCUS -> stringResource(id = R.string.focus)
+                    com.day.mate.data.TimerMode.SHORT_BREAK -> stringResource(id = R.string.short_break)
+                    com.day.mate.data.TimerMode.LONG_BREAK -> stringResource(id = R.string.long_break)
                 },
-                fontSize = 32.sp,
+                fontSize = if (isLandscape) 40.sp else 32.sp,
                 fontWeight = FontWeight.Bold
             )
 
@@ -124,140 +124,208 @@ fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f)),
                 contentAlignment = Alignment.Center
-            ) {
-                IconButton(onClick = { /* TODO: Settings action */ }) {
+            )
+
+            {
+                IconButton(onClick = { showSettings = true }) {
                     Icon(
                         imageVector = Icons.Default.Settings,
                         contentDescription = "Settings",
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
+
             }
         }
+        if (showSettings) {
+            var focusTimeStr by remember { mutableStateOf((viewModel.focusTime / 60).toString()) }
+            var shortBreakStr by remember { mutableStateOf((viewModel.shortBreakTime / 60).toString()) }
+            var longBreakStr by remember { mutableStateOf((viewModel.longBreakTime / 60).toString()) }
 
-        // 🔵 الدايرة فقط في منتصف الشاشة
-        Column(
+            AlertDialog(
+                onDismissRequest = { showSettings = false },
+                title = { Text(stringResource(id = R.string.settings_title)) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedTextField(
+                            value = focusTimeStr,
+                            onValueChange = { focusTimeStr = it },
+                            label = { Text(stringResource(id = R.string.focus_time_label)) },
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                keyboardType = KeyboardType.Number
+                            )
+                        )
+                        OutlinedTextField(
+                            value = shortBreakStr,
+                            onValueChange = { shortBreakStr = it },
+                            label = { Text(stringResource(id = R.string.short_break_label)) },
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                keyboardType = KeyboardType.Number
+                            )
+                        )
+                        OutlinedTextField(
+                            value = longBreakStr,
+                            onValueChange = { longBreakStr = it },
+                            label = { Text(stringResource(id = R.string.long_break_label)) },
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                keyboardType = KeyboardType.Number
+                            )
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        val focusTime = focusTimeStr.toIntOrNull() ?: viewModel.focusTime / 60
+                        val shortBreak = shortBreakStr.toIntOrNull() ?: viewModel.shortBreakTime / 60
+                        val longBreak = longBreakStr.toIntOrNull() ?: viewModel.longBreakTime / 60
+
+                        viewModel.updateTimes(focusTime, shortBreak, longBreak)
+                        showSettings = false
+                    }) {
+                        Text(stringResource(id = R.string.save_button))
+                    }
+                },
+                dismissButton = {
+                    Button(onClick = { showSettings = false }) {
+                        Text(stringResource(id = R.string.cancel_button))
+                    }
+                }
+            )
+        }
+
+
+        Box(
             modifier = Modifier
-                .fillMaxHeight()
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .fillMaxWidth(if (isLandscape) 0.5f else 0.7f)
+                .aspectRatio(1f)
+                .align(Alignment.Center),
+            contentAlignment = Alignment.Center
         ) {
             val primaryColor = MaterialTheme.colorScheme.primary
             val secondaryColor = MaterialTheme.colorScheme.secondary
             val onSurfaceColor = MaterialTheme.colorScheme.onSurface
 
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(240.dp)) {
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val sweep = 360 * animatedProgress
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val sweep = 360 * animatedProgress
+                val strokeWidth = size.minDimension * 0.06f
 
-                    drawArc(
-                        color = onSurfaceColor.copy(alpha = 0.1f),
-                        startAngle = -90f,
-                        sweepAngle = 360f,
-                        useCenter = false,
-                        style = Stroke(width = 14.dp.toPx(), cap = StrokeCap.Round)
-                    )
+                drawArc(
+                    color = onSurfaceColor.copy(alpha = 0.1f),
+                    startAngle = -90f,
+                    sweepAngle = 360f,
+                    useCenter = false,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                )
 
-                    drawArc(
-                        brush = Brush.sweepGradient(
-                            listOf(primaryColor, secondaryColor, primaryColor)
-                        ),
-                        startAngle = -90f,
-                        sweepAngle = sweep,
-                        useCenter = false,
-                        style = Stroke(width = 14.dp.toPx(), cap = StrokeCap.Round)
-                    )
-                }
-
-                Text(
-                    text = String.format(
-                        "%02d:%02d",
-                        timerState.secondsLeft / 60,
-                        timerState.secondsLeft % 60
-                    ),
-                    fontSize = 60.sp,
-                    fontWeight = FontWeight.Bold
+                drawArc(
+                    brush = Brush.sweepGradient(listOf(primaryColor, secondaryColor, primaryColor)),
+                    startAngle = -90f,
+                    sweepAngle = sweep,
+                    useCenter = false,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                 )
             }
+
+            Text(
+                text = String.format("%02d:%02d", timerState.secondsLeft / 60, timerState.secondsLeft % 60),
+                fontSize = if (isLandscape) 72.sp else 60.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
 
-        // 🟢 الأزرار تحت الدايرة
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 32.dp),
+                .padding(bottom = if (isLandscape) 16.dp else 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(if (isLandscape) 12.dp else 16.dp)
         ) {
             Row(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .shadow(4.dp, CircleShape)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.secondary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    IconButton(onClick = { viewModel.resetTimer() }) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Reset",
-                            tint = Color.White
-                        )
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(
+                        modifier = Modifier
+                            .size(if (isLandscape) 50.dp else 60.dp)
+                            .shadow(4.dp, CircleShape)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.secondary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        IconButton(onClick = { viewModel.resetTimer() }) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = stringResource(id = R.string.reset),
+                                tint = Color.White
+                            )
+                        }
                     }
+                    Text(
+                        text = stringResource(id = R.string.reset),
+                        fontSize = if (isLandscape) 12.sp else 14.sp
+                    )
                 }
-
-                Box(
-                    modifier = Modifier
-                        .size(70.dp)
-                        .shadow(6.dp, CircleShape)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    IconButton(onClick = {
-                        if (timerState.isRunning) viewModel.pauseTimer()
-                        else viewModel.startTimer()
-                    }) {
-                        Icon(
-                            imageVector = if (timerState.isRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = "Start/Pause",
-                            tint = Color.White
-                        )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(
+                        modifier = Modifier
+                            .size(if (isLandscape) 60.dp else 70.dp)
+                            .shadow(6.dp, CircleShape)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        IconButton(onClick = {
+                            if (timerState.isRunning) viewModel.pauseTimer()
+                            else viewModel.startTimer()
+                        }) {
+                            Icon(
+                                imageVector = if (timerState.isRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = stringResource(id = R.string.pause_start),
+                                tint = Color.White
+                            )
+                        }
                     }
+                    Text(
+                        text = stringResource(id = R.string.pause_start),
+                        fontSize = if (isLandscape) 12.sp else 14.sp
+                    )
                 }
-
-                Box(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .shadow(4.dp, CircleShape)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.secondary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    IconButton(onClick = { viewModel.skipTimer() }) {
-                        Icon(
-                            imageVector = Icons.Default.SkipNext,
-                            contentDescription = "Skip",
-                            tint = Color.White
-                        )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(
+                        modifier = Modifier
+                            .size(if (isLandscape) 50.dp else 60.dp)
+                            .shadow(4.dp, CircleShape)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.secondary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        IconButton(onClick = { viewModel.skipTimer() }) {
+                            Icon(
+                                imageVector = Icons.Default.SkipNext,
+                                contentDescription = stringResource(id = R.string.skip),
+                                tint = Color.White
+                            )
+                        }
                     }
-
+                    Text(
+                        text = stringResource(id = R.string.skip),
+                        fontSize = if (isLandscape) 12.sp else 14.sp
+                    )
                 }
             }
 
+
             Text(
                 text = "Completed Focus Sessions: ${timerState.completedSessions}",
-                fontSize = 16.sp
+                fontSize = if (isLandscape) 14.sp else 16.sp
             )
         }
     }
 }
+
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
