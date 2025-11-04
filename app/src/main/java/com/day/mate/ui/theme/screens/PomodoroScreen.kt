@@ -319,7 +319,7 @@ fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
 
 
             Text(
-                text = "Completed Focus Sessions: ${timerState.completedSessions}",
+                text = stringResource(id = R.string.completed_sessions, timerState.completedSessions),
                 fontSize = if (isLandscape) 14.sp else 16.sp
             )
         }

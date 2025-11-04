@@ -7,8 +7,10 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.day.mate.ui.screens.settings.SettingsScreenContainer
 
 import com.day.mate.ui.theme.Components.BottomNavigationBar
+import com.day.mate.ui.theme.screens.MediaScreen
 import com.day.mate.ui.theme.screens.PomodoroScreen
 import com.day.mate.ui.theme.screens.PrayerScreen
 import com.day.mate.ui.theme.screens.SettingsScreen
@@ -30,7 +32,15 @@ fun MainNavGraph() {
             composable(BottomNavItem.TimeLine.route) { TimeLineScreen() }
             composable(BottomNavItem.Todo.route) { TodoScreen() }
             composable(BottomNavItem.Pomodoro.route) { PomodoroScreen() }
-            composable(BottomNavItem.Settings.route) { SettingsScreen() }
+            composable("settings") {
+                SettingsScreenContainer(
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+            composable("media") {
+                MediaScreen()
+            }
+
             composable(BottomNavItem.Prayer.route) { PrayerScreen() }
         }
     }
