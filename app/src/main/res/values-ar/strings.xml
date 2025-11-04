@@ -1,39 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name" translatable="false">Day Mate</string>
 
-        <string name="onboarding_title">نظّم يومك بسهولة</string>
-        <string name="onboarding_description">دوّن المهام، حدّد أولوياتك، وراقب إنتاجيتك ترتفع. داي ميت يساعدك تبقى مركز على أهدافك.</string>
 
-        <string name="task_design_mockups">تصميم مخططات المشروع الجديدة</string>
-        <string name="task_call_client">اتصل بالعميل</string>
-        <string name="task_schedule_meeting">جدولة اجتماع الفريق</string>
 
-        <string name="button_continue">متابعة</string>
-        <string name="button_skip">تخطي الآن</string>
+    <!-- Onboarding texts -->
+    <string name="onboarding_title">نظّم يومك بسهولة</string>
+    <string name="onboarding_description">دوّن المهام، حدّد أولوياتك، وراقب إنتاجيتك ترتفع. داي ميت يساعدك تبقى مركز على أهدافك.</string>
 
-        <string name="onboarding2_title">تركيز عميق بلا حدود</string>
-        <string name="onboarding2_description">استخدم المؤقت القابل للتخصيص للعمل بتركيز عالٍ وزيادة الإنتاجية دون إجهاد.</string>
-        <string name="icon_timer_description">أيقونة المؤقت</string>
+    <!-- Tasks -->
+    <string name="task_design_mockups">تصميم مخططات المشروع الجديدة</string>
+    <string name="task_call_client">اتصل بالعميل</string>
+    <string name="task_schedule_meeting">جدولة اجتماع الفريق</string>
 
-    <string name="onboarding3_title">خزنة خاصة لوسائطك</string>
-    <string name="onboarding3_description">
-        احفظ صورك وفيديوهاتك ومستنداتك المهمة بأمان، بحيث يمكنك الوصول إليها فقط داخل تطبيق DayMate.
-    </string>
+    <!-- Buttons -->
+    <string name="button_continue">متابعة</string>
+    <string name="button_skip">تخطي الآن</string>
+
+    <!-- Pomodoro strings -->
     <string name="focus">تركيز</string>
     <string name="short_break">استراحة قصيرة</string>
     <string name="long_break">استراحة طويلة</string>
-    <string name="start">البدء</string>
-    <string name="pause_start">توقف/ بدا</string>
-    <string name="reset">اعادة</string>
+    <string name="start">ابدأ</string>
+    <string name="pause_start">توقف / بدء</string>
+    <string name="reset">إعادة</string>
     <string name="skip">تخطي</string>
     <string name="completed_sessions">عدد الجلسات المكتملة: %1$d</string>
 
-    <string name="settings_title">الاعدادات</string>
-    <string name="focus_time_label">وقت التركيز(بالدقائق)</string>
-    <string name="short_break_label">استراحة قصيرة(بالدقائق)</string>
-    <string name="long_break_label">استراحة طويلة(بالدقائق)</string>
+    <!-- Settings dialog -->
+    <string name="settings_title">الإعدادات</string>
+    <string name="focus_time_label">مدة التركيز (بالدقائق)</string>
+    <string name="short_break_label">الاستراحة القصيرة (بالدقائق)</string>
+    <string name="long_break_label">الاستراحة الطويلة (بالدقائق)</string>
     <string name="save_button">حفظ</string>
-    <string name="cancel_button">الغاء</string>
+    <string name="cancel_button">إلغاء</string>
+
+    <!-- Onboarding screen 2 -->
+    <string name="onboarding2_title">تركيز عميق بلا حدود</string>
+    <string name="onboarding2_description">استخدم المؤقت القابل للتخصيص للعمل بتركيز عالٍ وزيادة الإنتاجية دون إجهاد.</string>
+    <string name="icon_timer_description">أيقونة المؤقت</string>
+
+    <!-- Onboarding screen 3 -->
+
+    <string name="onboarding3_title">خزنة خاصة لوسائطك</string>
+    <string name="onboarding3_description">
+        احفظ صورك وفيديوهاتك ومستنداتك المهمة بأمان — بحيث يمكنك الوصول إليها فقط داخل تطبيق DayMate.
+    </string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title_and_profile">الملف الشخصي والإعدادات</string>
+    <string name="settings_appearance">المظهر</string>
+    <string name="settings_dark_mode">الوضع الداكن</string>
+    <string name="settings_data_sync">البيانات والمزامنة</string>
+    <string name="settings_cloud_sync">المزامنة السحابية</string>
+    <string name="settings_manage_storage">إدارة التخزين</string>
+    <string name="settings_account">الحساب</string>
+    <string name="settings_notifications">الإشعارات</string>
+    <string name="settings_change_password">تغيير كلمة المرور</string>
+    <string name="settings_support_legal">الدعم والشؤون القانونية</string>
+    <string name="settings_help_support">المساعدة والدعم</string>
+    <string name="settings_terms_service">شروط الخدمة</string>
+    <string name="settings_log_out">تسجيل الخروج</string>
+    <string name="settings_edit_profile">تعديل الملف الشخصي</string>
 
     <!-- Login Screen -->
     <string name="login_welcome_title">مرحبًا بعودتك إلى DayMate</string>
@@ -56,5 +84,14 @@
     <string name="or_signup_with">أو سجّل باستخدام</string>
     <string name="already_have_account">هل لديك حساب بالفعل؟ تسجيل الدخول</string>
     <string name="terms_text">بالتسجيل، فإنك توافق على شروط الخدمة.</string>
+    <string name="lets_start">هيا لنبدأ</string>
+
+    <string name="nav_timeline">الأحداث</string>
+    <string name="nav_todo">المهام</string>
+    <string name="nav_prayer">الصلاة</string>
+    <string name="nav_media">الوسائط</string>
+    <string name="nav_settings">حسابي</string>
+    <string name="nav_pomodoro">المؤقت</string>
+
 
 </resources>

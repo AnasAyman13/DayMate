@@ -1,5 +1,15 @@
 <resources>
-<string name="app_name" translatable="false">Day Mate</string>
+        <string name="app_name" translatable="false">Day Mate</string>
+
+        <string name="nav_timeline">Timeline</string>
+        <string name="nav_todo">To-Do</string>
+        <string name="nav_pomodoro">Pomodoro</string>
+        <string name="nav_prayer">Prayer</string>
+        <string name="nav_media">Media</string>
+        <string name="nav_settings">Profile</string>
+
+
+
         <!-- Onboarding texts -->
         <string name="onboarding_title">Organize Your Day, Effortlessly.</string>
         <string name="onboarding_description">Capture tasks, set priorities, and watch your productivity soar. DayMate keeps your goals in sight.</string>
@@ -12,32 +22,49 @@
         <!-- Buttons -->
         <string name="button_continue">Continue</string>
         <string name="button_skip">Skip for now</string>
-    <!-- Promodoro strings -->
-    <string name="focus">Focus</string>
-    <string name="short_break">Short Break</string>
-    <string name="long_break">Long Break</string>
-    <string name="start">Start</string>
-    <string name="pause_start">Start/Pause</string>
-    <string name="reset">Reset</string>
-    <string name="skip">Skip</string>
 
-    <string name="completed_sessions">Completed Focus Sessions: %1$d</string>
+        <!-- Promodoro strings -->
+        <string name="focus">Focus</string>
+        <string name="short_break">Short Break</string>
+        <string name="long_break">Long Break</string>
+        <string name="start">Start</string>
+        <string name="pause_start">Start/Pause</string>
+        <string name="reset">Reset</string>
+        <string name="skip">Skip</string>
 
-    <!-- settings dialog -->
-    <string name="settings_title">Settings</string>
-    <string name="focus_time_label">Focus Time (minutes)</string>
-    <string name="short_break_label">Short Break (minutes)</string>
-    <string name="long_break_label">Long Break (minutes)</string>
-    <string name="save_button">Save</string>
-    <string name="cancel_button">Cancel</string>
+        <string name="completed_sessions">Completed Focus Sessions: %1$d</string>
 
-    <string name="onboarding2_title">Deep Focus, Unlocked</string>
+        <!-- settings dialog -->
+        <string name="settings_title">Settings</string>
+        <string name="focus_time_label">Focus Time (minutes)</string>
+        <string name="short_break_label">Short Break (minutes)</string>
+        <string name="long_break_label">Long Break (minutes)</string>
+        <string name="save_button">Save</string>
+        <string name="cancel_button">Cancel</string>
+
+        <string name="onboarding2_title">Deep Focus, Unlocked</string>
         <string name="onboarding2_description">Use our customizable timer to work in focused bursts. Boost productivity and prevent burnout.</string>
         <string name="icon_timer_description">Timer icon</string>
-    <string name="onboarding3_title">A Private Vault for Your Media</string>
-    <string name="onboarding3_description">
+        <string name="onboarding3_title">A Private Vault for Your Media</string>
+        <string name="onboarding3_description">
         Safely store your important photos, videos, and documents — accessible only to you, right within DayMate.
     </string>
+
+        <!-- Settings Screen -->
+        <string name="settings_title_and_profile">Profile &amp; Settings</string>
+        <string name="settings_appearance">Appearance</string>
+        <string name="settings_dark_mode">Dark Mode</string>
+        <string name="settings_data_sync">Data &amp; Sync</string>
+        <string name="settings_cloud_sync">Cloud Sync</string>
+        <string name="settings_manage_storage">Manage Storage</string>
+        <string name="settings_account">Account</string>
+        <string name="settings_notifications">Notifications</string>
+        <string name="settings_change_password">Change Password</string>
+        <string name="settings_support_legal">Support &amp; Legal</string>
+        <string name="settings_help_support">Help &amp; Support</string>
+        <string name="settings_terms_service">Terms of Service</string>
+        <string name="settings_log_out">Log Out</string>
+        <string name="settings_edit_profile">Edit Profile</string>
 
     <!-- Login Screen -->
     <string name="login_welcome_title">Welcome Back to DayMate</string>
@@ -60,5 +87,7 @@
     <string name="or_signup_with">Or sign up with</string>
     <string name="already_have_account">Already have an account? Log In</string>
     <string name="terms_text">By signing up, you agree to our Terms of Service.</string>
+    <string name="lets_start">Lets Start</string>
+
 
 </resources>
