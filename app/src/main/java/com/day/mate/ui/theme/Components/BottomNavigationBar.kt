@@ -9,8 +9,11 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.day.mate.ui.theme.navigation.BottomNavItem
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {
@@ -19,6 +22,7 @@ fun BottomNavigationBar(navController: NavController) {
         BottomNavItem.Todo,
         BottomNavItem.Pomodoro,
         BottomNavItem.Prayer,
+        BottomNavItem.Media,
         BottomNavItem.Settings
     )
 
@@ -29,19 +33,32 @@ fun BottomNavigationBar(navController: NavController) {
         val currentRoute = navBackStackEntry?.destination?.route
 
         items.forEach { item ->
+            val selected = currentRoute == item.route
+
             NavigationBarItem(
                 icon = {
                     Icon(
-                        painter = painterResource(id = item.iconRes),
-                        contentDescription = item.title,
+                        painter = painterResource(
+                            id = if (selected) item.selectedIconRes else item.iconRes
+                        ),
+                        contentDescription = stringResource(id = item.titleRes),
                         modifier = Modifier.size(24.dp),
                         tint = Color.Unspecified
                     )
                 },
-                label = { Text(item.title,color = Color.White) },
-                selected = currentRoute == item.route,
+                label = {
+                    Text(
+                        text = stringResource(id = item.titleRes),
+                        color = if (selected) Color.White else Color.LightGray,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                        fontSize = 12.sp
+                    )
+                },
+                selected = selected,
                 onClick = {
-                    if (currentRoute != item.route) {
+                    if (!selected) {
                         navController.navigate(item.route) {
                             popUpTo(navController.graph.startDestinationId) { saveState = true }
                             launchSingleTop = true
