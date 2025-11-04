@@ -1,15 +1,5 @@
 <resources>
 <string name="app_name" translatable="false">Day Mate</string>
-
-    <string name="nav_timeline">Timeline</string>
-    <string name="nav_todo">To-Do</string>
-    <string name="nav_pomodoro">Pomodoro</string>
-    <string name="nav_prayer">Prayer</string>
-    <string name="nav_media">Media</string>
-    <string name="nav_settings">Profile</string>
-
-
-
         <!-- Onboarding texts -->
         <string name="onboarding_title">Organize Your Day, Effortlessly.</string>
         <string name="onboarding_description">Capture tasks, set priorities, and watch your productivity soar. DayMate keeps your goals in sight.</string>
@@ -22,8 +12,6 @@
         <!-- Buttons -->
         <string name="button_continue">Continue</string>
         <string name="button_skip">Skip for now</string>
-        <string name="lets_start">"Let's Start!"</string>
-
     <!-- Promodoro strings -->
     <string name="focus">Focus</string>
     <string name="short_break">Short Break</string>
@@ -51,20 +39,26 @@
         Safely store your important photos, videos, and documents — accessible only to you, right within DayMate.
     </string>
 
-    <!-- Settings Screen -->
-    <string name="settings_title_and_profile">Profile &amp; Settings</string>
-    <string name="settings_appearance">Appearance</string>
-    <string name="settings_dark_mode">Dark Mode</string>
-    <string name="settings_data_sync">Data &amp; Sync</string>
-    <string name="settings_cloud_sync">Cloud Sync</string>
-    <string name="settings_manage_storage">Manage Storage</string>
-    <string name="settings_account">Account</string>
-    <string name="settings_notifications">Notifications</string>
-    <string name="settings_change_password">Change Password</string>
-    <string name="settings_support_legal">Support &amp; Legal</string>
-    <string name="settings_help_support">Help &amp; Support</string>
-    <string name="settings_terms_service">Terms of Service</string>
-    <string name="settings_log_out">Log Out</string>
-    <string name="settings_edit_profile">Edit Profile</string>
+    <!-- Login Screen -->
+    <string name="login_welcome_title">Welcome Back to DayMate</string>
+    <string name="login_welcome_subtitle">Log in to continue your journey.</string>
+    <string name="email_label">Email Address</string>
+    <string name="password_label">Password</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="login_button">Login</string>
+    <string name="or_continue_with">Or continue with</string>
+    <string name="google_button">Google</string>
+    <string name="facebook_button">Facebook</string>
+    <string name="dont_have_account">Dont have an account? Sign Up</string>
+
+    <!-- Sign Up Screen -->
+    <string name="signup_header_title">DayMate</string>
+    <string name="signup_create_account">Create Your Account</string>
+    <string name="signup_subtitle">Start organizing your day, your way.</string>
+    <string name="fullname_label">Full Name</string>
+    <string name="signup_button">Sign Up</string>
+    <string name="or_signup_with">Or sign up with</string>
+    <string name="already_have_account">Already have an account? Log In</string>
+    <string name="terms_text">By signing up, you agree to our Terms of Service.</string>
 
 </resources>

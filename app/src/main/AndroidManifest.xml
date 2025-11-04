@@ -23,7 +23,6 @@
             </intent-filter>
         </activity>
 
-        <!-- باقي الـ Activities زي ما هي -->
         <activity
             android:name="com.day.mate.ui.onboardingActivity1.OnboardingActivity1"
             android:exported="false"
@@ -44,7 +43,13 @@
             android:exported="true"
             android:theme="@style/Theme.DayMate" />
 
+        <!-- 🟢 Auth Screens (Login / SignUp) -->
+        <activity
+            android:name="com.day.mate.AuthActivity"
+            android:exported="true"
+            android:theme="@style/Theme.DayMate" />
 
     </application>
+
 
 </manifest>

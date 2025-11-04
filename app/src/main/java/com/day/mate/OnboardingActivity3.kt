@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.sp
 import com.day.mate.MainActivity
 import com.day.mate.R
 import com.day.mate.ui.onboardingActivity1.DayMateDarkTheme
+import com.day.mate.AuthActivity
+import com.day.mate.ui.screens.SignUpScreen
 import com.day.mate.ui.theme.Primary
 import com.day.mate.ui.theme.Teal
 import kotlin.let
@@ -44,7 +46,7 @@ class OnboardingActivity3 : ComponentActivity() {
                         sharedPref.edit().putBoolean("isFirstTime", false).apply()
 
                         // الانتقال إلى الشاشة الرئيسية
-                        val intent = Intent(this, MainActivity::class.java)
+                        val intent = Intent(this, AuthActivity::class.java)
                         startActivity(intent)
                         finish()
                     }
