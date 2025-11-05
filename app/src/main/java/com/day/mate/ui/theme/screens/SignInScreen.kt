@@ -1,5 +1,6 @@
 package com.day.mate.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -9,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -33,8 +35,22 @@ fun LoginScreen(
     val backgroundDark = Color(0xFF102022)
     val primaryColor = Color(0xFF13DAEC)
 
+    val context = LocalContext.current
+
+    val state by viewModel.state.collectAsState()
+
+
     LaunchedEffect(uiState) {
-        if (uiState is AuthUiState.Success) onLoggedIn()
+        when (uiState) {
+            is AuthUiState.Success -> {
+                Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
+                onLoggedIn()
+            }
+            is AuthUiState.Error -> {
+                Toast.makeText(context, (uiState as AuthUiState.Error).message, Toast.LENGTH_SHORT).show()
+            }
+            else -> Unit
+        }
     }
 
     Box(
@@ -132,21 +148,29 @@ fun LoginScreen(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = onForgotPassword) {
-                        Text(stringResource(R.string.forgot_password), color = primaryColor, fontSize = 14.sp)
+                        Text(
+                            stringResource(R.string.forgot_password),
+                            color = primaryColor,
+                            fontSize = 14.sp
+                        )
                     }
                 }
             }
 
             // ---------- Login button ----------
             Button(
-                onClick = { viewModel.signIn(email, password) },
+                onClick = { viewModel.signIn(context, email, password) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
             ) {
-                Text(stringResource(R.string.login_button), color = backgroundDark, fontSize = 18.sp)
+                Text(
+                    stringResource(R.string.login_button),
+                    color = backgroundDark,
+                    fontSize = 18.sp
+                )
             }
 
             // ---------- Divider ----------
@@ -170,28 +194,40 @@ fun LoginScreen(
             ) {
                 OutlinedButton(
                     onClick = { /* Google login */ },
-                    modifier = Modifier.weight(1f).height(48.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
                         containerColor = Color.White.copy(alpha = 0.05f),
                         contentColor = Color.White
                     )
                 ) {
-                    Image(painter = painterResource(id = R.drawable.googlelogo), contentDescription = "Google", modifier = Modifier.size(20.dp))
+                    Image(
+                        painter = painterResource(id = R.drawable.googlelogo),
+                        contentDescription = "Google",
+                        modifier = Modifier.size(20.dp)
+                    )
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.google_button))
                 }
 
                 OutlinedButton(
                     onClick = { /* Facebook login */ },
-                    modifier = Modifier.weight(1f).height(48.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
                         containerColor = Color.White.copy(alpha = 0.05f),
                         contentColor = Color.White
                     )
                 ) {
-                    Image(painter = painterResource(id = R.drawable.facebooklogo), contentDescription = "Facebook", modifier = Modifier.size(20.dp))
+                    Image(
+                        painter = painterResource(id = R.drawable.facebooklogo),
+                        contentDescription = "Facebook",
+                        modifier = Modifier.size(20.dp)
+                    )
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.facebook_button))
                 }
@@ -199,7 +235,11 @@ fun LoginScreen(
 
             Spacer(Modifier.height(1.dp))
             TextButton(onClick = onNavigateToSignUp) {
-                Text(stringResource(R.string.dont_have_account), color = primaryColor, fontSize = 14.sp)
+                Text(
+                    stringResource(R.string.dont_have_account),
+                    color = primaryColor,
+                    fontSize = 14.sp
+                )
             }
         }
     }
@@ -210,6 +250,10 @@ fun LoginScreen(
 fun PreviewLoginScreen() {
     val fakeViewModel = remember { AuthViewModel() }
     MaterialTheme {
-        LoginScreen(viewModel = fakeViewModel, onLoggedIn = {}, onNavigateToSignUp = {}, onForgotPassword = {})
+        LoginScreen(
+            viewModel = fakeViewModel,
+            onLoggedIn = {},
+            onNavigateToSignUp = {},
+            onForgotPassword = {})
     }
 }

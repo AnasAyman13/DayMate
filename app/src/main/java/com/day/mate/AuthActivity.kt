@@ -50,4 +50,14 @@ class AuthActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onStart() {
+        super.onStart()
+        val viewModel: AuthViewModel = AuthViewModel()
+        viewModel.checkCurrentUser()
+        val currentUser = viewModel.getCurrentUser()
+        if (currentUser != null) {
+            // TODO: Navigate to MainActivity
+        }
+    }
 }
