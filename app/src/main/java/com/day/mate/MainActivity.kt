@@ -1,21 +1,26 @@
 package com.day.mate
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
-import androidx.core.app.ActivityCompat
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import com.day.mate.ui.theme.navigation.MainNavGraph
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.day.mate.data.AdhanReceiver
 import com.day.mate.ui.theme.DayMateTheme
+import com.day.mate.ui.theme.navigation.MainNavGraph
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        //  طلب صلاحية الموقع
+        // 🗺️ طلب صلاحية الموقع
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED
         ) {
@@ -26,10 +31,22 @@ class MainActivity : ComponentActivity() {
             )
         }
 
+        // 🔔 طلب صلاحية الإشعارات (Android 13+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val permission = Manifest.permission.POST_NOTIFICATIONS
+            if (ContextCompat.checkSelfPermission(this, permission)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(this, arrayOf(permission), 101)
+            }
+        }
+
+        // 🎨 واجهة التطبيق
         setContent {
             DayMateTheme {
                 Surface(color = MaterialTheme.colorScheme.background) {
                     MainNavGraph()
+
                 }
             }
         }
