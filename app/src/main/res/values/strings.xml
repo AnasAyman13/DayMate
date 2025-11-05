@@ -90,4 +90,53 @@
     <string name="lets_start">Lets Start</string>
 
 
+        <!-- App / Screen -->
+        <string name="location_city_hijri">Cairo, Egypt – %1$s</string>
+
+        <!-- Next prayer card -->
+        <string name="next_prayer">Next Prayer</string>
+        <string name="loading">Loading...</string>
+
+        <!-- Prayer list -->
+        <string name="enable_adhan">Enable Athan</string>
+
+        <!-- Qibla card -->
+        <string name="qibla_direction">Qibla Direction</string>
+
+        <!-- Compass text -->
+        <string name="getting_location">Getting location...</string>
+        <string name="facing_qibla">You are facing Qibla</string>
+        <string name="turn_right">Turn Right</string>
+        <string name="turn_left">Turn Left</string>
+
+        <!-- Prayer times fallback -->
+        <string name="loading_prayer_times">Loading prayer times...</string>
+
+
+
+
+    <!-- Prayer names -->
+    <string name="fajr">Fajr</string>
+    <string name="dhuhr">Dhuhr</string>
+    <string name="asr">Asr</string>
+    <string name="maghrib">Maghrib</string>
+    <string name="isha">Isha</string>
+
+    <!-- Hijri months -->
+    <string name="location_hijri">%1$s</string>
+    <string name="muharram">Muharram</string>
+    <string name="safar">Safar</string>
+    <string name="rabi_al_awwal">Rabi al-awwal</string>
+    <string name="rabi_al_thani">Rabi al-thani</string>
+    <string name="jumada_al_awwal">Jumada al-awwal</string>
+    <string name="jumada_al_thani">Jumada al-thani</string>
+    <string name="rajab">Rajab</string>
+    <string name="shaaban">Shaban</string>
+    <string name="ramadan">Ramadan</string>
+    <string name="shawwal">Shawwal</string>
+    <string name="dhu_al_qidah">Dhu al-Qidah</string>
+    <string name="dhu_al_hijjah">Dhu al-Hijjah</string>
+
+
+
 </resources>
