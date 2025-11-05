@@ -94,4 +94,44 @@
     <string name="nav_pomodoro">المؤقت</string>
 
 
+
+    <!-- App / Screen -->
+        <string name="location_city_hijri">القاهرة، مصر – %1$s</string>
+
+
+        <!-- General -->
+        <string name="loading">جارٍ التحميل...</string>
+        <string name="loading_prayer_times">جارٍ تحميل مواقيت الصلاة...</string>
+        <string name="next_prayer">الصلاة القادمة</string>
+        <string name="enable_adhan">تفعيل الأذان</string>
+        <string name="qibla_direction">اتجاه القبلة</string>
+        <string name="getting_location">جاري الحصول على الموقع...</string>
+        <string name="facing_qibla">أنت تواجه القبلة</string>
+        <string name="turn_right">استدر يمينًا</string>
+        <string name="turn_left">استدر يسارًا</string>
+
+        <!-- Prayer names -->
+        <string name="fajr">الفجر</string>
+        <string name="dhuhr">الظهر</string>
+        <string name="asr">العصر</string>
+        <string name="maghrib">المغرب</string>
+        <string name="isha">العشاء</string>
+
+        <!-- Hijri months -->
+        <string name="location_hijri">%1$s</string>
+        <string name="muharram">محرم</string>
+        <string name="safar">صفر</string>
+        <string name="rabi_al_awwal">ربيع الأول</string>
+        <string name="rabi_al_thani">ربيع الثاني</string>
+        <string name="jumada_al_awwal">جمادى الأولى</string>
+        <string name="jumada_al_thani">جمادى الثانية</string>
+        <string name="rajab">رجب</string>
+        <string name="shaaban">شعبان</string>
+        <string name="ramadan">رمضان</string>
+        <string name="shawwal">شوال</string>
+        <string name="dhu_al_qidah">ذو القعدة</string>
+        <string name="dhu_al_hijjah">ذو الحجة</string>
+
+
+
 </resources>

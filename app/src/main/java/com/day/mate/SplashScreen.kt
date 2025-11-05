@@ -52,7 +52,7 @@ class SplashScreen : ComponentActivity() {
                         sharedPref.edit().putBoolean("isFirstTime", false).apply()
                     } else {
                         // مش أول مرة → نفتح signup
-                        startActivity(Intent(this,  AuthActivity::class.java))
+                        startActivity(Intent(this, MainActivity::class.java))
                     }
                     finish()
                 }
