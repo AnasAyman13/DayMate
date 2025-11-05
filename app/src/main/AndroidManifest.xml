@@ -3,6 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.day.mate">
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-feature android:name="android.hardware.sensor.compass" android:required="false" />
+    <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="false" />
+
     <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:allowBackup="true"
@@ -44,10 +49,10 @@
             android:theme="@style/Theme.DayMate" />
 
         <!-- 🟢 Auth Screens (Login / SignUp) -->
-        <activity
-            android:name="com.day.mate.AuthActivity"
-            android:exported="true"
-            android:theme="@style/Theme.DayMate" />
+<!--        <activity-->
+<!--            android:name="com.day.mate.AuthActivity"-->
+<!--            android:exported="true"-->
+<!--            android:theme="@style/Theme.DayMate" />-->
 
     </application>
 
