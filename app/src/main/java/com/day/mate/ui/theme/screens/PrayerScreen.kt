@@ -2,7 +2,10 @@ package com.day.mate.ui.screens
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -41,12 +44,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import com.day.mate.R
+import com.day.mate.data.AdhanReceiver
 import com.day.mate.viewmodel.PrayerViewModel
 import kotlinx.coroutines.isActive
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.*
+import kotlin.rem
+
+/** Helper functions for saving/loading Adhan state */
+fun saveAdhanPref(ctx: Context, prayer: String, enabled: Boolean) {
+    val prefs = ctx.getSharedPreferences("adhan_prefs", Context.MODE_PRIVATE)
+    prefs.edit().putBoolean(prayer, enabled).apply()
+}
+
+fun getAdhanPref(ctx: Context, prayer: String): Boolean {
+    val prefs = ctx.getSharedPreferences("adhan_prefs", Context.MODE_PRIVATE)
+    return prefs.getBoolean(prayer, false)
+}
 
 @SuppressLint("MissingPermission")
 @Composable
@@ -105,13 +123,14 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
     val remM = ((remainingMillis % 3600000) / 60000).toInt()
     val remS = ((remainingMillis % 60000) / 1000).toInt()
 
+    /** Adhan switches with persistence */
     val adhanEnabled = remember {
         mutableStateMapOf(
-            "Fajr" to false,
-            "Dhuhr" to false,
-            "Asr" to false,
-            "Maghrib" to false,
-            "Isha" to false
+            "Fajr" to getAdhanPref(ctx, "Fajr"),
+            "Dhuhr" to getAdhanPref(ctx, "Dhuhr"),
+            "Asr" to getAdhanPref(ctx, "Asr"),
+            "Maghrib" to getAdhanPref(ctx, "Maghrib"),
+            "Isha" to getAdhanPref(ctx, "Isha")
         )
     }
 
@@ -157,22 +176,45 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
     DisposableEffect(ctx) {
         val sm = ctx.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val sensor = sm.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+
         val listener = object : SensorEventListener {
-            val rm = FloatArray(9)
-            val ori = FloatArray(3)
+            private val rotationMatrix = FloatArray(9)
+            private val adjustedMatrix = FloatArray(9)
+            private val orientation = FloatArray(3)
+
             override fun onSensorChanged(event: SensorEvent) {
                 try {
-                    SensorManager.getRotationMatrixFromVector(rm, event.values)
-                    SensorManager.getOrientation(rm, ori)
-                    val az = Math.toDegrees(ori[0].toDouble()).toFloat()
-                    deviceAzimuth = (az + 360f) % 360f
+                    // تحويل Rotation Vector إلى مصفوفة دوران
+                    SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
+
+                    // إعادة ضبط الإحداثيات لوضع الجهاز الأفقي
+                    SensorManager.remapCoordinateSystem(
+                        rotationMatrix,
+                        SensorManager.AXIS_X,
+                        SensorManager.AXIS_Z,
+                        adjustedMatrix
+                    )
+
+                    // استخراج الاتجاه بالدرجات
+                    SensorManager.getOrientation(adjustedMatrix, orientation)
+                    var azimuthDeg = Math.toDegrees(orientation[0].toDouble()).toFloat()
+                    if (azimuthDeg < 0) azimuthDeg += 360f
+
+                    deviceAzimuth = azimuthDeg
                 } catch (_: Exception) {}
             }
+
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
         }
-        if (sensor != null) sm.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)
-        onDispose { try { sm.unregisterListener(listener) } catch (_: Exception) {} }
+
+        if (sensor != null)
+            sm.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)
+
+        onDispose {
+            try { sm.unregisterListener(listener) } catch (_: Exception) {}
+        }
     }
+
 
     LaunchedEffect(userLocation) {
         userLocation?.let { loc ->
@@ -220,7 +262,7 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                 "Isha" -> stringResource(R.string.isha)
                 else -> stringResource(R.string.loading)
             }
-            // Next Prayer Card
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
@@ -260,7 +302,6 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
 
             Spacer(Modifier.height(18.dp))
 
-            // Prayer List
             val sdf24 = SimpleDateFormat("HH:mm", Locale.getDefault())
             val sdf12 = SimpleDateFormat("hh:mm a", Locale.getDefault())
             timings?.let { t ->
@@ -272,16 +313,23 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                     "Isha" to t.Isha
                 ).forEach { (name, timeStr) ->
                     val formatted = try { sdf12.format(sdf24.parse(timeStr)!!) } catch(_:Exception){ timeStr }
-                    PrayerRow(name = stringResource(
-                        when(name){
-                            "Fajr" -> R.string.fajr
-                            "Dhuhr" -> R.string.dhuhr
-                            "Asr" -> R.string.asr
-                            "Maghrib" -> R.string.maghrib
-                            "Isha" -> R.string.isha
-                            else -> R.string.loading
-                        }
-                    ), time = formatted, enabled = adhanEnabled[name] == true) { checked -> adhanEnabled[name] = checked }
+                    PrayerRow(
+                        name = stringResource(
+                            when(name){
+                                "Fajr" -> R.string.fajr
+                                "Dhuhr" -> R.string.dhuhr
+                                "Asr" -> R.string.asr
+                                "Maghrib" -> R.string.maghrib
+                                "Isha" -> R.string.isha
+                                else -> R.string.loading
+                            }
+                        ),
+                        time = formatted,
+                        enabled = adhanEnabled[name] == true
+                    ) { checked ->
+                        adhanEnabled[name] = checked
+                        saveAdhanPref(ctx, name, checked) // ← حفظ الحالة
+                    }
                 }
             } ?: Text(stringResource(R.string.loading_prayer_times), color = Color.White)
 
@@ -364,6 +412,7 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
             }
 
             Spacer(Modifier.height(20.dp))
+
         }
     }
 }
@@ -388,7 +437,7 @@ fun PrayerRow(name: String, time: String, enabled: Boolean, onToggle: (Boolean) 
     }
 }
 
-// Hijri date function using Context
+// Hijri date function
 fun getHijriDateSafely(ctx: Context): String {
     return try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -416,3 +465,5 @@ fun getHijriDateSafely(ctx: Context): String {
         }
     } catch (_: Exception) { "—" }
 }
+
+
