@@ -48,21 +48,15 @@ class SplashScreen : ComponentActivity() {
         setContent {
             DayMateDarkTheme {
                 SplashScreen {
-                    when {
-                        isFirstTime -> {
-                            startActivity(Intent(this, OnboardingActivity1::class.java))
-                            sharedPref.edit().putBoolean("isFirstTime", false).apply()
-                        }
-
-                        auth.currentUser != null && auth.currentUser!!.isEmailVerified -> {
-                            startActivity(Intent(this, MainActivity::class.java))
-                        }
-
-                        else -> {
-                            startActivity(Intent(this, AuthActivity::class.java))
-                        }
-                }
-
+                    if (isFirstTime) {
+                        // أول مرة → نفتح Onboarding
+                        startActivity(Intent(this, OnboardingActivity1::class.java))
+                        // بعد كده نخليها false
+                        sharedPref.edit().putBoolean("isFirstTime", false).apply()
+                    } else {
+                        // مش أول مرة → نفتح signup
+                        startActivity(Intent(this, AuthActivity::class.java))
+                    }
                     finish()
                 }
             }

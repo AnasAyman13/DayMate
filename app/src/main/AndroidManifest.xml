@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-feature android:name="android.hardware.sensor.compass" android:required="false" />
     <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="false" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <application
@@ -48,13 +50,19 @@
             android:exported="true"
             android:theme="@style/Theme.DayMate" />
 
-        <!-- 🟢 Auth Screens (Login / SignUp) -->
-       <activity
-          android:name="com.day.mate.AuthActivity"
+        <activity
+            android:name="com.day.mate.AuthActivity"
             android:exported="true"
             android:theme="@style/Theme.DayMate" />
 
-    </application>
+        <receiver
+            android:name=".data.AdhanReceiver"
+            android:exported="true" />
+        <receiver android:name=".data.StopAdhanReceiver" />
+
+    </application>   
+
+
 
 
 </manifest>
