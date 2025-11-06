@@ -49,10 +49,10 @@
             android:theme="@style/Theme.DayMate" />
 
         <!-- 🟢 Auth Screens (Login / SignUp) -->
-<!--        <activity-->
-<!--            android:name="com.day.mate.AuthActivity"-->
-<!--            android:exported="true"-->
-<!--            android:theme="@style/Theme.DayMate" />-->
+       <activity
+          android:name="com.day.mate.AuthActivity"
+            android:exported="true"
+            android:theme="@style/Theme.DayMate" />
 
     </application>
 

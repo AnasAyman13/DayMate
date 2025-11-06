@@ -30,8 +30,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.day.mate.ui.onboardingActivity1.DayMateDarkTheme
 import com.day.mate.ui.onboardingActivity1.OnboardingActivity1
+import com.day.mate.ui.onboardingActivity1.OnboardingScreen1
 import com.day.mate.ui.onboardingActivity3.OnboardingActivity3
 import com.day.mate.viewmodel.AuthViewModel
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 
 class SplashScreen : ComponentActivity() {
@@ -41,19 +43,26 @@ class SplashScreen : ComponentActivity() {
         // نجيب SharedPreferences
         val sharedPref = getSharedPreferences("DayMatePrefs", Context.MODE_PRIVATE)
         val isFirstTime = sharedPref.getBoolean("isFirstTime", true)
+        val auth = FirebaseAuth.getInstance()
 
         setContent {
             DayMateDarkTheme {
                 SplashScreen {
-                    if (isFirstTime) {
-                        // أول مرة → نفتح Onboarding
-                        startActivity(Intent(this, OnboardingActivity1::class.java))
-                        // بعد كده نخليها false
-                        sharedPref.edit().putBoolean("isFirstTime", false).apply()
-                    } else {
-                        // مش أول مرة → نفتح signup
-                        startActivity(Intent(this, MainActivity::class.java))
-                    }
+                    when {
+                        isFirstTime -> {
+                            startActivity(Intent(this, OnboardingActivity1::class.java))
+                            sharedPref.edit().putBoolean("isFirstTime", false).apply()
+                        }
+
+                        auth.currentUser != null && auth.currentUser!!.isEmailVerified -> {
+                            startActivity(Intent(this, MainActivity::class.java))
+                        }
+
+                        else -> {
+                            startActivity(Intent(this, AuthActivity::class.java))
+                        }
+                }
+
                     finish()
                 }
             }

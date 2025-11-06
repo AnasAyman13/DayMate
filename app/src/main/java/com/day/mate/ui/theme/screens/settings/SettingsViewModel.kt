@@ -2,7 +2,7 @@ package com.day.mate.ui.screens.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.day.mate.data.model.User
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,17 +22,17 @@ class SettingsViewModel : ViewModel() {
     }
 
     fun toggleDarkMode(enabled: Boolean) {
-        _uiState.value = _uiState.value.copy(darkModeEnabled = enabled)
+        _uiState.value = _uiState.value.copy(darkModeEnabled = enabled,)
         // لاحقًا: احفظ القيمة في DataStore أو Firebase
     }
 
     fun toggleCloudSync(enabled: Boolean) {
-        _uiState.value = _uiState.value.copy(cloudSyncEnabled = enabled)
+        _uiState.value = _uiState.value.copy(cloudSyncEnabled = enabled,)
         // لاحقًا: تشغيل/إيقاف sync منطقياً أو حفظ القيمة
     }
 
     fun toggleNotifications(enabled: Boolean) {
-        _uiState.value = _uiState.value.copy(notificationsEnabled = enabled)
+        _uiState.value = _uiState.value.copy(notificationsEnabled = enabled,)
         // لاحقًا: تفعيل/إيقاف قنوات الإشعارات أو حفظ الإعداد
     }
 
@@ -44,10 +44,13 @@ class SettingsViewModel : ViewModel() {
         // placeholder
     }
 
+
+
     fun onLogoutClicked() {
         viewModelScope.launch {
-            // placeholder: implement logout via FirebaseAuth later
-            _uiState.value = _uiState.value.copy(user = User())
+            val auth = FirebaseAuth.getInstance()
+            auth.signOut()
+            _uiState.value = _uiState.value.copy(isLoggedOut = true)
         }
     }
 }
