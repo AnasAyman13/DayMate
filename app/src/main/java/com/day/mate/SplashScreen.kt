@@ -30,8 +30,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.day.mate.ui.onboardingActivity1.DayMateDarkTheme
 import com.day.mate.ui.onboardingActivity1.OnboardingActivity1
+import com.day.mate.ui.onboardingActivity1.OnboardingScreen1
 import com.day.mate.ui.onboardingActivity3.OnboardingActivity3
 import com.day.mate.viewmodel.AuthViewModel
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 
 class SplashScreen : ComponentActivity() {
@@ -41,6 +43,7 @@ class SplashScreen : ComponentActivity() {
         // نجيب SharedPreferences
         val sharedPref = getSharedPreferences("DayMatePrefs", Context.MODE_PRIVATE)
         val isFirstTime = sharedPref.getBoolean("isFirstTime", true)
+        val auth = FirebaseAuth.getInstance()
 
         setContent {
             DayMateDarkTheme {

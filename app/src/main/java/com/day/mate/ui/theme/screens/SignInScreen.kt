@@ -1,6 +1,8 @@
 package com.day.mate.ui.screens
 
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -20,6 +22,8 @@ import androidx.compose.ui.unit.sp
 import com.day.mate.R
 import com.day.mate.data.authUiState.AuthUiState
 import com.day.mate.viewmodel.AuthViewModel
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 
 @Composable
 fun LoginScreen(
@@ -37,7 +41,6 @@ fun LoginScreen(
 
     val context = LocalContext.current
 
-    val state by viewModel.state.collectAsState()
 
 
     LaunchedEffect(uiState) {
@@ -52,6 +55,33 @@ fun LoginScreen(
             else -> Unit
         }
     }
+
+    LaunchedEffect(Unit) {
+        viewModel.initGoogleClient(context)
+    }
+
+    // --- Google Sign-In Launcher
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account: GoogleSignInAccount? = task.getResult(Exception::class.java)
+            account?.let {
+                viewModel.handleGoogleSignIn(it) { state ->
+                    when (state) {
+                        is AuthUiState.Success -> onLoggedIn()
+                        is AuthUiState.Error -> Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
+                        else -> {}
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Toast.makeText(context, "Google Sign-in failed", Toast.LENGTH_SHORT).show()
+            e.printStackTrace()
+        }
+    }
+
 
     Box(
         modifier = Modifier
@@ -147,7 +177,9 @@ fun LoginScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onForgotPassword) {
+                    TextButton(onClick = {
+                        viewModel.resetPassword(context,email)
+                    }) {
                         Text(
                             stringResource(R.string.forgot_password),
                             color = primaryColor,
@@ -188,12 +220,15 @@ fun LoginScreen(
             }
 
             // ---------- Social ----------
+
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedButton(
-                    onClick = { /* Google login */ },
+                    onClick = { viewModel.signOut()
+                        viewModel.googleSignOut(context)
+                        googleSignInLauncher.launch(viewModel.getGoogleSignInIntent()) },
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp),
