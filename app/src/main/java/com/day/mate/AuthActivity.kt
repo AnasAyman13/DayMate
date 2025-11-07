@@ -15,10 +15,15 @@ import androidx.navigation.compose.rememberNavController
 import com.day.mate.ui.screens.LoginScreen
 import com.day.mate.ui.screens.SignUpScreen
 import com.day.mate.viewmodel.AuthViewModel
+import com.facebook.CallbackManager
+import com.facebook.FacebookSdk
+import com.facebook.CallbackManager.Factory
 
 class AuthActivity : ComponentActivity() {
+    private val callbackManager = CallbackManager.Factory.create()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FacebookSdk.sdkInitialize(applicationContext)
         enableEdgeToEdge()
         setContent {
             MaterialTheme {
@@ -33,9 +38,10 @@ class AuthActivity : ComponentActivity() {
                         composable("signin") {
                             LoginScreen(
                                 viewModel = viewModel,
-                                onLoggedIn =  {
+                                onLoggedIn = {
                                     val intent = Intent(this@AuthActivity, MainActivity::class.java)
-                                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                    intent.flags =
+                                        Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                                     startActivity(intent)
                                     finish()
                                 },
@@ -71,5 +77,11 @@ class AuthActivity : ComponentActivity() {
         } else {
 
         }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        val viewModel: AuthViewModel by viewModels()
+        viewModel.handleFacebookLoginResult(requestCode, resultCode, data)
     }
 }

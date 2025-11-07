@@ -1,5 +1,7 @@
 package com.day.mate.ui.screens
 
+import android.app.Activity
+import android.content.Context
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,9 +21,15 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.day.mate.R
 import com.day.mate.data.authUiState.AuthUiState
 import com.day.mate.viewmodel.AuthViewModel
+import com.facebook.CallbackManager
+import com.facebook.FacebookCallback
+import com.facebook.FacebookException
+import com.facebook.login.LoginManager
+import com.facebook.login.LoginResult
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 
@@ -40,6 +48,11 @@ fun LoginScreen(
     val primaryColor = Color(0xFF13DAEC)
 
     val context = LocalContext.current
+
+    val callbackManager = remember { CallbackManager.Factory.create() }
+
+
+    val activity = LocalContext.current
 
 
 
@@ -82,6 +95,24 @@ fun LoginScreen(
         }
     }
 
+    val facebookLauncher = rememberLauncherForActivityResult(
+        contract = LoginManager.getInstance().createLogInActivityResultContract()
+    ) { result ->
+        println("Facebook Result: $result")
+
+        // جرب نستقبل الـ Token مباشرة
+        try {
+            val token = com.facebook.AccessToken.getCurrentAccessToken()
+            if (token != null) {
+                println("Facebook Token: $token")
+                viewModel.handleFacebookAccessToken(token)
+            } else {
+                println("Facebook Token is null")
+            }
+        } catch (e: Exception) {
+            println("Facebook Error: ${e.message}")
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -178,7 +209,7 @@ fun LoginScreen(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = {
-                        viewModel.resetPassword(context,email)
+                        viewModel.resetPassword(context, email)
                     }) {
                         Text(
                             stringResource(R.string.forgot_password),
@@ -226,9 +257,11 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedButton(
-                    onClick = { viewModel.signOut()
+                    onClick = {
+                        viewModel.signOut()
                         viewModel.googleSignOut(context)
-                        googleSignInLauncher.launch(viewModel.getGoogleSignInIntent()) },
+                        googleSignInLauncher.launch(viewModel.getGoogleSignInIntent())
+                    },
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp),
@@ -248,7 +281,7 @@ fun LoginScreen(
                 }
 
                 OutlinedButton(
-                    onClick = { /* Facebook login */ },
+                    onClick = {facebookLauncher.launch(listOf("email", "public_profile")) },
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp),
