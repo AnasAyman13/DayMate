@@ -1,58 +1,41 @@
 package com.day.mate.ui.theme
 
-import android.app.Activity
 import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+// --- ✅ ده الـ Dark Theme الحقيقي بتاعك ---
+private val AppDarkColorScheme = darkColorScheme(
+    primary = AppCyan,       // اللون الأساسي (سماوي)
+    onPrimary = DarkBg,      // لون الكلام اللي فوق السماوي (أسود/غامق)
+    background = DarkBg,     // خلفية التطبيق
+    onBackground = DarkText, // لون الكلام اللي فوق الخلفية
+    surface = DarkField,     // لون الكروت وحقول الإدخال
+    onSurface = DarkText     // لون الكلام اللي فوق الكروت
+    // (ممكن نضيف بقية الألوان زي secondary لو احتجنا)
 )
 
 @Composable
 fun DayMateTheme(
+    // إحنا أجبرنا التطبيق يبقى Dark Mode
     darkTheme: Boolean = true,
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // هنقفل الألوان الديناميكية عشان نحافظ على تصميمنا
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicDarkColorScheme(context)
         }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        else -> AppDarkColorScheme // <-- بنستخدم الألوان بتاعتنا
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = Typography, // (ملف Type.kt زي ما هو)
         content = content
     )
 }

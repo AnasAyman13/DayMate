@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.day.mate.R
 import com.day.mate.data.authUiState.AuthUiState
-import com.day.mate.viewmodel.AuthViewModel
+import com.day.mate.ui.theme.screens.auth.AuthViewModel
 
 @Composable
 fun LoginScreen(

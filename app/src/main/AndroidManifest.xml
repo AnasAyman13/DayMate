@@ -20,7 +20,7 @@
 
         <!-- 🟢 Onboarding: First screen (LAUNCHER) -->
         <activity
-            android:name=".SplashScreen"
+            android:name=".ui.theme.screens.splash.SplashScreen"
             android:exported="true"
             android:theme="@style/Theme.DayMate">
             <intent-filter>
@@ -50,7 +50,7 @@
             android:theme="@style/Theme.DayMate" />
 
         <activity
-            android:name="com.day.mate.AuthActivity"
+            android:name="com.day.mate.ui.theme.screens.auth.AuthActivity"
             android:exported="true"
             android:theme="@style/Theme.DayMate" />
 

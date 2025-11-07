@@ -1,18 +1,14 @@
-package com.day.mate.viewmodel
+package com.day.mate.ui.theme.screens.auth
 
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.day.mate.MainActivity
 import com.day.mate.data.authUiState.AuthUiState
-import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 
 class AuthViewModel : ViewModel() {
 

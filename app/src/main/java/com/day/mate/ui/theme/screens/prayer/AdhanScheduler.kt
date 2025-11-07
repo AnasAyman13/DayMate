@@ -1,4 +1,4 @@
-package com.day.mate
+package com.day.mate.ui.theme.screens.prayer
 
 import android.app.AlarmManager
 import android.app.PendingIntent

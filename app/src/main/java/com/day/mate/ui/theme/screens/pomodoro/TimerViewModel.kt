@@ -1,4 +1,4 @@
-package com.day.mate.viewmodel
+package com.day.mate.ui.theme.screens.pomodoro
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

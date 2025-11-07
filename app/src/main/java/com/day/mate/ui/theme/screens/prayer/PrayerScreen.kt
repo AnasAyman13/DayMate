@@ -2,10 +2,7 @@ package com.day.mate.ui.screens
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -44,16 +41,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import com.day.mate.R
-import com.day.mate.data.AdhanReceiver
-import com.day.mate.viewmodel.PrayerViewModel
+import com.day.mate.ui.theme.screens.prayer.PrayerViewModel
 import kotlinx.coroutines.isActive
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.*
-import kotlin.rem
 
 /** Helper functions for saving/loading Adhan state */
 fun saveAdhanPref(ctx: Context, prayer: String, enabled: Boolean) {

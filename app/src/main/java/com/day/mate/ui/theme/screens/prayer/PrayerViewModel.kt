@@ -1,17 +1,17 @@
-package com.day.mate.viewmodel
+package com.day.mate.ui.theme.screens.prayer
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.day.mate.data.RetrofitInstance
 import com.day.mate.data.Timings
-import com.day.mate.scheduleAdhan
+import com.day.mate.ui.screens.getAdhanPref
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.*
-import com.day.mate.ui.screens.getAdhanPref
+import java.util.Calendar
+import java.util.Locale
 
 class PrayerViewModel : ViewModel() {
 
