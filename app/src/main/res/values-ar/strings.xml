@@ -2,11 +2,24 @@
 <resources>
     <string name="app_name" translatable="false">Day Mate</string>
 
-
+    <!-- Navigation -->
+    <string name="nav_timeline">الأحداث</string>
+    <string name="nav_todo">المهام</string>
+    <string name="nav_prayer">الصلاة</string>
+    <string name="nav_media">الوسائط</string>
+    <string name="nav_settings">حسابي</string>
+    <string name="nav_pomodoro">المؤقت</string>
 
     <!-- Onboarding texts -->
     <string name="onboarding_title">نظّم يومك بسهولة</string>
     <string name="onboarding_description">دوّن المهام، حدّد أولوياتك، وراقب إنتاجيتك ترتفع. داي ميت يساعدك تبقى مركز على أهدافك.</string>
+    <string name="onboarding2_title">تركيز عميق بلا حدود</string>
+    <string name="onboarding2_description">استخدم المؤقت القابل للتخصيص للعمل بتركيز عالٍ وزيادة الإنتاجية دون إجهاد.</string>
+    <string name="icon_timer_description">أيقونة المؤقت</string>
+    <string name="onboarding3_title">خزنة خاصة لوسائطك</string>
+    <string name="onboarding3_description">
+        احفظ صورك وفيديوهاتك ومستنداتك المهمة بأمان — بحيث يمكنك الوصول إليها فقط داخل تطبيق DayMate.
+    </string>
 
     <!-- Tasks -->
     <string name="task_design_mockups">تصميم مخططات المشروع الجديدة</string>
@@ -34,18 +47,6 @@
     <string name="long_break_label">الاستراحة الطويلة (بالدقائق)</string>
     <string name="save_button">حفظ</string>
     <string name="cancel_button">إلغاء</string>
-
-    <!-- Onboarding screen 2 -->
-    <string name="onboarding2_title">تركيز عميق بلا حدود</string>
-    <string name="onboarding2_description">استخدم المؤقت القابل للتخصيص للعمل بتركيز عالٍ وزيادة الإنتاجية دون إجهاد.</string>
-    <string name="icon_timer_description">أيقونة المؤقت</string>
-
-    <!-- Onboarding screen 3 -->
-
-    <string name="onboarding3_title">خزنة خاصة لوسائطك</string>
-    <string name="onboarding3_description">
-        احفظ صورك وفيديوهاتك ومستنداتك المهمة بأمان — بحيث يمكنك الوصول إليها فقط داخل تطبيق DayMate.
-    </string>
 
     <!-- Settings Screen -->
     <string name="settings_title_and_profile">الملف الشخصي والإعدادات</string>
@@ -86,52 +87,77 @@
     <string name="terms_text">بالتسجيل، فإنك توافق على شروط الخدمة.</string>
     <string name="lets_start">هيا لنبدأ</string>
 
-    <string name="nav_timeline">الأحداث</string>
-    <string name="nav_todo">المهام</string>
-    <string name="nav_prayer">الصلاة</string>
-    <string name="nav_media">الوسائط</string>
-    <string name="nav_settings">حسابي</string>
-    <string name="nav_pomodoro">المؤقت</string>
+    <!-- Prayer Screen -->
+    <string name="location_city_hijri">القاهرة، مصر – %1$s</string>
+    <string name="loading">جارٍ التحميل...</string>
+    <string name="loading_prayer_times">جارٍ تحميل مواقيت الصلاة...</string>
+    <string name="next_prayer">الصلاة القادمة</string>
+    <string name="enable_adhan">تفعيل الأذان</string>
+    <string name="qibla_direction">اتجاه القبلة</string>
+    <string name="getting_location">جاري الحصول على الموقع...</string>
+    <string name="facing_qibla">أنت تواجه القبلة</string>
+    <string name="turn_right">استدر يمينًا</string>
+    <string name="turn_left">استدر يسارًا</string>
+    <string name="fajr">الفجر</string>
+    <string name="dhuhr">الظهر</string>
+    <string name="asr">العصر</string>
+    <string name="maghrib">المغرب</string>
+    <string name="isha">العشاء</string>
 
+    <!-- Hijri months -->
+    <string name="location_hijri">%1$s</string>
+    <string name="muharram">محرم</string>
+    <string name="safar">صفر</string>
+    <string name="rabi_al_awwal">ربيع الأول</string>
+    <string name="rabi_al_thani">ربيع الثاني</string>
+    <string name="jumada_al_awwal">جمادى الأولى</string>
+    <string name="jumada_al_thani">جمادى الثانية</string>
+    <string name="rajab">رجب</string>
+    <string name="shaaban">شعبان</string>
+    <string name="ramadan">رمضان</string>
+    <string name="shawwal">شوال</string>
+    <string name="dhu_al_qidah">ذو القعدة</string>
+    <string name="dhu_al_hijjah">ذو الحجة</string>
 
-
-    <!-- App / Screen -->
-        <string name="location_city_hijri">القاهرة، مصر – %1$s</string>
-
-
-        <!-- General -->
-        <string name="loading">جارٍ التحميل...</string>
-        <string name="loading_prayer_times">جارٍ تحميل مواقيت الصلاة...</string>
-        <string name="next_prayer">الصلاة القادمة</string>
-        <string name="enable_adhan">تفعيل الأذان</string>
-        <string name="qibla_direction">اتجاه القبلة</string>
-        <string name="getting_location">جاري الحصول على الموقع...</string>
-        <string name="facing_qibla">أنت تواجه القبلة</string>
-        <string name="turn_right">استدر يمينًا</string>
-        <string name="turn_left">استدر يسارًا</string>
-
-        <!-- Prayer names -->
-        <string name="fajr">الفجر</string>
-        <string name="dhuhr">الظهر</string>
-        <string name="asr">العصر</string>
-        <string name="maghrib">المغرب</string>
-        <string name="isha">العشاء</string>
-
-        <!-- Hijri months -->
-        <string name="location_hijri">%1$s</string>
-        <string name="muharram">محرم</string>
-        <string name="safar">صفر</string>
-        <string name="rabi_al_awwal">ربيع الأول</string>
-        <string name="rabi_al_thani">ربيع الثاني</string>
-        <string name="jumada_al_awwal">جمادى الأولى</string>
-        <string name="jumada_al_thani">جمادى الثانية</string>
-        <string name="rajab">رجب</string>
-        <string name="shaaban">شعبان</string>
-        <string name="ramadan">رمضان</string>
-        <string name="shawwal">شوال</string>
-        <string name="dhu_al_qidah">ذو القعدة</string>
-        <string name="dhu_al_hijjah">ذو الحجة</string>
-
-
+    <!-- ========= TODO / TASKS (TRANSLATED) ========= -->
+    <string name="todo_title">قائمة المهام</string>
+    <string name="todo_create_task">إنشاء مهمة جديدة</string>
+    <string name="todo_edit_task">تعديل المهمة</string>
+    <string name="form_title">العنوان</string>
+    <string name="form_date">التاريخ</string>
+    <string name="form_time">الوقت</string>
+    <string name="form_remind_me">ذكرني</string>
+    <string name="form_category">الفئة</string>
+    <string name="form_category_all">الكل</string>
+    <string name="form_add_tag">إضافة فئة</string>
+    <string name="form_description">الوصف (اختياري)</string>
+    <string name="form_save_changes">حفظ التغييرات</string>
+    <string name="header_in_progress">قيد التنفيذ</string>
+    <string name="header_completed">مكتملة</string>
+    <string name="empty_tasks">لا توجد مهام لـ %1$s</string>
+    <string name="dialog_manage_categories">إدارة الفئات</string>
+    <string name="dialog_add_category">إضافة فئة جديدة</string>
+    <string name="dialog_category_name">اسم الفئة</string>
+    <string name="dialog_add">إضافة</string>
+    <string name="dialog_done">تم</string>
+    <string name="dialog_error">خطأ</string>
+    <string name="dialog_ok">موافق</string>
+    <string name="dialog_delete">حذف</string>
+    <string name="dialog_cancel">إلغاء</string>
+    <string name="dialog_delete_confirm_title">حذف الفئة</string>
+    <string name="dialog_delete_confirm_body">هل أنت متأكد من حذف \'%1$s\'؟\nلا يمكن التراجع عن هذا الإجراء.</string>
+    <string name="error_delete_default_category">لا يمكن حذف فئة أساسية.</string>
+    <string name="error_delete_category_in_use">لا يمكن الحذف: الفئة مستخدمة في مهمة واحدة أو أكثر.</string>
+    <string name="menu_edit">تعديل</string>
+    <string name="menu_delete">حذف</string>
+    <string name="manage_categories">إدارة الفئات</string>
+    <string name="go_to_date">الذهاب إلى تاريخ</string>
+    <string name="select_date">اختر التاريخ</string>
+    <string name="select_time">اختر الوقت</string>
+    <string name="desc_back_button">رجوع</string>
+    <string name="desc_add_task">إضافة مهمة</string>
+    <string name="desc_toggle_task">تغيير حالة المهمة</string>
+    <string name="desc_category_icon">أيقونة الفئة</string>
+    <string name="desc_task_options">خيارات المهمة</string>
 
 </resources>

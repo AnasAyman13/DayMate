@@ -1,4 +1,6 @@
-package com.day.mate.ui.theme.screens
+package com.day.mate.ui.theme.screens.pomodoro
+import android.content.Context
+import android.content.res.Configuration
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -37,8 +39,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.day.mate.viewmodel.TimerViewModel
 import com.day.mate.R
+import com.day.mate.data.TimerMode
 import kotlinx.coroutines.delay
 
 @Composable
@@ -50,7 +52,7 @@ fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
 
     val mediaPlayer = remember { MediaPlayer.create(context, R.raw.timer_end) }
     val vibrator = remember {
-        context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as Vibrator
+        context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
     }
 
     val animatedProgress by animateFloatAsState(
@@ -74,7 +76,7 @@ fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
         }
     }
     val configuration = LocalConfiguration.current
-    val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     Box(
         modifier = Modifier
@@ -109,9 +111,9 @@ fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
 
             Text(
                 text = when (timerState.mode) {
-                    com.day.mate.data.TimerMode.FOCUS -> stringResource(id = R.string.focus)
-                    com.day.mate.data.TimerMode.SHORT_BREAK -> stringResource(id = R.string.short_break)
-                    com.day.mate.data.TimerMode.LONG_BREAK -> stringResource(id = R.string.long_break)
+                    TimerMode.FOCUS -> stringResource(id = R.string.focus)
+                    TimerMode.SHORT_BREAK -> stringResource(id = R.string.short_break)
+                    TimerMode.LONG_BREAK -> stringResource(id = R.string.long_break)
                 },
                 fontSize = if (isLandscape) 40.sp else 32.sp,
                 fontWeight = FontWeight.Bold

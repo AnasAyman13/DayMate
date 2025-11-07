@@ -220,7 +220,6 @@ fun LoginScreen(
             }
 
             // ---------- Social ----------
-
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxWidth()

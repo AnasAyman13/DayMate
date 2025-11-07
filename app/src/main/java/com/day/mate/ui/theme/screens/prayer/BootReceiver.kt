@@ -1,4 +1,4 @@
-package com.day.mate
+package com.day.mate.ui.theme.screens.prayer
 
 import android.content.BroadcastReceiver
 import android.content.Context

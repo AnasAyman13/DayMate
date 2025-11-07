@@ -1,4 +1,4 @@
-package com.day.mate
+package com.day.mate.ui.theme.screens.auth
 
 import android.content.Intent
 import android.os.Bundle
@@ -14,7 +14,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.day.mate.ui.screens.LoginScreen
 import com.day.mate.ui.screens.SignUpScreen
-import com.day.mate.viewmodel.AuthViewModel
 
 class AuthActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
