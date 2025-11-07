@@ -1,9 +1,11 @@
 package com.day.mate.ui.onboardingActivity3
 
+import android.R.attr.id
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -23,11 +25,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.day.mate.MainActivity
 import com.day.mate.R
 import com.day.mate.ui.onboardingActivity1.DayMateDarkTheme
-import com.day.mate.ui.theme.screens.auth.AuthActivity
+import com.day.mate.AuthActivity
+import com.day.mate.ui.screens.SignUpScreen
 import com.day.mate.ui.theme.Primary
 import com.day.mate.ui.theme.Teal
+import kotlin.let
 
 class OnboardingActivity3 : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
