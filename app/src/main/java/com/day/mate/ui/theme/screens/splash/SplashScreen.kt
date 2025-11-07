@@ -31,6 +31,7 @@ import com.day.mate.MainActivity
 import com.day.mate.R
 import com.day.mate.ui.onboardingActivity1.DayMateDarkTheme
 import com.day.mate.ui.onboardingActivity1.OnboardingActivity1
+import com.day.mate.ui.theme.screens.auth.AuthActivity
 import kotlinx.coroutines.delay
 
 class SplashScreen : ComponentActivity() {
@@ -51,7 +52,7 @@ class SplashScreen : ComponentActivity() {
                         sharedPref.edit().putBoolean("isFirstTime", false).apply()
                     } else {
                         // مش أول مرة → نفتح signup
-                        startActivity(Intent(this, MainActivity::class.java))
+                        startActivity(Intent(this, AuthActivity::class.java))
                     }
                     finish()
                 }
