@@ -1,4 +1,4 @@
-package com.day.mate
+package com.day.mate.ui.theme.screens.splash
 
 import android.content.Context
 import android.content.Intent
