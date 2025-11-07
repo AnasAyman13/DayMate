@@ -1,20 +1,24 @@
 package com.day.mate.viewmodel
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import com.day.mate.MainActivity
 import com.day.mate.data.authUiState.AuthUiState
+import com.facebook.AccessToken
+import com.facebook.CallbackManager
+import com.facebook.login.LoginManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 
 class AuthViewModel : ViewModel() {
 
@@ -22,6 +26,30 @@ class AuthViewModel : ViewModel() {
     val state: StateFlow<AuthUiState> = _state
 
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+
+
+    // Facebook LogIn
+    fun handleFacebookLogin(context: Context) {
+        val activity = context as Activity
+        LoginManager.getInstance().logInWithReadPermissions(activity, listOf("email", "public_profile"))
+    }
+
+    fun handleFacebookLoginResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        val callbackManager = CallbackManager.Factory.create()
+        callbackManager.onActivityResult(requestCode, resultCode, data)
+    }
+
+    fun handleFacebookAccessToken(token: AccessToken) {
+        val credential = FacebookAuthProvider.getCredential(token.token)
+        auth.signInWithCredential(credential)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    _state.value = AuthUiState.Success
+                } else {
+                    _state.value = AuthUiState.Error("Facebook login failed: ${task.exception?.message}")
+                }
+            }
+    }
 
     // --- Google Sign-In
     fun handleGoogleSignIn(account: GoogleSignInAccount, onResult: (AuthUiState) -> Unit) {
@@ -61,6 +89,10 @@ class AuthViewModel : ViewModel() {
         client.signOut()
     }
     fun signIn(context: Context, email: String, password: String) {
+        if (email.isBlank() || password.isBlank()) {
+            Toast.makeText(context, "Please enter email and password", Toast.LENGTH_SHORT).show()
+            return
+        }
         _state.value = AuthUiState.Loading
 
         auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
@@ -70,7 +102,6 @@ class AuthViewModel : ViewModel() {
                     Toast.makeText(context, "Welcome back!", Toast.LENGTH_SHORT).show()
                     _state.value = AuthUiState.Success
 
-                    // انتقل مباشرة لـ MainActivity
                     val intent = Intent(context, MainActivity::class.java)
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                     context.startActivity(intent)
@@ -87,7 +118,11 @@ class AuthViewModel : ViewModel() {
     }
 
     // --- Email & Password Sign-Up
-    fun signUp(context: Context, email: String, password: String) {
+    fun signUp(context: Context, name: String,   email: String, password: String) {
+        if (name.isBlank() || email.isBlank() || password.isBlank()) {
+            Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+            return
+        }
         _state.value = AuthUiState.Loading
 
         auth.createUserWithEmailAndPassword(email, password)
