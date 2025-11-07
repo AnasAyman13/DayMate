@@ -1,5 +1,6 @@
-package com.day.mate.ui.theme.screens.splash
+package com.day.mate
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -32,6 +33,10 @@ import com.day.mate.R
 import com.day.mate.ui.onboardingActivity1.DayMateDarkTheme
 import com.day.mate.ui.onboardingActivity1.OnboardingActivity1
 import com.day.mate.ui.theme.screens.auth.AuthActivity
+import com.day.mate.ui.onboardingActivity1.OnboardingScreen1
+import com.day.mate.ui.onboardingActivity3.OnboardingActivity3
+import com.day.mate.viewmodel.AuthViewModel
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 
 class SplashScreen : ComponentActivity() {
