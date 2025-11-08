@@ -1,4 +1,4 @@
-package com.day.mate.ui.theme.screens.splash
+package com.day.mate
 
 import android.content.Context
 import android.content.Intent
@@ -28,11 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.day.mate.MainActivity
-import com.day.mate.R
 import com.day.mate.ui.onboardingActivity1.DayMateDarkTheme
 import com.day.mate.ui.onboardingActivity1.OnboardingActivity1
-import com.day.mate.ui.theme.screens.auth.AuthActivity
 import com.day.mate.ui.onboardingActivity1.OnboardingScreen1
 import com.day.mate.ui.onboardingActivity3.OnboardingActivity3
 import com.day.mate.viewmodel.AuthViewModel
@@ -44,8 +41,9 @@ class SplashScreen : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         // نجيب SharedPreferences
-        val sharedPref = getSharedPreferences("DayMatePrefs", MODE_PRIVATE)
+        val sharedPref = getSharedPreferences("DayMatePrefs", Context.MODE_PRIVATE)
         val isFirstTime = sharedPref.getBoolean("isFirstTime", true)
+        val auth = FirebaseAuth.getInstance()
 
         setContent {
             DayMateDarkTheme {

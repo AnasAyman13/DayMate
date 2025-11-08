@@ -20,9 +20,17 @@
         android:theme="@style/Theme.DayMate">
 
 
+        <meta-data
+            android:name="com.facebook.sdk.ApplicationId"
+            android:value="@string/facebook_app_id" />
+        <meta-data
+            android:name="com.facebook.sdk.ClientToken"
+            android:value="@string/facebook_client_token" />
+
+
         <!-- 🟢 Onboarding: First screen (LAUNCHER) -->
         <activity
-            android:name=".ui.theme.screens.splash.SplashScreen"
+            android:name=".SplashScreen"
             android:exported="true"
             android:theme="@style/Theme.DayMate">
             <intent-filter>
@@ -32,7 +40,7 @@
         </activity>
 
         <activity
-            android:name="com.day.mate.ui.onboardingActivity1.OnboardingActivity1"
+            android:name=".ui.onboardingActivity1.OnboardingActivity1"
             android:exported="false"
             android:theme="@style/Theme.DayMate" />
 
@@ -52,7 +60,7 @@
             android:theme="@style/Theme.DayMate" />
 
         <activity
-            android:name="com.day.mate.ui.theme.screens.auth.AuthActivity"
+            android:name=".AuthActivity"
             android:exported="true"
             android:theme="@style/Theme.DayMate" />
 
@@ -61,7 +69,23 @@
             android:exported="true" />
         <receiver android:name=".data.StopAdhanReceiver" />
 
-    </application>   
+        <activity
+            android:name="com.facebook.FacebookActivity"
+            android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+            android:label="@string/app_name" />
+
+        <activity
+            android:name="com.facebook.CustomTabActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="@string/facebook_app_id" />
+            </intent-filter>
+        </activity>
+
+    </application>
 
 
 

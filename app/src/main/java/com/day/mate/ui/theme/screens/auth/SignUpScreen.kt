@@ -1,5 +1,7 @@
 package com.day.mate.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -20,6 +22,9 @@ import androidx.compose.ui.unit.sp
 import com.day.mate.R
 import com.day.mate.data.authUiState.AuthUiState
 import com.day.mate.viewmodel.AuthViewModel
+import com.facebook.login.LoginManager
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 
 @Composable
 fun SignUpScreen(
@@ -34,6 +39,42 @@ fun SignUpScreen(
     val backgroundDark = Color(0xFF102022)
     val primaryColor = Color(0xFF13DAEC)
     val context = LocalContext.current
+
+
+// Google Sign-In Launcher
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account: GoogleSignInAccount? = task.getResult(Exception::class.java)
+            account?.let {
+                viewModel.handleGoogleSignIn(it) { state ->
+                    when (state) {
+                        is AuthUiState.Success -> onSignedUp()
+                        is AuthUiState.Error -> {/* Handle error */}
+                        else -> {}
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            // Handle error
+        }
+    }
+
+// Facebook Launcher
+    val facebookLauncher = rememberLauncherForActivityResult(
+        contract = LoginManager.getInstance().createLogInActivityResultContract()
+    ) { result ->
+        try {
+            val token = com.facebook.AccessToken.getCurrentAccessToken()
+            if (token != null) {
+                viewModel.handleFacebookAccessToken(token)
+            }
+        } catch (e: Exception) {
+            // Handle error
+        }
+    }
 
     LaunchedEffect(uiState) {
         if (uiState is AuthUiState.Success) onSignedUp()
@@ -166,7 +207,7 @@ fun SignUpScreen(
 
             // ---------- Sign up button ----------
             Button(
-                onClick = { viewModel.signUp(context ,email, password) },
+                onClick = { viewModel.signUp(context , name ,email,password) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -203,7 +244,11 @@ fun SignUpScreen(
                 ) {
                     // Google
                     OutlinedButton(
-                        onClick = { /* handle Google */ },
+                        onClick = {
+                            viewModel.signOut()
+                            viewModel.googleSignOut(context)
+                            googleSignInLauncher.launch(viewModel.getGoogleSignInIntent())
+                        },
                         modifier = Modifier
                             .weight(1f)
                             .height(48.dp),
@@ -224,7 +269,7 @@ fun SignUpScreen(
 
                     // Facebook
                     OutlinedButton(
-                        onClick = { /* handle Facebook */ },
+                        onClick = {  facebookLauncher.launch(listOf("email", "public_profile")) },
                         modifier = Modifier
                             .weight(1f)
                             .height(48.dp),
