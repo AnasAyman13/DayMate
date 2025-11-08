@@ -48,8 +48,12 @@ android {
 
 
 dependencies {
-    // --- Android/Jetpack Core ---
+    implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation("androidx.compose.material3:material3:1.3.0")
+    implementation("com.google.android.material:material:1.12.0")
+
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1")

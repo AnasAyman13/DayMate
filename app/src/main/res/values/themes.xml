@@ -2,6 +2,4 @@
 <resources>
 
     <style name="Theme.DayMate" parent="android:Theme.Material.Light.NoActionBar" />
-
-
 </resources>

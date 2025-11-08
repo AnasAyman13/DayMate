@@ -16,7 +16,6 @@ import com.day.mate.ui.theme.DayMateTheme
 import com.day.mate.ui.theme.navigation.MainNavGraph
 
 class MainActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
