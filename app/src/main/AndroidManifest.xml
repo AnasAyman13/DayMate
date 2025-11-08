@@ -19,6 +19,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DayMate">
 
+
         <!-- 🟢 Onboarding: First screen (LAUNCHER) -->
         <activity
             android:name=".ui.theme.screens.splash.SplashScreen"
