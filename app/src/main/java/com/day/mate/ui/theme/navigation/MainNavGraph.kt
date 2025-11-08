@@ -9,12 +9,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.day.mate.ui.screens.PrayerScreen
 import com.day.mate.ui.theme.Components.BottomNavigationBar
-import com.day.mate.ui.theme.screens.MediaScreen
 import com.day.mate.ui.theme.screens.PomodoroScreen
 import com.day.mate.ui.theme.screens.SettingsScreen
 import com.day.mate.ui.theme.screens.TimeLineScreen
 import com.day.mate.ui.theme.screens.TodoScreen
 import com.day.mate.ui.screens.settings.SettingsScreenContainer
+import com.day.mate.ui.theme.screens.VaultScreen
+import com.day.mate.ui.theme.screens.VaultViewerScreen
 
 @Composable
 fun MainNavGraph() {
@@ -28,36 +29,20 @@ fun MainNavGraph() {
             startDestination = BottomNavItem.TimeLine.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            // 🟢 Home / Timeline
-            composable(BottomNavItem.TimeLine.route) {
-                TimeLineScreen()
-            }
-
-            // 🟢 To-Do
-            composable(BottomNavItem.Todo.route) {
-                TodoScreen()
-            }
-
-            // 🟢 Pomodoro
-            composable(BottomNavItem.Pomodoro.route) {
-                PomodoroScreen()
-            }
-
-            // 🟢 Media
-            composable(BottomNavItem.Media.route) {
-                MediaScreen()
-            }
-
-            // 🟢 Prayer
-            composable(BottomNavItem.Prayer.route) {
-                PrayerScreen()
-            }
-
-            // 🟢 Settings
+            composable(BottomNavItem.TimeLine.route) { TimeLineScreen() }
+            composable(BottomNavItem.Todo.route) { TodoScreen() }
+            composable(BottomNavItem.Pomodoro.route) { PomodoroScreen() }
+            composable(BottomNavItem.Media.route) { VaultScreen(navController = navController) }
+            composable(BottomNavItem.Prayer.route) { PrayerScreen() }
             composable(BottomNavItem.Settings.route) {
-                SettingsScreenContainer(
-                    onBackClick = { navController.popBackStack() }
-                )
+                SettingsScreenContainer(onBackClick = { navController.popBackStack() })
+            }
+
+            // 🟢 شاشة عرض الملفات
+            composable("viewer/{uri}/{type}") { backStackEntry ->
+                val uri = backStackEntry.arguments?.getString("uri") ?: ""
+                val type = backStackEntry.arguments?.getString("type") ?: "PHOTO"
+                VaultViewerScreen(navController = navController, uri = uri, type = type)
             }
         }
     }

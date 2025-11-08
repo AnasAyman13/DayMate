@@ -2,22 +2,26 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.day.mate">
+
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-feature android:name="android.hardware.sensor.compass" android:required="false" />
     <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="false" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.DayMate">
-
+        android:theme="@style/Theme.DayMate"
+        android:requestLegacyExternalStorage="true"
+        android:hardwareAccelerated="true">
         <!-- 🟢 Onboarding: First screen (LAUNCHER) -->
         <activity
             android:name=".SplashScreen"
@@ -59,8 +63,8 @@
             android:exported="true" />
         <receiver android:name=".data.StopAdhanReceiver" />
 
-    </application>    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
 
+    </application>
 
 </manifest>
