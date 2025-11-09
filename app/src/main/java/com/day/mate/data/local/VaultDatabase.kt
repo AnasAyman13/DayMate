@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
-@Database(entities = [VaultItem::class], version = 1)
+@Database(entities = [VaultItem::class], version = 1, exportSchema = false) // ✅ exportSchema = false
 @TypeConverters(VaultTypeConverter::class)
 abstract class VaultDatabase : RoomDatabase() {
     abstract fun vaultDao(): VaultDao
@@ -21,7 +21,9 @@ abstract class VaultDatabase : RoomDatabase() {
                     context.applicationContext,
                     VaultDatabase::class.java,
                     "vault_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration() // 🚨 الحل: السماح بحذف القاعدة وإعادة بنائها
+                    .build()
                 INSTANCE = instance
                 instance
             }

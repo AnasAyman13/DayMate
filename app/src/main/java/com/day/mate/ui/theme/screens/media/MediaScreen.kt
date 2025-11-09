@@ -1,8 +1,10 @@
 package com.day.mate.ui.theme.screens.media
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.util.Log // 🚨 تمت إضافة هذا الاستيراد للمساعدة في التشخيص
+import android.provider.OpenableColumns // ✅ استيراد ضروري لجلب اسم الملف
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
@@ -22,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -50,35 +53,37 @@ fun VaultScreen(
     val picker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments(),
         onResult = { uris ->
-            val newItems = uris.mapNotNull { uri -> // ✅ استخدمنا mapNotNull للتحقق من النوع
+            val newItems = uris.mapNotNull { uri ->
 
-                // 1. ✅ الحصول على MIME Type (الحل الجذري)
                 val mimeType = context.contentResolver.getType(uri)
 
-                // 2. ✅ تحديد النوع بناءً على MIME Type
                 val type = when {
                     mimeType?.startsWith("image/") == true -> VaultType.PHOTO
                     mimeType?.startsWith("video/") == true -> VaultType.VIDEO
                     mimeType == "application/pdf" -> VaultType.DOCUMENT
                     else -> {
-                        // تجاهل الملفات غير المدعومة أو غير المحددة
                         Log.e("VaultScreen", "Unknown or unsupported MIME type ($mimeType) for URI: $uri")
                         return@mapNotNull null
                     }
                 }
 
-                // 3. منح الأذونات المستمرة (كودك الأصلي، تم دمجه بعد تحديد النوع)
+                // ✅ استخراج اسم الملف
+                val name = getFileName(context, uri)
+
+                // منح الأذونات المستمرة
                 try {
                     context.contentResolver.takePersistableUriPermission(
                         uri,
                         Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                     )
+                    Log.d("VAULT_PERMISSION", "Permission granted for URI: $uri") // تسجيل النجاح
                 } catch (e: Exception) {
-                    Log.e("VaultScreen", "Failed to take persistable permission for URI: $uri", e)
+                    Log.e("VAULT_PERMISSION", "FAILED to grant persistable permission for URI: $uri", e)
                     e.printStackTrace()
                 }
 
-                VaultItem(id = uri.hashCode(), uri = uri.toString(), type = type)
+                // ✅ تمرير اسم الملف إلى VaultItem
+                VaultItem(id = uri.hashCode(), uri = uri.toString(), type = type, name = name)
             }
             viewModel.addItems(newItems)
         }
@@ -207,7 +212,23 @@ fun VaultScreen(
     }
 }
 
-// الكود الخاص بـ VaultItemCard لم يتغير، فهو صحيح.
+// دالة مساعدة للحصول على اسم الملف (يجب تعريفها خارج Composable)
+fun getFileName(context: Context, uri: Uri): String {
+    var result: String? = null
+    if (uri.scheme == "content") {
+        val cursor = context.contentResolver.query(uri, null, null, null, null)
+        cursor?.use {
+            if (it.moveToFirst()) {
+                val displayNameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (displayNameIndex != -1) {
+                    result = it.getString(displayNameIndex)
+                }
+            }
+        }
+    }
+    return result ?: uri.lastPathSegment ?: "Vault Item"
+}
+
 @Composable
 fun VaultItemCard(
     item: VaultItem,
@@ -247,6 +268,23 @@ fun VaultItemCard(
                 ) {
                     Icon(Icons.Default.Description, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(64.dp))
                 }
+            }
+
+            // ✅ إضافة الـOverlay في الأسفل لعرض اسم الملف
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .background(Color.Black.copy(alpha = 0.6f))
+                    .padding(8.dp)
+            ) {
+                Text(
+                    text = item.name,
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
 
             overlayContent?.let { it() }
