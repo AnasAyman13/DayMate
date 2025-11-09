@@ -53,15 +53,20 @@ class PrayerViewModel : ViewModel() {
         prayers.forEach { (prayer, timeStr) ->
             val date = try { sdf.parse(timeStr) } catch (_: Exception) { null } ?: return@forEach
             val cal = Calendar.getInstance().apply { time = date }
+            val hour = cal.get(Calendar.HOUR_OF_DAY)
+            val minute = cal.get(Calendar.MINUTE)
 
             // شوف إذا الصلاة مفعلة للأذان
             if (getAdhanPref(ctx, prayer)) {
                 scheduleAdhan(
                     context = ctx,
                     prayer = prayer,
-                    hour = cal.get(Calendar.HOUR_OF_DAY),
-                    minute = cal.get(Calendar.MINUTE)
+                    hour = hour,
+                    minute = minute
                 )
+            } else {
+                // ✅ التعديل: إلغاء الجدولة إذا كانت معطلة
+                cancelAdhanSchedule(ctx, prayer)
             }
         }
     }

@@ -2,7 +2,10 @@ package com.day.mate.ui.screens
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -11,9 +14,12 @@ import android.hardware.SensorManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
-import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
+import android.net.Uri
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.TweenSpec
@@ -44,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import com.day.mate.R
 import com.day.mate.ui.theme.screens.prayer.PrayerViewModel
+import com.day.mate.services.AdhanService
 import kotlinx.coroutines.isActive
 import java.text.SimpleDateFormat
 import java.util.*
@@ -60,6 +67,17 @@ fun getAdhanPref(ctx: Context, prayer: String): Boolean {
     return prefs.getBoolean(prayer, false)
 }
 
+// ✅ دالة التحقق الجديدة (خارج Composable)
+fun checkExactAlarmPermission(context: Context): Boolean {
+    val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        return am.canScheduleExactAlarms()
+    }
+    return true
+}
+
+
 @SuppressLint("MissingPermission")
 @Composable
 fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
@@ -69,6 +87,15 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
     val bgGradient = Brush.verticalGradient(listOf(Color(0xFF042825), Color(0xFF073B3A)))
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+
+    // ✅ 1. تعريف Launcher لإطلاق Intent الإعدادات
+    val settingsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) {
+        // بعد عودة المستخدم من الإعدادات، نقوم بإعادة جدولة الأذان (الـViewModel سيتولى ذلك)
+        viewModel.loadPrayerTimes(ctx = ctx)
+    }
+
     LaunchedEffect(Unit) {
         if (ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -128,19 +155,14 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
         )
     }
 
-    val mediaPlayer = remember { MediaPlayer.create(ctx, R.raw.adhan) }
-    var lastPlayedForPrayer by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(remainingMillis, nextPrayerPair?.first) {
-        val name = nextPrayerPair?.first
-        if (name != null && remainingMillis <= 1000L) {
-            if (adhanEnabled[name] == true && lastPlayedForPrayer != name) {
-                try { mediaPlayer.start() } catch (_: Exception) {}
-                lastPlayedForPrayer = name
-            }
+    // 🚨 الخطوة 1: جدولة الأذانات المفعلة عند بدء التشغيل
+    LaunchedEffect(timings) {
+        timings?.let { t ->
+            Log.d("PrayerScreen", "Attempting to schedule saved adhans...")
+            viewModel.loadPrayerTimes(ctx = ctx)
         }
-        if (remainingMillis > 1000L) lastPlayedForPrayer = null
     }
+
 
     val hijriStr = remember { getHijriDateSafely(ctx) }
 
@@ -307,6 +329,9 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                     "Isha" to t.Isha
                 ).forEach { (name, timeStr) ->
                     val formatted = try { sdf12.format(sdf24.parse(timeStr)!!) } catch(_:Exception){ timeStr }
+
+                    val timeMillis = timeStrToNextMillis(timeStr)
+
                     PrayerRow(
                         name = stringResource(
                             when(name){
@@ -322,7 +347,37 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                         enabled = adhanEnabled[name] == true
                     ) { checked ->
                         adhanEnabled[name] = checked
-                        saveAdhanPref(ctx, name, checked) // ← حفظ الحالة
+                        saveAdhanPref(ctx, name, checked)
+
+                        // 🚨 2. منطق زر التبديل المهني
+                        if (timeMillis != null) {
+
+                            if (checked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !checkExactAlarmPermission(ctx)) {
+
+                                // الإذن مفقود: توجيه المستخدم لصفحة الإعدادات عبر Launcher
+                                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                                    data = Uri.fromParts("package", ctx.packageName, null)
+                                }
+                                settingsLauncher.launch(intent)
+
+                                // رسالة توست مهنية لمرة واحدة فقط
+                                Toast.makeText(ctx, "يرجى تفعيل إذن الجدولة الدقيقة في الشاشة المفتوحة ليعمل الأذان.", Toast.LENGTH_LONG).show()
+
+                            } else if (checked) {
+                                // الإذن ممنوح (أو الإصدار قديم): قم بالجدولة مباشرة
+                                val cal = Calendar.getInstance().apply { timeInMillis = timeMillis }
+                                scheduleAdhan(ctx, name,
+                                    cal.get(Calendar.HOUR_OF_DAY),
+                                    cal.get(Calendar.MINUTE)
+                                )
+                                // إظهار رسالة نجاح لمرة واحدة
+                                Toast.makeText(ctx, "تم تفعيل أذان ${name}", Toast.LENGTH_SHORT).show()
+                            } else {
+                                // تعطيل: إلغاء الجدولة
+                                cancelAdhanSchedule(ctx, name)
+                                Toast.makeText(ctx, "تم إلغاء أذان ${name}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     }
                 }
             } ?: Text(stringResource(R.string.loading_prayer_times), color = Color.White)
@@ -377,7 +432,7 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                     Spacer(Modifier.width(16.dp))
 
                     // Right column with fixed texts (no stringResource)
-                     Column(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp) // مسافة جانبية متناسبة
@@ -478,4 +533,62 @@ fun getHijriDateSafely(ctx: Context): String {
     } catch (_: Exception) { "—" }
 }
 
+// 🚨 دوال الجدولة والإلغاء (مع التعديل ليصبح صامتاً إذا كان الإذن مفقوداً)
+fun scheduleAdhan(context: Context, prayer: String, hour: Int, minute: Int) {
+    val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
+    // 🚨 1. التحقق الصامت (منع أي Toast أو Intent)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (!am.canScheduleExactAlarms()) {
+            // سجل المشكلة فقط وعد بصمت (هذا يحل مشكلة الـ5 رسائل)
+            Log.w("AdhanScheduler", "Cannot schedule $prayer. Exact Alarm permission missing. User must enable it first.")
+            return
+        }
+    }
+
+    // 2. إعداد الوقت والنية (الـIntent)
+    val cal = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, hour)
+        set(Calendar.MINUTE, minute)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+        if (before(Calendar.getInstance())) add(Calendar.DATE, 1)
+    }
+
+    val intent = Intent(context, AdhanService::class.java).apply {
+        putExtra("PRAYER_NAME", prayer)
+    }
+
+    val pendingIntent = PendingIntent.getService(
+        context,
+        prayer.hashCode(),
+        intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    // 3. الجدولة الفعلية
+    try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
+        } else {
+            am.setExact(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
+        }
+        Log.d("AdhanScheduler", "Scheduled $prayer successfully at ${SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(cal.timeInMillis))}")
+    } catch (e: SecurityException) {
+        // هذا الـcatch هو فقط للتأكد من عدم انهيار التطبيق
+        Log.e("ALARM_ERROR", "Unexpected SecurityException caught during scheduling.", e)
+    }
+}
+
+fun cancelAdhanSchedule(context: Context, prayer: String) {
+    val intent = Intent(context, AdhanService::class.java)
+    val pendingIntent = PendingIntent.getService(
+        context,
+        prayer.hashCode(),
+        intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    am.cancel(pendingIntent)
+    Log.d("AdhanScheduler", "Canceled schedule for $prayer")
+}
