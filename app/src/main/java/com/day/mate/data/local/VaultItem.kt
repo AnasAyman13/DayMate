@@ -7,7 +7,8 @@ import androidx.room.PrimaryKey
 data class VaultItem(
     @PrimaryKey val id: Int,
     val uri: String,
-    val type: VaultType
+    val type: VaultType,
+    val name: String = "Untitled"
 )
 
 enum class VaultType {

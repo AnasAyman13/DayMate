@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.day.mate.AuthActivity
 import com.day.mate.MainActivity
 import com.day.mate.ui.onboardingActivity2.OnboardingActivity2
 import com.day.mate.ui.theme.*
@@ -56,7 +57,7 @@ class OnboardingActivity1 : ComponentActivity() {
                             finish()
                         },
                         onSkip = {
-                            val intent = Intent(this, MainActivity::class.java)
+                            val intent = Intent(this, AuthActivity::class.java)
                             startActivity(intent)
                             finish()
                         }
