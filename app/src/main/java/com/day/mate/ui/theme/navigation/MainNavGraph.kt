@@ -27,7 +27,6 @@ import com.day.mate.ui.theme.DarkBg
 import com.day.mate.ui.theme.navigation.BottomNavigationBar
 import com.day.mate.ui.theme.navigation.BottomNavItem
 import com.day.mate.ui.theme.screens.TimeLineScreen
-import com.day.mate.ui.theme.screens.VaultViewerScreen
 import com.day.mate.ui.theme.screens.pomodoro.PomodoroScreen
 import com.day.mate.ui.theme.screens.todo.CreateTaskScreen
 import com.day.mate.ui.theme.screens.todo.TasksScreen

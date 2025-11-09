@@ -2,6 +2,7 @@ package com.day.mate.ui.theme.screens.media
 
 import android.content.Intent
 import android.net.Uri
+import android.util.Log // 🚨 تمت إضافة هذا الاستيراد للمساعدة في التشخيص
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
@@ -49,22 +50,34 @@ fun VaultScreen(
     val picker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments(),
         onResult = { uris ->
-            uris.forEach { uri ->
+            val newItems = uris.mapNotNull { uri -> // ✅ استخدمنا mapNotNull للتحقق من النوع
+
+                // 1. ✅ الحصول على MIME Type (الحل الجذري)
+                val mimeType = context.contentResolver.getType(uri)
+
+                // 2. ✅ تحديد النوع بناءً على MIME Type
+                val type = when {
+                    mimeType?.startsWith("image/") == true -> VaultType.PHOTO
+                    mimeType?.startsWith("video/") == true -> VaultType.VIDEO
+                    mimeType == "application/pdf" -> VaultType.DOCUMENT
+                    else -> {
+                        // تجاهل الملفات غير المدعومة أو غير المحددة
+                        Log.e("VaultScreen", "Unknown or unsupported MIME type ($mimeType) for URI: $uri")
+                        return@mapNotNull null
+                    }
+                }
+
+                // 3. منح الأذونات المستمرة (كودك الأصلي، تم دمجه بعد تحديد النوع)
                 try {
                     context.contentResolver.takePersistableUriPermission(
                         uri,
                         Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                     )
                 } catch (e: Exception) {
+                    Log.e("VaultScreen", "Failed to take persistable permission for URI: $uri", e)
                     e.printStackTrace()
                 }
-            }
-            val newItems = uris.map { uri ->
-                val type = when {
-                    uri.toString().endsWith(".mp4") -> VaultType.VIDEO
-                    uri.toString().endsWith(".pdf") -> VaultType.DOCUMENT
-                    else -> VaultType.PHOTO
-                }
+
                 VaultItem(id = uri.hashCode(), uri = uri.toString(), type = type)
             }
             viewModel.addItems(newItems)
@@ -165,7 +178,6 @@ fun VaultScreen(
 
                 Spacer(Modifier.height(16.dp))
 
-                // ✅ الحل هنا: نخلي الـGrid ياخد المساحة المتبقية فقط
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 150.dp),
                     contentPadding = PaddingValues(8.dp),
@@ -195,6 +207,7 @@ fun VaultScreen(
     }
 }
 
+// الكود الخاص بـ VaultItemCard لم يتغير، فهو صحيح.
 @Composable
 fun VaultItemCard(
     item: VaultItem,
