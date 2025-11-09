@@ -12,5 +12,6 @@ data class SettingsState(
     val cloudSyncEnabled: Boolean = false,
     val notificationsEnabled: Boolean = true,
     val loading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val isLoggedOut: Boolean  = false
 )
