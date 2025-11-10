@@ -215,7 +215,7 @@ fun TimelineItem(event: TimelineEvent) {
     }
 }
 @Composable
-fun TimelineRow(
+fun (
     timeLabel: String,
     content: @Composable () -> Unit,
     isCurrentHour: Boolean = false
@@ -228,20 +228,27 @@ fun TimelineRow(
             modifier = Modifier.width(30.dp),
             contentAlignment = Alignment.TopCenter
         ) {
+            // 1. تسمية الوقت
             Text(
                 text = timeLabel,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.Gray
             )
+
+            // 2. الخط العمودي الرمادي
             Spacer(
                 modifier = Modifier
-                    .padding(top = 24.dp)
+                    // ⬇️ زيادة الـ padding العلوي لكي لا يتداخل مع النص
+                    .padding(top = 50.dp)
                     .width(2.dp)
-                    .height(80.dp)
+                    // ⬇️ الارتفاع: استخدمي ارتفاعًا أكبر (مثلاً 100.dp) أو استخدمي ارتفاع العمود كاملاً
+                    // نستخدم ارتفاع ثابت مؤقت (80dp) ونزيد قيمته قليلاً
+                    .height(70.dp)
                     .background(Color.LightGray)
             )
 
+            // 3. مؤشر "Now" (بدون تغيير)
             if (isCurrentHour) {
                 Box(
                     modifier = Modifier
@@ -267,6 +274,7 @@ fun TimelineRow(
                 }
             }
         }
+        // ... (بقية الـ Box الخاصة بالـ content) ...
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -276,7 +284,6 @@ fun TimelineRow(
         }
     }
 }
-
 // =========================================================================
 // المكون الرئيسي (TimelineScreen)
 // =========================================================================
