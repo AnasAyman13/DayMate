@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import com.day.mate.R
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.MoreVert
@@ -30,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -117,9 +120,11 @@ fun TimelineItem(event: TimelineEvent) {
     // CardBackgroundDark و CardBackgroundLight و PrimaryColor يجب أن تكون متاحة عبر الـ import: com.day.mate.ui.theme.*
 
     // 1. تحديد الأيقونة بناءً على نوع الحدث
-    val iconImageVector: ImageVector = when (event.type) {
-        EventType.PRAYER -> Icons.Filled.SelfImprovement // أيقونة الصلاة
-        EventType.TODO_TASK -> Icons.Filled.TaskAlt // أيقونة المهمة
+    val iconImageVector: Int = when (event.type) {
+        EventType.PRAYER -> R.drawable.ic_mosque_filled // 👈 غيري ic_prayer_custom باسم الملف عندك
+
+        // ⬇️ الأيقونة الأخرى تبقى كما هي (كمثال)
+        EventType.TODO_TASK -> R.drawable.ic_todo_filled // أيقونة المهمة
     }
 
     // 2. تحديد لون الحدود والخلفية الشفافة
@@ -151,7 +156,7 @@ fun TimelineItem(event: TimelineEvent) {
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = iconImageVector,
+                    painter = painterResource(id = iconImageVector),
                     contentDescription = event.title,
                     tint = event.iconColor,
                     modifier = Modifier.size(24.dp)
@@ -215,7 +220,7 @@ fun TimelineItem(event: TimelineEvent) {
     }
 }
 @Composable
-fun (
+fun TimelineRow(
     timeLabel: String,
     content: @Composable () -> Unit,
     isCurrentHour: Boolean = false

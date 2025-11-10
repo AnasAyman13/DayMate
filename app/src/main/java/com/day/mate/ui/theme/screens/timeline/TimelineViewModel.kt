@@ -11,46 +11,58 @@ import com.day.mate.data.repository.TodoRepository
 import com.day.mate.data.repository.PrayerRepository
 
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
+
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asStateFlow
+
+
+
+import kotlinx.coroutines.flow.combine // لحل خطأ combine
+import kotlinx.coroutines.flow.flowOn   // لحل خطأ .flowOn
+import kotlinx.coroutines.flow.SharingStarted // لحل خطأ SharingStarted (ربما كان خطأ مخفيًا)
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.flowOn
 
 class TimelineViewModel(
-    todoRepository: TodoRepository, // Repository الخاص بالـ Todo
-    prayerRepository: PrayerRepository // Repository الخاص بالصلاة
+    todoRepository: TodoRepository,
+    prayerRepository: PrayerRepository
 ) : ViewModel() {
 
-    // 1. جلب مهام الـ Todo كـ Flow
+    // ... (todosFlow بدون تغيير) ...
     private val todosFlow = todoRepository.getAllTodos()
         .map { todos ->
             // تحويل قائمة الـ Todo إلى قائمة TimelineEvent
             todos.map { it.toTimelineEvent() }
         }
 
-    // 2. جلب مواقيت الصلاة كـ Flow
-    // يُفضل وضع الموقع في مكان مركزي (مثل SharedPreferences أو Configuration)
     private val prayerTimingsFlow = prayerRepository.getPrayerTimingsFlow("Cairo", "Egypt")
         .map { timings ->
-            // تحويل الـ Timings (كائن الصلاة) إلى قائمة TimelineEvent
-            timings?.toTimelineEvents() ?: emptyList()
-        }
+            val currentTime = System.currentTimeMillis()
+            val oneDayInMillis = 24 * 60 * 60 * 1000L // ثابت يمثل 24 ساعة
 
-    // 3. دمج كلا الـ Flows في Flow واحد
+            // تحويل الـ Timings إلى قائمة TimelineEvent (أحداث اليوم)
+            val todayEvents = timings?.toTimelineEvents() ?: emptyList()
+
+            // 🔄 المنطق الرئيسي: إزاحة الصلوات التي فاتت إلى اليوم التالي
+            val adjustedEvents = todayEvents.map { event ->
+                // إذا كان الـ timestamp لهذه الصلاة أقل من الوقت الحالي:
+                if (event.timestamp < currentTime) {
+                    // أضف 24 ساعة لجعلها صلاة الغد
+                    event.copy(timestamp = event.timestamp + oneDayInMillis)
+                } else {
+                    event
+                }
+            }
+            return@map adjustedEvents
+        } // 🚨 النهاية الجديدة لـ prayerTimingsFlow
+
+    // 3. دمج كلا الـ Flows في Flow واحد (بدون تغيير)
     val timelineEvents: StateFlow<List<TimelineEvent>> =
         combine(todosFlow, prayerTimingsFlow) { todoEvents, prayerEvents ->
-            // دمج القائمتين
             (todoEvents + prayerEvents)
-                // فرز القائمة بالـ timestamp
                 .sortedBy { it.timestamp }
-                // تصفية الأحداث التي حدثت بالفعل (إذا أردنا عرض المستقبل فقط)
-                .filter { it.timestamp >= System.currentTimeMillis() - (60 * 60 * 1000) } // عرض الأحداث من ساعة سابقة للوقت الحالي
+                .filter { it.timestamp >= System.currentTimeMillis() - (60 * 60 * 1000) }
         }
-            .flowOn(Dispatchers.Default) // إجراء عمليات الفرز والتحويل على Thread منفصل
+            .flowOn(Dispatchers.Default)
             .stateIn(
                 scope = viewModelScope,
                 started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000),
