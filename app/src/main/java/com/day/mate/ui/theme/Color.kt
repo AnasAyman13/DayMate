@@ -26,3 +26,14 @@ val SoftGold = Color(0xFFF0E68C)
 val BackgroundDark = Color(0xFF101F22)
 val CharcoalLight = Color(0xFFD1D5DB)
 val AccentGold = Color(0xFFD4AF37)
+
+
+val PrimaryColor = Color(0xFF13daec) // primary: Sky/Cyan-like color
+val BackgroundLight = Color(0xFFf6f8f8) // background-light: Off-white
+val BackgroundDark2 = Color(0xFF102022) // background-dark: Deep blue/greenish dark
+val TextDark = Color(0xFF102022) // Text color for light theme
+val CardBackgroundLight = Color(0xFFFFFFFF) // White card background
+val CardBackgroundDark = Color(0xFF1F2937) // Slate-800 Dark card background
+val EventColorSky = Color(0xFF03A9F4) // Color(0xFF03A9F4) لـ Team Sync
+val EventColorYellow = Color(0xFFFFCC00) // Color(0xFFFFCC00) لـ Gym
+val EventColorGreen = Color(0xFF4CAF50) // Color(0xFF4CAF50) لـ Lunch

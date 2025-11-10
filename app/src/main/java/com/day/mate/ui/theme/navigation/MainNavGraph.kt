@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -19,6 +20,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.day.mate.data.local.AppDatabase
+import com.day.mate.data.local.RetrofitInstance
+import com.day.mate.data.repository.PrayerRepository
 import com.day.mate.data.repository.TodoRepository
 import com.day.mate.ui.screens.PrayerScreen
 import com.day.mate.ui.screens.settings.SettingsScreenContainer
@@ -26,8 +29,12 @@ import com.day.mate.ui.theme.AppGold
 import com.day.mate.ui.theme.DarkBg
 import com.day.mate.ui.theme.navigation.BottomNavigationBar
 import com.day.mate.ui.theme.navigation.BottomNavItem
-import com.day.mate.ui.theme.screens.TimeLineScreen
+import com.day.mate.ui.theme.screens.timeline.TimelineViewModel
+
 import com.day.mate.ui.theme.screens.pomodoro.PomodoroScreen
+import com.day.mate.ui.theme.screens.timeline.TimelineScreen
+import com.day.mate.ui.theme.screens.timeline.TimelineViewModelFactory
+import com.day.mate.ui.theme.screens.timeline.fakeEvents
 import com.day.mate.ui.theme.screens.todo.CreateTaskScreen
 import com.day.mate.ui.theme.screens.todo.TasksScreen
 import com.day.mate.ui.theme.screens.todo.TodoViewModel
@@ -38,15 +45,28 @@ fun MainNavGraph() {
     val navController = rememberNavController()
     val context = LocalContext.current.applicationContext
 
-    // --- إعداد الـ Repository و ViewModel ---
-    val repository = remember {
-        val database = AppDatabase.getInstance(context)
-        val todoDao = database.todoDao()
-        val categoryDao = database.categoryDao()
-        TodoRepository(todoDao, categoryDao)
+    // --- إعداد الـ Repositories و API ---
+    val database = remember { AppDatabase.getInstance(context) }
+
+    val todoRepository = remember {
+        TodoRepository(database.todoDao(), database.categoryDao())
     }
-    val factory = remember(repository) { TodoViewModelFactory(repository) }
-    val viewModel: TodoViewModel = viewModel(factory = factory)
+
+    // 🆕 Repository الخاص بالصلاة: يعتمد على RetrofitInstance.api
+    val prayerRepository = remember {
+        PrayerRepository(RetrofitInstance.api)
+    }
+
+    // --- إعداد الـ ViewModels Factories ---
+
+    // Todo Factory (لـ TasksScreen)
+    val todoFactory = remember(todoRepository) { TodoViewModelFactory(todoRepository) }
+    val todoViewModel: TodoViewModel = viewModel(factory = todoFactory)
+
+    // 🆕 Timeline Factory (لـ TimelineScreen)
+    val timelineFactory = remember(todoRepository, prayerRepository) {
+        TimelineViewModelFactory(todoRepository, prayerRepository)
+    }
 
     // --- إدارة حالة الـ BackStack ---
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -60,7 +80,7 @@ fun MainNavGraph() {
             if (showFab) {
                 FloatingActionButton(
                     onClick = {
-                        viewModel.clearForm()
+                        todoViewModel.clearForm() // استخدام الـ ViewModel المتاح هنا
                         navController.navigate("task_screen/new")
                     },
                     containerColor = AppGold,
@@ -78,10 +98,17 @@ fun MainNavGraph() {
             modifier = Modifier.padding(innerPadding)
         ) {
             // --- الشاشات الرئيسية ---
-            composable(BottomNavItem.TimeLine.route) { TimeLineScreen() }
+            composable(BottomNavItem.TimeLine.route) {
+                // 🚀 الاستدعاء النهائي: استخدام TimelineViewModel الحقيقي
+                val timelineViewModel: TimelineViewModel = viewModel(
+                    modelClass = TimelineViewModel::class.java,
+                    factory = timelineFactory
+                )
+                TimelineScreen(viewModel = timelineViewModel)
+            }
             composable(BottomNavItem.Todo.route) {
                 TasksScreen(
-                    viewModel = viewModel,
+                    viewModel = todoViewModel,
                     onEditTask = { taskId ->
                         navController.navigate("task_screen/$taskId")
                     }
@@ -115,7 +142,7 @@ fun MainNavGraph() {
                 val taskIdString = backStackEntry.arguments?.getString("taskId")
                 CreateTaskScreen(
                     navController = navController,
-                    viewModel = viewModel,
+                    viewModel = todoViewModel,
                     taskIdString = taskIdString
                 )
             }

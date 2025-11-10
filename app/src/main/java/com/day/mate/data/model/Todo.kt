@@ -1,5 +1,9 @@
 package com.day.mate.data.model
+import com.day.mate.combineDateTimeToTimestamp
+import com.day.mate.data.model.Todo
+import com.day.mate.formatTimestampToHourLabel
 
+import com.day.mate.ui.theme.PrimaryColor // لاستخدام اللون الرئيسي
 data class Todo(
     // (سبناه زي ما هو عشان الـ AutoGenerate بتاع Room)
     val id: Int = 0,
@@ -12,3 +16,20 @@ data class Todo(
     // (شيلنا اللينك)
     val isDone: Boolean
 )
+fun Todo.toTimelineEvent(): TimelineEvent {
+    val timestamp = combineDateTimeToTimestamp(this.date, this.time)
+
+    return TimelineEvent(
+        id = "todo-${this.id}",
+        timestamp = timestamp,
+        title = this.title,
+        description = this.description,
+        timeRange = this.time, // عرض الوقت فقط (13:30)
+        type = EventType.TODO_TASK,
+        icon = "task_alt", // رمز المهام
+        iconColor = PrimaryColor, // لون مميز للمهام
+        isDone = this.isDone,
+        isProgress = null,
+        timeLabel = formatTimestampToHourLabel(timestamp)
+    )
+}
