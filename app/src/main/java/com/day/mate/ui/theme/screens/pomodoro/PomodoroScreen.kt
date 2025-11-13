@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.day.mate.R
 import com.day.mate.data.local.TimerMode
@@ -90,24 +91,9 @@ fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
                 .padding(top = 16.dp, start = 8.dp, end = 8.dp, bottom = 16.dp)
                 .align(Alignment.TopCenter),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.Start
         ) {
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .shadow(6.dp, CircleShape)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f)),
-                contentAlignment = Alignment.Center
-            ) {
-                IconButton(onClick = { /* Back */ }) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
+
 
             Text(
                 text = when (timerState.mode) {
@@ -115,7 +101,9 @@ fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
                     TimerMode.SHORT_BREAK -> stringResource(id = R.string.short_break)
                     TimerMode.LONG_BREAK -> stringResource(id = R.string.long_break)
                 },
-                fontSize = if (isLandscape) 40.sp else 32.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f),
+                fontSize = if (isLandscape) 50.sp else 42.sp,
                 fontWeight = FontWeight.Bold
             )
 
