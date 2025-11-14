@@ -4,11 +4,13 @@
 ---
 
 # **Project Idea**
-DayMate is an Android application that helps users manage and organize their daily routines effectively.  
-It combines productivity tools like a To-Do List, Pomodoro Timer, Smart Alarm, Timeline (Calendar View),  
-and secure Media Storage — all connected through Firebase Cloud Synchronization and a modern UI/UX design.  
 
-The app aims to simplify daily life management while maintaining an elegant, fast, and secure experience for every user.  
+DayMate is an Android application that helps users manage and organize their daily routines effectively.
+It combines productivity tools like a To-Do List, Pomodoro Timer, Smart Alarm, Timeline (Calendar View),
+and secure Media Storage — all connected through Firebase Cloud Synchronization and a modern UI/UX design.
+
+The app aims to simplify daily life management while maintaining an elegant, fast, and secure experience for every user.
+
 
 ---
 
@@ -44,22 +46,35 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 # **Roles & Responsibilities**
 
 **Anas Ayman**  
-• Onboarding, Splash, Alarm & Theme
+• To-Do List Screen (UI + Logic + RoomDB)  
+• UI/UX  
+• Splash Screen  
+• Profile Screen  
+• Icons (App Icon + All In-App Icons)  
+• Managing & Organization  
+• Testing  
 
 **Mohamed Yousry**  
-• UI/UX, Auth, Cloud Sync
+• Media Screen (UI + Logic + RoomDB)  
+• Login & SignUp (UI)  
+• Onboarding  
+• Prayer Screen (UI + Logic)  
 
 **Menna Ayman**  
-• To-Do List UI & Task Flow
+• Pomodoro (UI & Logic)  
+• Timeline Screen (UI & Logic)  
 
 **Islam Fawzy**  
-• Timeline, Progress & Widget
+• Facebook Login & SignUp  
+• Google Login & SignUp  
 
 **Youssef Barakat**  
-• Media Storage & File Sync
+• Authentication (Login & SignUp)  
+• Firebase  
 
 **Basem Mohamed**  
-• Voice Notes, Biometric, Pomodoro
+• Voice Notes  
+• Biometric Lock  
 
 ---
 
