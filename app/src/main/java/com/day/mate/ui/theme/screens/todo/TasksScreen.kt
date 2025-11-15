@@ -294,7 +294,6 @@ fun ListHeader(text: String) {
     )
 }
 
-// --- ✅ تعديل TaskItem لعرض الـ Description ---
 @Composable
 fun TaskItem(
     todo: Todo,
@@ -360,13 +359,13 @@ fun TaskItem(
                     fontSize = 16.sp
                 )
 
-                // ✅ Description (New Feature)
+
                 if (todo.description.isNotBlank()) {
                     Text(
                         text = todo.description,
                         color = DarkTextHint,
                         fontSize = 13.sp,
-                        maxLines = 1, // عشان مياخدش مساحة كبيرة
+                        maxLines = 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }

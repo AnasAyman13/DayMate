@@ -5,7 +5,7 @@ import com.day.mate.ui.theme.PrimaryColor
 import com.day.mate.ui.theme.EventColorSky
 import com.day.mate.ui.theme.EventColorGreen
 
-// تم تعريف الألوان في ملف Colors.kt سابقًا
+
 
 enum class EventType {
     PRAYER,
@@ -13,15 +13,15 @@ enum class EventType {
 }
 
 data class TimelineEvent(
-    val id: String, // معرف فريد (مثلاً: "todo-123" أو "prayer-Fajr")
-    val timestamp: Long, // أهم حقل للفرز
+    val id: String, //  "todo-123" أو "prayer-Fajr")
+    val timestamp: Long,
     val title: String,
-    val description: String, // يمكن استخدامها للوصف أو اسم الصلاة الفرعي
-    val timeRange: String, // النص المعروض للوقت (مثل 10:00 - 11:30)
+    val description: String,
+    val timeRange: String,
     val type: EventType,
-    val icon: String, // اسم الرمز (مثل "task_alt" أو "self_improvement")
+    val icon: String,
     val iconColor: Color,
-    val isDone: Boolean = false, // خاص بالمهام
-    val isProgress: Float? = null, // نسبة التقدم
-    val timeLabel: String = "" // تسمية الساعة (مثل 10 AM)
+    val isDone: Boolean = false,
+    val isProgress: Float? = null,
+    val timeLabel: String = ""
 )

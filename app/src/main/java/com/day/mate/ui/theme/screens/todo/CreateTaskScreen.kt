@@ -75,7 +75,7 @@ fun CreateTaskScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // --- ✅ [الترجمة] Top App Bar ---
+
         TopAppBar(
             title = {
                 Text(
@@ -110,7 +110,7 @@ fun CreateTaskScreen(
                 .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
 
-            // --- ✅ [الترجمة] (Fields) ---
+
             TaskTextField(value = title, onValueChange = viewModel::onTitleChange, label = stringResource(R.string.form_title))
             Spacer(Modifier.height(16.dp))
 
@@ -218,7 +218,7 @@ fun CreateTaskScreen(
         }
     }
 
-    // --- ✅ [الترجمة] (Dialogs) ---
+
     if (showAddCategoryDialog) {
         var newCategoryName by remember { mutableStateOf("") }
         AlertDialog(
