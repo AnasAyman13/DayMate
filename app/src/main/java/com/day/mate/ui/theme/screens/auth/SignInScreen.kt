@@ -33,7 +33,6 @@ fun LoginScreen(
     onLoggedIn: () -> Unit,
     onNavigateToSignUp: () -> Unit,
     onForgotPassword: () -> Unit,
-    // *** المعامل المفقود تم إضافته لحل جميع الأخطاء ***
     onGoogleSignInClicked: () -> Unit
 ) {
     val uiState by viewModel.state.collectAsState()
@@ -48,9 +47,8 @@ fun LoginScreen(
     LaunchedEffect(uiState) {
         when (uiState) {
             is AuthUiState.Success -> {
-                // ملاحظة: يُفضل ترك onLoggedIn في AuthActivity ليتم بعد التأكد من التحقق من البريد
-                // Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
-                // onLoggedIn()
+                Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
+                 onLoggedIn()
             }
             is AuthUiState.Error -> {
                 Toast.makeText(context, (uiState as AuthUiState.Error).message, Toast.LENGTH_SHORT).show()
@@ -59,8 +57,7 @@ fun LoginScreen(
         }
     }
 
-    // *** تم حذف LaunchedEffect(Unit) الخاص بتهيئة Google Client ***
-    // *** تم حذف Google Sign-In Launcher بالكامل ***
+
 
     val facebookLauncher = rememberLauncherForActivityResult(
         contract = LoginManager.getInstance().createLogInActivityResultContract()
