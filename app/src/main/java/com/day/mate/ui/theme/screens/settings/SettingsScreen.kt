@@ -35,6 +35,9 @@ fun SettingsScreenContainer(
     onBackClick: () -> Unit = {},
     onNavigate: (String) -> Unit = {}
 ) {
+    LaunchedEffect(Unit) {
+        viewModel.loadUser()
+    }
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 

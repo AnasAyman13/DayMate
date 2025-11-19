@@ -21,7 +21,7 @@ android {
         applicationId = "com.day.mate"
         minSdk = 29
         targetSdk = 36
-        versionCode = 2 // (عليت الـ Version عشان الداتابيز)
+        versionCode = 2
         versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -87,9 +87,10 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
     // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
+    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
 
     // Network
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
@@ -107,7 +108,6 @@ dependencies {
     // Media
     implementation("androidx.media3:media3-exoplayer:1.4.1")
     implementation("androidx.media3:media3-ui:1.4.1")
-// ✅ لإدارة المهام المجدولة في الخلفية
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation("androidx.core:core-ktx:1.13.1")
 
@@ -119,11 +119,10 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 
     // Firebase Authentication
-    implementation("com.google.firebase:firebase-auth-ktx:23.2.1") // تأكد من تحديث الإصدار
+    implementation("com.google.firebase:firebase-auth-ktx:23.2.1")
 
     // Google Sign-In SDK
-    implementation("com.google.android.gms:play-services-auth:21.4.0") // تأكد من تحديث الإصدار
+    implementation("com.google.android.gms:play-services-auth:21.4.0")
 
-    // Facebook Login SDK
-    implementation("com.facebook.android:facebook-login:18.1.3") // تأكد من تحديث الإصدار
+
 }

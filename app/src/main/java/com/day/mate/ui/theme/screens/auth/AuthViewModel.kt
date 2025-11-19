@@ -1,22 +1,18 @@
 package com.day.mate.viewmodel
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import com.day.mate.MainActivity
 import com.day.mate.data.authUiState.AuthUiState
-// **Imports Google Sign-In المصححة**
+import com.day.mate.data.model.User
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-// *************************************
-import com.facebook.AccessToken
-import com.facebook.login.LoginManager
-import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -26,6 +22,7 @@ class AuthViewModel : ViewModel() {
     val state: StateFlow<AuthUiState> = _state
 
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 
     private lateinit var googleSignInClient: GoogleSignInClient
 
@@ -55,13 +52,39 @@ class AuthViewModel : ViewModel() {
 
         auth.signInWithCredential(credential).addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                _state.value = AuthUiState.Success
+                val firebaseUser = auth.currentUser
+                if (firebaseUser == null) {
+                    _state.value = AuthUiState.Error("Google login failed: no user")
+                    return@addOnCompleteListener
+                }
+
+                val userId = firebaseUser.uid
+                val name = firebaseUser.displayName ?: "Unknown"
+                val email = firebaseUser.email ?: ""
+
+                val userData = User(
+                    id = userId,
+                    name = name,
+                    email = email
+                )
+
+                db.collection("users")
+                    .document(userId)
+                    .set(userData)
+                    .addOnSuccessListener {
+                        _state.value = AuthUiState.Success
+                    }
+                    .addOnFailureListener { e ->
+                        _state.value = AuthUiState.Error("Firestore error: ${e.message}")
+                    }
+
             } else {
                 val msg = task.exception?.message ?: "Google Sign-in failed"
                 _state.value = AuthUiState.Error(msg)
             }
         }
     }
+
 
     fun googleSignOut(onComplete: () -> Unit = {}) {
         if (::googleSignInClient.isInitialized) {
@@ -102,7 +125,7 @@ class AuthViewModel : ViewModel() {
     }
 
     // --- Email & Password Sign-Up ---
-    fun signUp(context: Context, name: String,   email: String, password: String) {
+    fun signUp(context: Context, name: String, email: String, password: String) {
         if (name.isBlank() || email.isBlank() || password.isBlank()) {
             Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
             return
@@ -112,22 +135,76 @@ class AuthViewModel : ViewModel() {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    val user = auth.currentUser
-                    user?.sendEmailVerification()?.addOnCompleteListener { verifyTask ->
-                        if (verifyTask.isSuccessful) {
-                            Toast.makeText(context, "Verification email sent!", Toast.LENGTH_LONG).show()
-                            _state.value = AuthUiState.Success
-                        } else {
-                            Toast.makeText(context, "Failed to send verification email.", Toast.LENGTH_SHORT).show()
-                            _state.value = AuthUiState.Error(verifyTask.exception?.message ?: "Failed to send verification email")
-                        }
+
+                    val firebaseUser = auth.currentUser
+                    if (firebaseUser == null) {
+                        _state.value = AuthUiState.Error("User not found after sign up")
+                        return@addOnCompleteListener
                     }
+
+                    val userId = firebaseUser.uid
+
+                    val userData = User(
+                        id = userId,
+                        name = name,
+                        email = email
+                    )
+
+                    db.collection("users")
+                        .document(userId)
+                        .set(userData)
+                        .addOnSuccessListener {
+
+                            firebaseUser.sendEmailVerification()
+                                .addOnSuccessListener {
+                                    Toast.makeText(
+                                        context,
+                                        "Verification email sent! Please check your inbox, then sign in manually.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+
+                                    auth.signOut()
+
+                                    _state.value = AuthUiState.Idle
+                                }
+                                .addOnFailureListener { e ->
+                                    Toast.makeText(
+                                        context,
+                                        "Failed to send verification email.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+
+                                    auth.signOut()
+
+                                    _state.value = AuthUiState.Error(
+                                        e.message ?: "Failed to send verification email"
+                                    )
+                                }
+
+                        }
+                        .addOnFailureListener { e ->
+                            Toast.makeText(
+                                context,
+                                "Failed to save user data.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            auth.signOut()
+
+                            _state.value = AuthUiState.Error(
+                                e.message ?: "Failed to save user data"
+                            )
+                        }
+
                 } else {
-                    Toast.makeText(context, task.exception?.message ?: "Sign-up failed", Toast.LENGTH_SHORT).show()
-                    _state.value = AuthUiState.Error(task.exception?.message ?: "Sign-up failed")
+                    val msg = task.exception?.message ?: "Sign-up failed"
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                    _state.value = AuthUiState.Error(msg)
                 }
             }
     }
+
+
 
 
     // --- Reset Password ---
