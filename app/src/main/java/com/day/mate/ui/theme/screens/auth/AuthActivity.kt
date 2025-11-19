@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -26,15 +27,33 @@ import com.day.mate.R
 class AuthActivity : ComponentActivity() {
 
     private val authViewModel: AuthViewModel by viewModels()
-    private val callbackManager = CallbackManager.Factory.create()
 
-    companion object {
-        const val RC_SIGN_IN = 9001
+
+    private val googleLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+
+        val data = result.data
+        val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+
+        try {
+            val account = task.getResult(ApiException::class.java)
+
+            val idToken = account.idToken
+            if (idToken != null) {
+                authViewModel.firebaseAuthWithGoogle(idToken)
+            } else {
+                println("Google Sign-In failed: ID Token is null")
+            }
+
+        } catch (e: Exception) {
+            println("Google Sign-In error: ${e.message}")
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        FacebookSdk.sdkInitialize(applicationContext)
+
 
 
         val webClientId = getString(R.string.web_client_id)
@@ -81,9 +100,10 @@ class AuthActivity : ComponentActivity() {
     private fun startGoogleSignIn() {
         authViewModel.googleSignOut {
             val signInIntent = authViewModel.getGoogleSignInIntent()
-            startActivityForResult(signInIntent, RC_SIGN_IN)
+            googleLauncher.launch(signInIntent)
         }
     }
+
 
     override fun onStart() {
         super.onStart()
@@ -97,29 +117,5 @@ class AuthActivity : ComponentActivity() {
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
 
-        callbackManager.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == RC_SIGN_IN) {
-            // حل مشكلة Unresolved reference 'GoogleSignIn'
-            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
-            try {
-                val account = task.getResult(ApiException::class.java)
-
-                account.idToken?.let {
-                    authViewModel.firebaseAuthWithGoogle(it)
-                } ?: run {
-                    println("Google Sign-In failed: ID Token is null.")
-                }
-
-            } catch (e: ApiException) {
-                val statusCode = e.statusCode
-                println("Google Sign-In failed: Status Code $statusCode, Error: ${e.message}")
-            } catch (e: Exception) {
-                println("Google Sign-In failed: Unknown Error: ${e.message}")
-            }
-        }
-    }
 }
