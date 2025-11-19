@@ -15,19 +15,12 @@ import androidx.navigation.compose.rememberNavController
 import com.day.mate.ui.screens.LoginScreen
 import com.day.mate.ui.screens.SignUpScreen
 import com.day.mate.viewmodel.AuthViewModel
-import com.facebook.CallbackManager
-import com.facebook.FacebookSdk
-// **Imports Google Sign-In المصححة**
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
-// **Import R لحل مشكلة web_client_id**
-import com.day.mate.R
-// *************************************
 
 class AuthActivity : ComponentActivity() {
 
     private val authViewModel: AuthViewModel by viewModels()
-
 
     private val googleLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -39,7 +32,7 @@ class AuthActivity : ComponentActivity() {
         try {
             val account = task.getResult(ApiException::class.java)
 
-            val idToken = account.idToken
+            val idToken = account?.idToken
             if (idToken != null) {
                 authViewModel.firebaseAuthWithGoogle(idToken)
             } else {
@@ -54,12 +47,11 @@ class AuthActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
-
         val webClientId = getString(R.string.web_client_id)
         authViewModel.initGoogleClient(this, webClientId)
 
         enableEdgeToEdge()
+
         setContent {
             MaterialTheme {
                 val navController = rememberNavController()
@@ -80,14 +72,14 @@ class AuthActivity : ComponentActivity() {
                                 },
                                 onGoogleSignInClicked = { startGoogleSignIn() },
                                 onNavigateToSignUp = { navController.navigate("signup") },
-                                onForgotPassword = { /* Handle forgot password */ }
+                                onForgotPassword = { }
                             )
                         }
 
                         composable("signup") {
                             SignUpScreen(
                                 viewModel = authViewModel,
-                                onSignedUp = { /* Navigate to MainActivity or show success */ },
+                                onSignedUp = { },
                                 onNavigateToSignIn = { navController.popBackStack() }
                             )
                         }
@@ -104,7 +96,6 @@ class AuthActivity : ComponentActivity() {
         }
     }
 
-
     override fun onStart() {
         super.onStart()
         val currentUser = authViewModel.getCurrentUser()
@@ -116,6 +107,4 @@ class AuthActivity : ComponentActivity() {
             finish()
         }
     }
-
-
 }

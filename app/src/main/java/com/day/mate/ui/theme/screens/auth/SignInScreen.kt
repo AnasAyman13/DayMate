@@ -1,8 +1,7 @@
 package com.day.mate.ui.screens
 
+
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -23,9 +22,6 @@ import androidx.compose.ui.unit.sp
 import com.day.mate.R
 import com.day.mate.data.authUiState.AuthUiState
 import com.day.mate.viewmodel.AuthViewModel
-import com.facebook.login.LoginManager
-import com.google.android.gms.common.api.ApiException
-// تم حذف Imports Google Sign-In المكررة هنا
 
 @Composable
 fun LoginScreen(
@@ -33,7 +29,7 @@ fun LoginScreen(
     onLoggedIn: () -> Unit,
     onNavigateToSignUp: () -> Unit,
     onForgotPassword: () -> Unit,
-    onGoogleSignInClicked: () -> Unit
+    onGoogleSignInClicked: () -> Unit,
 ) {
     val uiState by viewModel.state.collectAsState()
     var email by remember { mutableStateOf("") }
@@ -59,20 +55,7 @@ fun LoginScreen(
 
 
 
-    val facebookLauncher = rememberLauncherForActivityResult(
-        contract = LoginManager.getInstance().createLogInActivityResultContract()
-    ) { result ->
-        try {
-            val token = com.facebook.AccessToken.getCurrentAccessToken()
-            if (token != null) {
-                viewModel.handleFacebookAccessToken(token)
-            } else {
-                println("Facebook Token is null")
-            }
-        } catch (e: Exception) {
-            println("Facebook Error: ${e.message}")
-        }
-    }
+
 
     Box(
         modifier = Modifier
@@ -89,7 +72,7 @@ fun LoginScreen(
         ) {
             Spacer(Modifier.height(16.dp))
 
-            // ---------- Header (كما هو) ----------
+            // ---------- Header ----------
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(
                     painter = painterResource(id = R.drawable.forgrnd),
@@ -110,7 +93,7 @@ fun LoginScreen(
                 )
             }
 
-            // ---------- Inputs (كما هو) ----------
+            // ---------- Inputs  ----------
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -193,7 +176,7 @@ fun LoginScreen(
                 }
             }
 
-            // ---------- Login button (كما هو) ----------
+            // ---------- Login button  ----------
             Button(
                 onClick = { viewModel.signIn(context, email, password) },
                 modifier = Modifier
@@ -209,7 +192,7 @@ fun LoginScreen(
                 )
             }
 
-            // ---------- Divider (كما هو) ----------
+            // ---------- Divider  ----------
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -223,52 +206,28 @@ fun LoginScreen(
                 Divider(modifier = Modifier.weight(1f), color = Color.White.copy(alpha = 0.3f))
             }
 
-            // ---------- Social ----------
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxWidth()
+            OutlinedButton(
+                onClick = onGoogleSignInClicked,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color.White.copy(alpha = 0.05f),
+                    contentColor = Color.White
+                )
             ) {
-                OutlinedButton(
-                    // *** استدعاء المعامل الممرر لبدء العملية في Activity ***
-                    onClick = onGoogleSignInClicked,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color.White.copy(alpha = 0.05f),
-                        contentColor = Color.White
-                    )
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.googlelogo),
-                        contentDescription = "Google",
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.google_button))
-                }
-
-                OutlinedButton(
-                    onClick = {facebookLauncher.launch(listOf("email", "public_profile")) },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color.White.copy(alpha = 0.05f),
-                        contentColor = Color.White
-                    )
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.facebooklogo),
-                        contentDescription = "Facebook",
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.facebook_button))
-                }
+                Image(
+                    painter = painterResource(id = R.drawable.googlelogo),
+                    contentDescription = "Google",
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.google_button))
             }
+
+
+
 
             Spacer(Modifier.height(1.dp))
             TextButton(onClick = onNavigateToSignUp) {
@@ -292,7 +251,7 @@ fun PreviewLoginScreen() {
             onLoggedIn = {},
             onNavigateToSignUp = {},
             onForgotPassword = {},
-            onGoogleSignInClicked = {} // يجب تمرير دالة حتى في الـ Preview
+            onGoogleSignInClicked = {}
         )
     }
 }

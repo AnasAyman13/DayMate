@@ -102,8 +102,7 @@ dependencies {
     // DatePicker dialogs
     implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
 
-    // Facebook
-    implementation("com.facebook.android:facebook-login:16.3.0")
+
 
     // Media
     implementation("androidx.media3:media3-exoplayer:1.4.1")

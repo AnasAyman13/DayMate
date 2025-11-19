@@ -64,15 +64,7 @@ fun SignUpScreen(
         }
     }
 
-    // Facebook Launcher
-    val facebookLauncher = rememberLauncherForActivityResult(
-        contract = LoginManager.getInstance().createLogInActivityResultContract()
-    ) { _ ->
-        try {
-            val token = com.facebook.AccessToken.getCurrentAccessToken()
-            token?.let { viewModel.handleFacebookAccessToken(it) }
-        } catch (_: Exception) {}
-    }
+
 
     LaunchedEffect(uiState) {
         when (uiState) {
@@ -150,7 +142,6 @@ fun SignUpScreen(
             // ---------- Divider + Social ----------
             SocialSignUpButtons(
                 googleSignInLauncher = googleSignInLauncher,
-                facebookLauncher = facebookLauncher,
                 viewModel = viewModel,
             )
 
@@ -218,7 +209,6 @@ fun OutlinedTextFieldComposable(
 @Composable
 fun SocialSignUpButtons(
     googleSignInLauncher: androidx.activity.result.ActivityResultLauncher<android.content.Intent>,
-    facebookLauncher: ManagedActivityResultLauncher<Collection<String>, CallbackManager.ActivityResultParameters>,
     viewModel: AuthViewModel
 ) {
     Row(
@@ -248,24 +238,7 @@ fun SocialSignUpButtons(
             Text(stringResource(R.string.google_button))
         }
 
-        // Facebook Button
-        OutlinedButton(
-            onClick = { facebookLauncher.launch(listOf("email", "public_profile")) },
-            modifier = Modifier.weight(1f).height(48.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = Color.White.copy(alpha = 0.05f),
-                contentColor = Color.White
-            )
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.facebooklogo),
-                contentDescription = null,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.facebook_button))
-        }
+
     }
 }
 
