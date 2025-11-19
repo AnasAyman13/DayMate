@@ -30,24 +30,7 @@ class AuthViewModel : ViewModel() {
     private lateinit var googleSignInClient: GoogleSignInClient
 
 
-    // --- Facebook LogIn ---
-    fun handleFacebookLogin(context: Context) {
-        val activity = context as Activity
-        LoginManager.getInstance().logInWithReadPermissions(activity, listOf("email", "public_profile"))
-    }
 
-    fun handleFacebookAccessToken(token: AccessToken) {
-        _state.value = AuthUiState.Loading
-        val credential = FacebookAuthProvider.getCredential(token.token)
-        auth.signInWithCredential(credential)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    _state.value = AuthUiState.Success
-                } else {
-                    _state.value = AuthUiState.Error("Facebook login failed: ${task.exception?.message}")
-                }
-            }
-    }
 
     // --- Google Sign-In Functions ---
 

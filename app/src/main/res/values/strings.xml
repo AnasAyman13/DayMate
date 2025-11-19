@@ -10,10 +10,7 @@
     <string name="nav_media">Media</string>
     <string name="nav_settings">Profile</string>
 
-    <!-- Facebook Auth -->
-    <string name="facebook_app_id" translatable="false">1381435056673831</string>
-    <string name="facebook_client_token" translatable="false">9ca971677bbcaecb948bd1d50591d414</string>
-
+    
     <!-- Google Auth -->
     <string name="web_client_id" translatable="false">1052155530713-ejd10bvrcjlr5o4b452dtu454dnrte68.apps.googleusercontent.com</string>
 
