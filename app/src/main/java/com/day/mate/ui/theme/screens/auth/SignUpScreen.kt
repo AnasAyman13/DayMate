@@ -24,9 +24,6 @@ import androidx.compose.ui.unit.sp
 import com.day.mate.R
 import com.day.mate.data.authUiState.AuthUiState
 import com.day.mate.viewmodel.AuthViewModel
-import com.facebook.CallbackManager
-import com.facebook.login.LoginManager
-import com.facebook.login.LoginResult
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.common.api.ApiException
