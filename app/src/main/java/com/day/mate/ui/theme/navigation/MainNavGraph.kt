@@ -7,6 +7,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -61,11 +62,17 @@ fun MainNavGraph() {
 
     // Todo Factory (لـ TasksScreen)
     val todoFactory = remember(todoRepository) { TodoViewModelFactory(todoRepository) }
-    val todoViewModel: TodoViewModel = viewModel(factory = todoFactory)
 
     // 🆕 Timeline Factory (لـ TimelineScreen)
     val timelineFactory = remember(todoRepository, prayerRepository) {
         TimelineViewModelFactory(todoRepository, prayerRepository)
+    }
+
+    val todoViewModel: TodoViewModel = viewModel(factory = todoFactory)
+
+
+    LaunchedEffect(Unit) {
+        todoViewModel.syncFromFirestore()
     }
 
     // --- إدارة حالة الـ BackStack ---

@@ -24,8 +24,9 @@ class TodoRepository(
         return todoDao.getTodoById(id)?.toModel()
     }
 
-    suspend fun insert(todo: Todo) {
-        todoDao.insert(todo.toEntity())
+    suspend fun insert(todo: Todo): Int {
+        val newId = todoDao.insert(todo.toEntity()).toInt()
+        return newId
     }
 
     suspend fun update(todo: Todo) {
@@ -34,6 +35,9 @@ class TodoRepository(
 
     suspend fun delete(todo: Todo) {
         todoDao.delete(todo.toEntity())
+    }
+    suspend fun clearAllTodos() {
+        todoDao.clearAll()
     }
 
     // --- Category Functions ---
@@ -61,6 +65,7 @@ class TodoRepository(
 fun TodoEntity.toModel(): Todo {
     return Todo(
         id = id,
+        remoteId = remoteId,
         title = title,
         description = description,
         category = category,
@@ -74,6 +79,7 @@ fun TodoEntity.toModel(): Todo {
 fun Todo.toEntity(): TodoEntity {
     return TodoEntity(
         id = id,
+        remoteId = remoteId,
         title = title,
         description = description,
         category = category,
