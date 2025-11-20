@@ -17,7 +17,7 @@ interface TodoDao {
     suspend fun getTodoById(id: Int): TodoEntity?
 
     @Insert
-    suspend fun insert(todo: TodoEntity)
+    suspend fun insert(todo: TodoEntity): Long
 
     @Update
     suspend fun update(todo: TodoEntity)

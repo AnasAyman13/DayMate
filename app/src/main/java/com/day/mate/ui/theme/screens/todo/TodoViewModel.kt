@@ -4,15 +4,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.day.mate.data.model.Todo
 import com.day.mate.data.repository.TodoRepository
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
+
+    private val auth = FirebaseAuth.getInstance()
+    private val db = FirebaseFirestore.getInstance()
 
     private val DEFAULT_CATEGORIES = listOf("General", "Study", "Work", "Personal")
 
@@ -124,6 +130,8 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
 
         viewModelScope.launch {
             val newTodo = Todo(
+                id = 0,
+                remoteId = "",
                 title = titleValue,
                 description = description.value.trim(),
                 category = category.value,
@@ -132,7 +140,14 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
                 remindMe = remindMe.value,
                 isDone = false
             )
-            repository.insert(newTodo)
+
+            val newLocalId = repository.insert(newTodo)
+
+            val insertedTodo = newTodo.copy(id = newLocalId)
+
+            val remoteId = addTodoToFirestore(insertedTodo)
+
+            repository.update(insertedTodo.copy(remoteId = remoteId))
         }
     }
 
@@ -146,6 +161,7 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
 
             val updatedTodo = Todo(
                 id = id,
+                remoteId = oldTask?.remoteId ?: "",
                 title = titleValue,
                 description = description.value.trim(),
                 category = category.value,
@@ -155,18 +171,133 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
                 isDone = oldIsDoneStatus
             )
             repository.update(updatedTodo)
+            updateTodoInFirestore(updatedTodo)
+        }
+    }
+
+    private suspend fun addTodoToFirestore(todo: Todo): String {
+        val userId = auth.currentUser?.uid ?: return ""
+
+        val docRef = db.collection("users")
+            .document(userId)
+            .collection("tasks")
+            .document()
+
+        val remoteId = docRef.id
+
+        val data = mapOf(
+            "remoteId" to remoteId,
+            "title" to todo.title,
+            "description" to todo.description,
+            "category" to todo.category,
+            "date" to todo.date,
+            "time" to todo.time,
+            "remindMe" to todo.remindMe,
+            "isDone" to todo.isDone
+        )
+
+        docRef.set(data).await()
+
+        return remoteId
+    }
+
+    private fun updateTodoInFirestore(todo: Todo) {
+        val userId = auth.currentUser?.uid ?: return
+        if (todo.remoteId.isEmpty()) return
+
+        val taskMap = mapOf(
+            "remoteId" to todo.remoteId,
+            "title" to todo.title,
+            "description" to todo.description,
+            "category" to todo.category,
+            "date" to todo.date,
+            "time" to todo.time,
+            "remindMe" to todo.remindMe,
+            "isDone" to todo.isDone
+        )
+
+        db.collection("users")
+            .document(userId)
+            .collection("tasks")
+            .document(todo.remoteId)
+            .set(taskMap)
+    }
+    private fun deleteTodoFromFirestore(todo: Todo) {
+        val userId = auth.currentUser?.uid ?: return
+        val remoteId = todo.remoteId
+
+        if (remoteId.isEmpty()) return
+
+        db.collection("users")
+            .document(userId)
+            .collection("tasks")
+            .document(remoteId)
+            .delete()
+    }
+    private fun updateDoneStateInFirestore(todo: Todo) {
+        val userId = auth.currentUser?.uid ?: return
+        val remoteId = todo.remoteId
+        if (remoteId.isEmpty()) return
+
+        db.collection("users")
+            .document(userId)
+            .collection("tasks")
+            .document(remoteId)
+            .update("isDone", todo.isDone)
+    }
+
+    private suspend fun loadTasksFromFirestore() {
+        val userId = auth.currentUser?.uid ?: return
+
+        val snapshot = db.collection("users")
+            .document(userId)
+            .collection("tasks")
+            .get()
+            .await()
+
+        val tasks = snapshot.documents.mapNotNull { doc ->
+            val data = doc.data ?: return@mapNotNull null
+
+            Todo(
+                id = 0,
+                remoteId = data["remoteId"] as? String ?: "",
+                title = data["title"] as? String ?: "",
+                description = data["description"] as? String ?: "",
+                category = data["category"] as? String ?: "",
+                date = data["date"] as? String ?: "",
+                time = data["time"] as? String ?: "",
+                remindMe = data["remindMe"] as? Boolean ?: false,
+                isDone = data["isDone"] as? Boolean ?: false
+            )
+        }
+
+
+        repository.clearAllTodos()
+
+        tasks.forEach { task ->
+            val newId = repository.insert(task)
+            repository.update(task.copy(id = newId))
+        }
+    }
+
+     fun syncFromFirestore() {
+        viewModelScope.launch {
+            loadTasksFromFirestore()
         }
     }
 
     fun toggleTodoDone(todo: Todo) {
         viewModelScope.launch {
-            repository.update(todo.copy(isDone = !todo.isDone))
+            val updated = todo.copy(isDone = !todo.isDone)
+            repository.update(updated)
+            updateDoneStateInFirestore(updated)
         }
     }
 
     fun deleteTodo(todo: Todo) {
         viewModelScope.launch {
             repository.delete(todo)
+            deleteTodoFromFirestore(todo)
         }
     }
 }
