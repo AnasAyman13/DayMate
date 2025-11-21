@@ -122,10 +122,13 @@ fun MainNavGraph() {
                 )
             }
             composable(BottomNavItem.Pomodoro.route) { PomodoroScreen() }
-            composable(BottomNavItem.Media.route) { VaultScreen(navController = navController) }
+            composable(BottomNavItem.Media.route) { BiometricLockScreen(navController = navController) }
             composable(BottomNavItem.Prayer.route) { PrayerScreen() }
             composable(BottomNavItem.Settings.route) {
                 SettingsScreenContainer(onBackClick = { navController.popBackStack() })
+            }
+            composable("media_vault") {
+                VaultScreen(navController = navController)
             }
 
             // --- شاشة عرض الملفات ---
@@ -156,3 +159,5 @@ fun MainNavGraph() {
         }
     }
 }
+
+
