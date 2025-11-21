@@ -75,6 +75,7 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.4.0")
     implementation("androidx.compose.material:material-icons-extended:1.7.0")
     implementation("androidx.navigation:navigation-compose:2.8.2")
+    implementation(libs.androidx.appcompat)
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
@@ -123,6 +124,10 @@ dependencies {
 
     // Google Sign-In SDK
     implementation("com.google.android.gms:play-services-auth:21.4.0")
+
+    implementation("androidx.biometric:biometric:1.1.0")
+    implementation("androidx.appcompat:appcompat:1.6.1") // Use the latest stable version
+
 
 
 }

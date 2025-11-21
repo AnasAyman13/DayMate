@@ -6,6 +6,8 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity
+//import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.core.app.ActivityCompat
@@ -13,7 +15,7 @@ import androidx.core.content.ContextCompat
 import com.day.mate.ui.theme.DayMateTheme
 import com.day.mate.ui.theme.screens.media.MainNavGraph
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -43,7 +45,6 @@ class MainActivity : ComponentActivity() {
             DayMateTheme {
                 Surface(color = MaterialTheme.colorScheme.background) {
                     MainNavGraph()
-
                 }
             }
         }
