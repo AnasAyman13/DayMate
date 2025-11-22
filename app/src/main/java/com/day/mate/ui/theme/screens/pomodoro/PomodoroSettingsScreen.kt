@@ -171,18 +171,20 @@ fun TimeRow(
         TimeComponentPicker((0..59).map { it.toString().padStart(2, '0') }, seconds, onSecondsChange, stringResource(R.string.unit_seconds))
     }
 }
-
 @Composable
 fun TimeComponentPicker(
     items: List<String>,
     selected: Int,
     onSelected: (Int) -> Unit,
     label: String,
-    boxWidth: Dp = 52.dp,   // عرض المربع
-    boxHeight: Dp = 64.dp   // ارتفاع المربع
+    boxWidth: Dp = 52.dp,
+    boxHeight: Dp = 64.dp
 ) {
     val state = rememberLazyListState(selected)
-    LaunchedEffect(selected) { state.scrollToItem(selected) }
+
+    LaunchedEffect(selected) {
+        state.scrollToItem(selected)
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -193,9 +195,9 @@ fun TimeComponentPicker(
                 .height(boxHeight)
                 .fillMaxWidth()
                 .border(
-                    width = 1.5.dp,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                    shape = RoundedCornerShape(0.dp)
+                    width = 1.4.dp,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
+                    shape = RoundedCornerShape(6.dp)   // مربع نظيف
                 )
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
@@ -204,24 +206,29 @@ fun TimeComponentPicker(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
+
                 itemsIndexed(items) { i, v ->
                     val isSel = i == selected
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(36.dp), // ارتفاع عنصر فردي داخل المربع
+                            .height(38.dp),
                         contentAlignment = Alignment.Center
                     ) {
+
                         Text(
                             text = v,
                             fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = if (isSel) 18.sp else 14.sp,
-                            color = if (isSel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            fontSize = if (isSel) 20.sp else 15.sp,  // ← تم تكبير المختار شويه
+                            color =
+                                if (isSel) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             modifier = Modifier
                                 .background(
-                                    if (isSel) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                                    if (isSel) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                                     else Color.Transparent,
-                                    shape = RoundedCornerShape(8.dp)
+                                    shape = RoundedCornerShape(6.dp)
                                 )
                                 .clickable { onSelected(i) }
                                 .padding(horizontal = 2.dp)
@@ -230,6 +237,12 @@ fun TimeComponentPicker(
                 }
             }
         }
-        Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 2.dp))
+
+        Text(
+            label,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(top = 3.dp)
+        )
     }
 }
