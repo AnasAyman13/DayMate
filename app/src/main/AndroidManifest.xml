@@ -25,6 +25,7 @@
     <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="false" />
 
     <application
+        android:name="com.day.mate.util.MyApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -37,7 +38,8 @@
 
 
 
-        <activity
+
+    <activity
             android:name=".SplashScreen"
             android:exported="true"
             android:theme="@style/Theme.DayMate">

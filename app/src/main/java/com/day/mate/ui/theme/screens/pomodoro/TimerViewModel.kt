@@ -24,19 +24,17 @@ class TimerViewModel : ViewModel() {
     fun skipTimer() {
         timerJob?.cancel()
         handleSessionEnd()
-
     }
-    fun updateTimes(focus: Int, shortBreak: Int, longBreak: Int) {
-        focusTime = focus * 60
-        shortBreakTime = shortBreak * 60
-        longBreakTime = longBreak * 60
+    fun updateTimesRaw(focusSeconds: Int, shortBreakSeconds: Int, longBreakSeconds: Int) {
+        focusTime = focusSeconds
+        shortBreakTime = shortBreakSeconds
+        longBreakTime = longBreakSeconds
 
         _timerState.value = _timerState.value.copy(
             secondsLeft = focusTime,
             totalSeconds = focusTime
         )
     }
-
     fun startTimer() {
         val state = _timerState.value
         if (state.isRunning) return
@@ -50,7 +48,6 @@ class TimerViewModel : ViewModel() {
                     secondsLeft = _timerState.value.secondsLeft - 1
                 )
             }
-
             if (_timerState.value.secondsLeft <= 0) {
                 _timerState.value = _timerState.value.copy(
                     isRunning = false,
@@ -59,8 +56,6 @@ class TimerViewModel : ViewModel() {
             }
         }
     }
-
-
     fun handleSessionEnd() {
         val state = _timerState.value
         when (state.mode) {
@@ -78,7 +73,6 @@ class TimerViewModel : ViewModel() {
                     isFinished = false
                 )
             }
-
             else -> {
                 _timerState.value = state.copy(
                     mode = TimerMode.FOCUS,
@@ -89,13 +83,11 @@ class TimerViewModel : ViewModel() {
             }
         }
     }
-
     fun pauseTimer() {
         val state = _timerState.value
         _timerState.value = state.copy(isRunning = false)
         timerJob?.cancel()
     }
-
     fun resetTimer() {
         timerJob?.cancel()
         val state = _timerState.value

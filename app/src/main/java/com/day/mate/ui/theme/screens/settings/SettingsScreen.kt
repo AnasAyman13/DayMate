@@ -1,5 +1,6 @@
 package com.day.mate.ui.screens.settings
 
+import android.app.Activity
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -26,8 +27,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.day.mate.AuthActivity
-import com.day.mate.data.model.User
 import com.day.mate.R
+import com.day.mate.data.model.User
+import com.day.mate.util.LocaleUtils
 
 @Composable
 fun SettingsScreenContainer(
@@ -40,9 +42,10 @@ fun SettingsScreenContainer(
     }
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val activity = context as? Activity
 
     LaunchedEffect(state.isLoggedOut) {
-        if(state.isLoggedOut){
+        if (state.isLoggedOut) {
             Toast.makeText(context, "Logged out successfully", Toast.LENGTH_SHORT).show()
             val intent = Intent(context, AuthActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -53,11 +56,12 @@ fun SettingsScreenContainer(
     SettingsScreen(
         state = state,
         onBackClick = onBackClick,
-        onEditProfile = { viewModel.onEditProfileClicked() },
         onToggleDarkMode = { viewModel.toggleDarkMode(it) },
         onToggleCloudSync = { viewModel.toggleCloudSync(it) },
         onToggleNotifications = { viewModel.toggleNotifications(it) },
-        onManageStorage = { viewModel.onManageStorageClicked() },
+        onToggleLanguage = { lang ->
+            activity?.let { LocaleUtils.setLocaleAndRestart(it, lang) }
+        },
         onLogout = { viewModel.onLogoutClicked() }
     )
 }
@@ -66,14 +70,15 @@ fun SettingsScreenContainer(
 fun SettingsScreen(
     state: SettingsState,
     onBackClick: () -> Unit,
-    onEditProfile: () -> Unit,
     onToggleDarkMode: (Boolean) -> Unit,
     onToggleCloudSync: (Boolean) -> Unit,
     onToggleNotifications: (Boolean) -> Unit,
-    onManageStorage: () -> Unit,
+    onToggleLanguage: (String) -> Unit,
     onLogout: () -> Unit
 ) {
     val scroll = rememberScrollState()
+    val context = LocalContext.current
+    val savedLang = LocaleUtils.getSavedLanguage(context) ?: java.util.Locale.getDefault().language
 
     Column(
         modifier = Modifier
@@ -84,7 +89,6 @@ fun SettingsScreen(
     ) {
         Spacer(Modifier.height(16.dp))
 
-        // Top bar
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -102,15 +106,11 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // Profile header
-        ProfileHeader(
-            user = state.user,
-            onEdit = onEditProfile
-        )
+        ProfileHeader(user = state.user)
 
         Spacer(Modifier.height(20.dp))
 
-        // Appearance Card
+        // Appearance + language toggle
         SettingsCard(title = stringResource(R.string.settings_appearance)) {
             SettingsToggleRow(
                 icon = Icons.Outlined.DarkMode,
@@ -118,9 +118,22 @@ fun SettingsScreen(
                 checked = state.darkModeEnabled,
                 onCheckedChange = onToggleDarkMode
             )
+
+            Divider(modifier = Modifier.padding(vertical = 4.dp))
+
+            SettingsClickableRow(
+                icon = Icons.Outlined.Language,
+                title = if (savedLang == "en")
+                    stringResource(R.string.settings_change_to_arabic)
+                else
+                    stringResource(R.string.settings_change_to_english),
+                onClick = {
+                    val nextLang = if (savedLang == "en") "ar" else "en"
+                    onToggleLanguage(nextLang)
+                }
+            )
         }
 
-        // Data & Sync
         SettingsCard(title = stringResource(R.string.settings_data_sync)) {
             SettingsToggleRow(
                 icon = Icons.Outlined.CloudSync,
@@ -128,30 +141,34 @@ fun SettingsScreen(
                 checked = state.cloudSyncEnabled,
                 onCheckedChange = onToggleCloudSync
             )
-
-            Divider(modifier = Modifier.padding(vertical = 4.dp))
-            SettingsClickableRow(
-                icon = Icons.Outlined.Folder,
-                title = stringResource(R.string.settings_manage_storage),
-                onClick = onManageStorage
-            )
         }
 
-        // Account
         SettingsCard(title = stringResource(R.string.settings_account)) {
-            SettingsClickableRow(Icons.Outlined.Notifications, stringResource(R.string.settings_notifications)) {}
-            SettingsClickableRow(Icons.Outlined.Password, stringResource(R.string.settings_change_password)) {}
+            SettingsClickableRow(
+                Icons.Outlined.Notifications,
+                stringResource(R.string.settings_notifications)
+            ) {
+                onToggleNotifications(!state.notificationsEnabled)
+            }
+            SettingsClickableRow(
+                Icons.Outlined.Password,
+                stringResource(R.string.settings_change_password)
+            ) { }
         }
 
-        // Support & Legal
         SettingsCard(title = stringResource(R.string.settings_support_legal)) {
-            SettingsClickableRow(Icons.Outlined.Help, stringResource(R.string.settings_help_support)) {}
-            SettingsClickableRow(Icons.Outlined.Gavel, stringResource(R.string.settings_terms_service)) {}
+            SettingsClickableRow(
+                Icons.Outlined.Help,
+                stringResource(R.string.settings_help_support)
+            ) { }
+            SettingsClickableRow(
+                Icons.Outlined.Gavel,
+                stringResource(R.string.settings_terms_service)
+            ) { }
         }
 
         Spacer(Modifier.height(12.dp))
 
-        // Logout
         Button(
             onClick = { onLogout() },
             modifier = Modifier
@@ -166,7 +183,11 @@ fun SettingsScreen(
                     .background(Color(0x1AFF0000), shape = RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(stringResource(R.string.settings_log_out), color = Color.Red, fontWeight = FontWeight.Bold)
+                Text(
+                    stringResource(R.string.settings_log_out),
+                    color = Color.Red,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
 
@@ -175,24 +196,17 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun ProfileHeader(user: User, onEdit: () -> Unit) {
+private fun ProfileHeader(user: User) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(user.name, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        Text(user.email, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-        Spacer(Modifier.height(8.dp))
-
-        Button(
-            onClick = onEdit,
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0x3313DAEC)),
-            modifier = Modifier
-                .fillMaxWidth(0.7f)
-                .height(40.dp)
-        ) {
-            Text(stringResource(R.string.settings_edit_profile), color = Color(0xFF13DAEC))
-        }
+        Spacer(Modifier.height(12.dp))
+        Text(
+            user.email,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+        )
     }
 }
 
@@ -231,7 +245,12 @@ private fun SettingsToggleRow(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(28.dp)
+            )
             Spacer(Modifier.width(12.dp))
             Text(title)
         }
@@ -254,11 +273,20 @@ private fun SettingsClickableRow(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(28.dp)
+            )
             Spacer(Modifier.width(12.dp))
             Text(title)
         }
-        Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+        Icon(
+            Icons.Outlined.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+        )
     }
 }
 
@@ -270,16 +298,20 @@ fun SettingsPreview() {
         name = "Alex Doe",
         email = "alex.doe@daymate.com",
     )
-    val state = SettingsState(user = mockUser,)
+    val state = SettingsState(
+        user = mockUser,
+        darkModeEnabled = false,
+        cloudSyncEnabled = true,
+        notificationsEnabled = true
+    )
     MaterialTheme {
         SettingsScreen(
             state = state,
             onBackClick = {},
-            onEditProfile = {},
             onToggleDarkMode = {},
             onToggleCloudSync = {},
             onToggleNotifications = {},
-            onManageStorage = {},
+            onToggleLanguage = {},
             onLogout = {}
         )
     }

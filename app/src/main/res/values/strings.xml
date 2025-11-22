@@ -2,6 +2,14 @@
 <resources>
     <string name="app_name" translatable="false">Day Mate</string>
 
+
+
+    <!-- TimeLine -->
+    <string name="timeline_topbar_title">Make today amazing.</string>
+    <string name="more">More</string>
+    <string name="timeline_now">Now</string>
+    <string name="timeline_empty_or_loading">Loading timeline or no events for today...</string>
+
     <!-- Navigation -->
     <string name="nav_timeline">Timeline</string>
     <string name="nav_todo">To-Do</string>
@@ -45,11 +53,19 @@
 
     <!-- settings dialog -->
     <string name="settings_title">Settings</string>
-    <string name="focus_time_label">Focus Time (minutes)</string>
-    <string name="short_break_label">Short Break (minutes)</string>
-    <string name="long_break_label">Long Break (minutes)</string>
-    <string name="save_button">Save</string>
+    <string name="focus_label">Focus</string>
+    <string name="short_break_label">Short Break</string>
+    <string name="long_break_label">Long Break</string>
+    <string name="unit_seconds">Sec</string>
+    <string name="unit_minutes">Min</string>
+    <string name="unit_hours">Hrs</string>
     <string name="cancel_button">Cancel</string>
+    <string name="save_button">Save</string>
+    <string name="focus_time_label">Focus Time </string>
+
+
+
+
 
     <!-- Settings Screen -->
     <string name="settings_title_and_profile">Profile &amp; Settings</string>
@@ -65,7 +81,10 @@
     <string name="settings_help_support">Help &amp; Support</string>
     <string name="settings_terms_service">Terms of Service</string>
     <string name="settings_log_out">Log Out</string>
-    <string name="settings_edit_profile">Edit Profile</string>
+    <string name="settings_change_to_arabic">Change language to Arabic</string>
+    <string name="settings_change_to_english">Change language to English</string>
+
+
 
     <!-- Login Screen -->
     <string name="login_welcome_title">Welcome Back to DayMate</string>

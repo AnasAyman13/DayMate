@@ -1,28 +1,7 @@
 package com.day.mate.ui.theme.screens.pomodoro
+
 import android.content.Context
 import android.content.res.Configuration
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import android.media.MediaPlayer
 import android.os.Build
 import android.os.VibrationEffect
@@ -30,16 +9,36 @@ import android.os.Vibrator
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.*
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.day.mate.R
 import com.day.mate.data.local.TimerMode
 import kotlinx.coroutines.delay
@@ -76,6 +75,7 @@ fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
             viewModel.handleSessionEnd()
         }
     }
+
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
@@ -84,17 +84,29 @@ fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
             .fillMaxSize()
             .background(Color(0xFF101F22))
     ) {
-
+        // ======= TOP BAR =======
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp, start = 8.dp, end = 8.dp, bottom = 16.dp)
                 .align(Alignment.TopCenter),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start
+            verticalAlignment = Alignment.CenterVertically
         ) {
-
-
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f)),
+                contentAlignment = Alignment.Center
+            ) {
+                IconButton(onClick = { showSettings = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Settings",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
             Text(
                 text = when (timerState.mode) {
                     TimerMode.FOCUS -> stringResource(id = R.string.focus)
@@ -104,86 +116,32 @@ fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
                 textAlign = TextAlign.Center,
                 modifier = Modifier.weight(1f),
                 fontSize = if (isLandscape) 50.sp else 42.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = Color.White
             )
+            Box(modifier = Modifier.size(42.dp)) {}
+        }
 
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .shadow(6.dp, CircleShape)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f)),
-                contentAlignment = Alignment.Center
-            )
-
-            {
-                IconButton(onClick = { showSettings = true }) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = "Settings",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-
+        // ======= SETTINGS DIALOG =======
+        if (showSettings) {
+            Dialog(
+                onDismissRequest = { showSettings = false },
+                properties = DialogProperties(usePlatformDefaultWidth = false)
+            ) {
+                PomodoroSettingsScreen(
+                    onCancel = { showSettings = false },
+                    onSave = { focusSeconds, shortSeconds, longSeconds ->
+                        viewModel.updateTimesRaw(focusSeconds, shortSeconds, longSeconds)
+                        showSettings = false
+                    },
+                    initialFocus = viewModel.focusTime,
+                    initialShort = viewModel.shortBreakTime,
+                    initialLong = viewModel.longBreakTime
+                )
             }
         }
-        if (showSettings) {
-            var focusTimeStr by remember { mutableStateOf((viewModel.focusTime / 60).toString()) }
-            var shortBreakStr by remember { mutableStateOf((viewModel.shortBreakTime / 60).toString()) }
-            var longBreakStr by remember { mutableStateOf((viewModel.longBreakTime / 60).toString()) }
 
-            AlertDialog(
-                onDismissRequest = { showSettings = false },
-                title = { Text(stringResource(id = R.string.settings_title)) },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedTextField(
-                            value = focusTimeStr,
-                            onValueChange = { focusTimeStr = it },
-                            label = { Text(stringResource(id = R.string.focus_time_label)) },
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                keyboardType = KeyboardType.Number
-                            )
-                        )
-                        OutlinedTextField(
-                            value = shortBreakStr,
-                            onValueChange = { shortBreakStr = it },
-                            label = { Text(stringResource(id = R.string.short_break_label)) },
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                keyboardType = KeyboardType.Number
-                            )
-                        )
-                        OutlinedTextField(
-                            value = longBreakStr,
-                            onValueChange = { longBreakStr = it },
-                            label = { Text(stringResource(id = R.string.long_break_label)) },
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                keyboardType = KeyboardType.Number
-                            )
-                        )
-                    }
-                },
-                confirmButton = {
-                    Button(onClick = {
-                        val focusTime = focusTimeStr.toIntOrNull() ?: viewModel.focusTime / 60
-                        val shortBreak = shortBreakStr.toIntOrNull() ?: viewModel.shortBreakTime / 60
-                        val longBreak = longBreakStr.toIntOrNull() ?: viewModel.longBreakTime / 60
-
-                        viewModel.updateTimes(focusTime, shortBreak, longBreak)
-                        showSettings = false
-                    }) {
-                        Text(stringResource(id = R.string.save_button))
-                    }
-                },
-                dismissButton = {
-                    Button(onClick = { showSettings = false }) {
-                        Text(stringResource(id = R.string.cancel_button))
-                    }
-                }
-            )
-        }
-
-
+        // ======= TIMER CIRCLE =======
         Box(
             modifier = Modifier
                 .fillMaxWidth(if (isLandscape) 0.5f else 0.7f)
@@ -219,10 +177,12 @@ fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
             Text(
                 text = String.format("%02d:%02d", timerState.secondsLeft / 60, timerState.secondsLeft % 60),
                 fontSize = if (isLandscape) 72.sp else 60.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = Color.White
             )
         }
 
+        // ======= BOTTOM BUTTONS =======
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -235,7 +195,6 @@ fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 modifier = Modifier.fillMaxWidth()
             ) {
-
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Box(
                         modifier = Modifier
@@ -255,7 +214,8 @@ fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
                     }
                     Text(
                         text = stringResource(id = R.string.reset),
-                        fontSize = if (isLandscape) 12.sp else 14.sp
+                        fontSize = if (isLandscape) 12.sp else 14.sp,
+                        color = Color.White
                     )
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -280,7 +240,8 @@ fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
                     }
                     Text(
                         text = stringResource(id = R.string.pause_start),
-                        fontSize = if (isLandscape) 12.sp else 14.sp
+                        fontSize = if (isLandscape) 12.sp else 14.sp,
+                        color = Color.White
                     )
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -302,25 +263,16 @@ fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
                     }
                     Text(
                         text = stringResource(id = R.string.skip),
-                        fontSize = if (isLandscape) 12.sp else 14.sp
+                        fontSize = if (isLandscape) 12.sp else 14.sp,
+                        color = Color.White
                     )
                 }
             }
-
-
             Text(
                 text = stringResource(id = R.string.completed_sessions, timerState.completedSessions),
-                fontSize = if (isLandscape) 14.sp else 16.sp
+                fontSize = if (isLandscape) 14.sp else 16.sp,
+                color = Color.White
             )
         }
-    }
-}
-
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun PomodoroScreenPreview() {
-    MaterialTheme {
-        PomodoroScreen()
     }
 }

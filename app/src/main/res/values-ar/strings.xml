@@ -2,6 +2,12 @@
 <resources>
     <string name="app_name" translatable="false">Day Mate</string>
 
+    <!-- TimeLine -->
+    <string name="timeline_topbar_title">اجعل يومك مميزًا.</string>
+    <string name="more">المزيد</string>
+    <string name="timeline_now">الآن</string>
+    <string name="timeline_empty_or_loading">جارٍ تحميل الجدول أو لا توجد أحداث لليوم…</string>
+
     <!-- Navigation -->
     <string name="nav_timeline">الأحداث</string>
     <string name="nav_todo">المهام</string>
@@ -41,12 +47,22 @@
     <string name="completed_sessions">عدد الجلسات المكتملة: %1$d</string>
 
     <!-- Settings dialog -->
+    <string name="focus_label">التركيز</string>
+    <string name="unit_seconds">ثانية</string>
+    <string name="unit_minutes">دقيقة</string>
+    <string name="unit_hours">ساعة</string>
     <string name="settings_title">الإعدادات</string>
-    <string name="focus_time_label">مدة التركيز (بالدقائق)</string>
-    <string name="short_break_label">الاستراحة القصيرة (بالدقائق)</string>
-    <string name="long_break_label">الاستراحة الطويلة (بالدقائق)</string>
+    <string name="focus_time_label">مدة التركيز </string>
+    <string name="short_break_label">الاستراحة القصيرة</string>
+    <string name="long_break_label">الاستراحة الطويلة </string>
     <string name="save_button">حفظ</string>
     <string name="cancel_button">إلغاء</string>
+
+
+
+
+
+
 
     <!-- Settings Screen -->
     <string name="settings_title_and_profile">الملف الشخصي والإعدادات</string>
@@ -62,7 +78,10 @@
     <string name="settings_help_support">المساعدة والدعم</string>
     <string name="settings_terms_service">شروط الخدمة</string>
     <string name="settings_log_out">تسجيل الخروج</string>
-    <string name="settings_edit_profile">تعديل الملف الشخصي</string>
+    <string name="settings_change_to_arabic">تغيير اللغة إلى العربية</string>
+    <string name="settings_change_to_english">تغيير اللغة إلى الإنجليزية</string>
+
+
 
     <!-- Login Screen -->
     <string name="login_welcome_title">مرحبًا بعودتك إلى DayMate</string>

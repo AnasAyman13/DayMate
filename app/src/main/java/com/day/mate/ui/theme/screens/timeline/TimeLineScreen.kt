@@ -6,22 +6,11 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import com.day.mate.R
-import androidx.compose.ui.res.painterResource
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.SelfImprovement
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material.icons.filled.WatchLater
-import androidx.compose.material.icons.outlined.BookmarkBorder
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
-import androidx.compose.material.icons.outlined.SelfImprovement
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -31,9 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
-
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -41,39 +29,30 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.day.mate.R
 import com.day.mate.data.model.EventType
 import com.day.mate.data.model.TimelineEvent
 import com.day.mate.formatTimestampToHourLabel
-import com.day.mate.ui.theme.* // **هذا هو الاستيراد الذي يحل مشكلة الألوان**
+import com.day.mate.ui.theme.*
 
-// =========================================================================
-// نماذج وبيانات وهمية (مؤقتة)
-// =========================================================================
-
-// نموذج بيانات وهمي مؤقت
 data class FakeTimelineEvent(
     val id: Int,
     val timeLabel: String,
     val title: String,
     val timeRange: String,
-    val icon: String, // اسم الرمز
+    val icon: String,
     val eventColor: Color,
     val isDone: Boolean = false,
-    val isProgress: Float? = null // نسبة التقدم 0.0f to 1.0f
+    val isProgress: Float? = null
 )
 
-// بيانات وهمية للعرض فقط (لتشغيل التصميم)
 val fakeEvents = listOf(
     FakeTimelineEvent(1, "09 AM", "Morning Meditation", "09:00 - 09:30 AM", "self_improvement", PrimaryColor, false),
     FakeTimelineEvent(2, "10 AM", "Team Sync Meeting", "10:00 - 11:30 AM", "event", Color(0xFF03A9F4), false, isProgress = 0.25f),
     FakeTimelineEvent(3, "12 PM", "Gym Session", "12:00 PM", "fitness_center", Color(0xFFFFCC00), false),
     FakeTimelineEvent(4, "01 PM", "Lunch with Sarah", "01:00 - 02:00 PM", "restaurant", Color(0xFF4CAF50), true),
-    FakeTimelineEvent(5, "02 PM", "", "", "", Color.Transparent), // فاصل زمني وهمي
+    FakeTimelineEvent(5, "02 PM", "", "", "", Color.Transparent),
 )
-
-// =========================================================================
-// المكونات المساعدة (تم نقلها هنا مؤقتاً لتجنب مشاكل الـ Import)
-// =========================================================================
 
 @Composable
 fun DayMateTopBar() {
@@ -95,7 +74,7 @@ fun DayMateTopBar() {
         )
         Spacer(Modifier.width(8.dp))
         Text(
-            text = "Make today amazing.",
+            text = stringResource(R.string.timeline_topbar_title),
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.weight(1f),
@@ -105,29 +84,22 @@ fun DayMateTopBar() {
         IconButton(onClick = { /* More actions */ }) {
             Icon(
                 imageVector = Icons.Filled.MoreVert,
-                contentDescription = "More",
+                contentDescription = stringResource(R.string.more),
                 tint = MaterialTheme.colorScheme.onBackground
             )
         }
     }
 }
 
-
-
 @Composable
 fun TimelineItem(event: TimelineEvent) {
     val isDark = isSystemInDarkTheme()
-    // CardBackgroundDark و CardBackgroundLight و PrimaryColor يجب أن تكون متاحة عبر الـ import: com.day.mate.ui.theme.*
 
-    // 1. تحديد الأيقونة بناءً على نوع الحدث
     val iconImageVector: Int = when (event.type) {
-        EventType.PRAYER -> R.drawable.ic_mosque_filled // 👈 غيري ic_prayer_custom باسم الملف عندك
-
-        // ⬇️ الأيقونة الأخرى تبقى كما هي (كمثال)
-        EventType.TODO_TASK -> R.drawable.ic_todo_filled // أيقونة المهمة
+        EventType.PRAYER -> R.drawable.ic_mosque_filled
+        EventType.TODO_TASK -> R.drawable.ic_todo_filled
     }
 
-    // 2. تحديد لون الحدود والخلفية الشفافة
     val borderColor = event.iconColor.copy(alpha = 0.3f)
     val containerColor = event.iconColor.copy(alpha = 0.1f)
 
@@ -147,7 +119,6 @@ fun TimelineItem(event: TimelineEvent) {
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 3. عرض أيقونة الحدث
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -165,32 +136,30 @@ fun TimelineItem(event: TimelineEvent) {
             Spacer(Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                // عنوان الحدث (مع خط مشطوب للمهام المنجزة)
                 Text(
                     text = event.title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    textDecoration = if (event.isDone && event.type == EventType.TODO_TASK) TextDecoration.LineThrough else null,
+                    textDecoration = if (event.isDone && event.type == EventType.TODO_TASK)
+                        TextDecoration.LineThrough else null,
                     color = if (event.isDone) Color.Gray else MaterialTheme.colorScheme.onBackground
                 )
 
-                // الوقت أو الوصف
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Filled.WatchLater,
-                        contentDescription = "Time",
+                        contentDescription = null,
                         tint = Color.Gray.copy(alpha = 0.7f),
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = event.timeRange, // (مثل 09:00 - 09:30 AM)
+                        text = event.timeRange,
                         fontSize = 14.sp,
                         color = Color.Gray
                     )
                 }
 
-                // عرض شريط التقدم إذا كان موجوداً
                 event.isProgress?.let { progress ->
                     LinearProgressIndicator(
                         progress = progress,
@@ -199,19 +168,21 @@ fun TimelineItem(event: TimelineEvent) {
                             .height(6.dp)
                             .padding(top = 4.dp)
                             .clip(CircleShape),
-                        color = event.iconColor, // لون التقدم هو لون الحدث
+                        color = event.iconColor,
                         trackColor = Color.LightGray.copy(alpha = 0.5f)
                     )
                 }
             }
             Spacer(Modifier.width(8.dp))
 
-            // زر حالة الإنجاز (يظهر فقط للمهام)
             if (event.type == EventType.TODO_TASK) {
                 IconButton(onClick = { /* TODO: Toggle done status in ViewModel */ }) {
                     Icon(
-                        imageVector = if (event.isDone) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
-                        contentDescription = "Status",
+                        imageVector = if (event.isDone)
+                            Icons.Filled.CheckCircle
+                        else
+                            Icons.Outlined.RadioButtonUnchecked,
+                        contentDescription = null,
                         tint = if (event.isDone) Color(0xFF4CAF50) else Color.Gray
                     )
                 }
@@ -219,6 +190,7 @@ fun TimelineItem(event: TimelineEvent) {
         }
     }
 }
+
 @Composable
 fun TimelineRow(
     timeLabel: String,
@@ -233,7 +205,6 @@ fun TimelineRow(
             modifier = Modifier.width(30.dp),
             contentAlignment = Alignment.TopCenter
         ) {
-            // 1. تسمية الوقت
             Text(
                 text = timeLabel,
                 fontSize = 12.sp,
@@ -241,19 +212,14 @@ fun TimelineRow(
                 color = Color.Gray
             )
 
-            // 2. الخط العمودي الرمادي
             Spacer(
                 modifier = Modifier
-                    // ⬇️ زيادة الـ padding العلوي لكي لا يتداخل مع النص
                     .padding(top = 50.dp)
                     .width(2.dp)
-                    // ⬇️ الارتفاع: استخدمي ارتفاعًا أكبر (مثلاً 100.dp) أو استخدمي ارتفاع العمود كاملاً
-                    // نستخدم ارتفاع ثابت مؤقت (80dp) ونزيد قيمته قليلاً
                     .height(70.dp)
                     .background(Color.LightGray)
             )
 
-            // 3. مؤشر "Now" (بدون تغيير)
             if (isCurrentHour) {
                 Box(
                     modifier = Modifier
@@ -268,7 +234,7 @@ fun TimelineRow(
                         color = PrimaryColor
                     )
                     Text(
-                        text = "Now",
+                        text = stringResource(R.string.timeline_now),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryColor,
@@ -279,7 +245,7 @@ fun TimelineRow(
                 }
             }
         }
-        // ... (بقية الـ Box الخاصة بالـ content) ...
+
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -289,20 +255,17 @@ fun TimelineRow(
         }
     }
 }
-// =========================================================================
-// المكون الرئيسي (TimelineScreen)
-// =========================================================================
+
 fun isCurrentHour(timestamp: Long): Boolean {
     val currentHourLabel = formatTimestampToHourLabel(System.currentTimeMillis())
     val eventHourLabel = formatTimestampToHourLabel(timestamp)
     return currentHourLabel == eventHourLabel
 }
+
 @Composable
 fun TimelineScreen(
-    // 🆕 استلام الـ ViewModel
     viewModel: TimelineViewModel = viewModel()
 ) {
-    // 🚀 مراقبة قائمة الأحداث الحقيقية
     val events by viewModel.timelineEvents.collectAsState()
 
     val isDark = isSystemInDarkTheme()
@@ -312,13 +275,17 @@ fun TimelineScreen(
         topBar = { DayMateTopBar() },
         containerColor = backgroundColor
     ) { paddingValues ->
-        // ✅ عرض رسالة تحميل أو حالة فارغة
         if (events.isEmpty()) {
             Box(
-                modifier = Modifier.fillMaxSize().padding(paddingValues),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Loading timeline or no events for today...", color = Color.Gray)
+                Text(
+                    text = stringResource(R.string.timeline_empty_or_loading),
+                    color = Color.Gray
+                )
             }
         } else {
             LazyColumn(
@@ -332,16 +299,11 @@ fun TimelineScreen(
 
                     TimelineRow(
                         timeLabel = event.timeLabel,
-                        content = {
-                            // نستخدم TimelineItem لكل حدث حقيقي
-                            TimelineItem(event = event)
-                        },
-                        // استخدام الدالة الجديدة لتحديد مؤشر "Now"
+                        content = { TimelineItem(event = event) },
                         isCurrentHour = isCurrentHour(event.timestamp)
                     )
                 }
             }
         }
     }
-    // ** ملاحظة: تم إزالة FAB من هنا **
 }

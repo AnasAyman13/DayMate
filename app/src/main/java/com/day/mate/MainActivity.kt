@@ -1,21 +1,26 @@
 package com.day.mate
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
-//import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.activity.compose.setContent
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.day.mate.ui.theme.DayMateTheme
 import com.day.mate.ui.theme.screens.media.MainNavGraph
+import com.day.mate.util.LocaleUtils
 
 class MainActivity : AppCompatActivity() {
+
+    // ⚡ ضروري علشان اللغة تتطبق قبل UI
+    override fun attachBaseContext(newBase: Context?) {
+        val localeUpdated = newBase?.let { LocaleUtils.applySavedLocale(it) }
+        super.attachBaseContext(localeUpdated)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -43,9 +48,7 @@ class MainActivity : AppCompatActivity() {
         // 🎨 واجهة التطبيق
         setContent {
             DayMateTheme {
-                Surface(color = MaterialTheme.colorScheme.background) {
-                    MainNavGraph()
-                }
+                MainNavGraph()
             }
         }
     }
