@@ -1,4 +1,5 @@
 package com.day.mate.data.model
+
 import androidx.room.Query
 import com.day.mate.combineDateTimeToTimestamp
 import com.day.mate.data.local.TodoEntity
@@ -6,6 +7,9 @@ import com.day.mate.data.model.Todo
 import com.day.mate.formatTimestampToHourLabel
 
 import com.day.mate.ui.theme.PrimaryColor // لاستخدام اللون الرئيسي
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 data class Todo(
 
     val id: Int = 0,
@@ -19,6 +23,11 @@ data class Todo(
 
     val isDone: Boolean
 )
+fun formatTimestampTo12HourLabel(timestamp: Long): String {
+    val date = Date(timestamp)
+    val formatter = SimpleDateFormat("hh:mm a", Locale("ar"))
+    return formatter.format(date)
+}
 fun Todo.toTimelineEvent(): TimelineEvent {
     val timestamp = combineDateTimeToTimestamp(this.date, this.time)
 
