@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,34 +26,87 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import java.text.SimpleDateFormat
+import java.util.Date
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.day.mate.R
 import com.day.mate.data.model.EventType
 import com.day.mate.data.model.TimelineEvent
 import com.day.mate.formatTimestampToHourLabel
 import com.day.mate.ui.theme.*
+import java.time.Instant
+import java.time.ZoneId
+import java.time.LocalDateTime
 
-data class FakeTimelineEvent(
-    val id: Int,
+
+data class TimeBlock(
     val timeLabel: String,
-    val title: String,
-    val timeRange: String,
-    val icon: String,
-    val eventColor: Color,
-    val isDone: Boolean = false,
-    val isProgress: Float? = null
+    val events: List<TimelineEvent>,
+    val isCurrentHour: Boolean
 )
 
-val fakeEvents = listOf(
-    FakeTimelineEvent(1, "09 AM", "Morning Meditation", "09:00 - 09:30 AM", "self_improvement", PrimaryColor, false),
-    FakeTimelineEvent(2, "10 AM", "Team Sync Meeting", "10:00 - 11:30 AM", "event", Color(0xFF03A9F4), false, isProgress = 0.25f),
-    FakeTimelineEvent(3, "12 PM", "Gym Session", "12:00 PM", "fitness_center", Color(0xFFFFCC00), false),
-    FakeTimelineEvent(4, "01 PM", "Lunch with Sarah", "01:00 - 02:00 PM", "restaurant", Color(0xFF4CAF50), true),
-    FakeTimelineEvent(5, "02 PM", "", "", "", Color.Transparent),
-)
+
+
+fun formatTimeForDisplay(time24h: String): String {
+
+    return try {
+        val inputFormatter = DateTimeFormatter.ofPattern("HH:mm")
+        val time = LocalTime.parse(time24h, inputFormatter)
+
+        val outputFormatter = DateTimeFormatter.ofPattern("hh:mm", Locale("ar"))
+
+        time.format(outputFormatter)
+    } catch (e: Exception) {
+        try {
+            val inputFormatter = SimpleDateFormat("HH:mm", Locale.US)
+            val date: Date? = inputFormatter.parse(time24h)
+            val outputFormatter = SimpleDateFormat("hh:mm", Locale("ar"))
+
+            if (date != null) outputFormatter.format(date) else time24h
+        } catch (e2: Exception) {
+            time24h
+        }
+    }
+}
+fun getHourFromTimestamp(timestamp: Long): Int {
+    return try {
+        val instant = Instant.ofEpochMilli(timestamp)
+        val localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
+        localDateTime.hour
+    } catch (e: Exception) {
+        -1
+    }
+}
+
+
+fun groupEventsIntoTimeBlocks(events: List<TimelineEvent>): List<TimeBlock> {
+    if (events.isEmpty()) return emptyList()
+
+    val groupedByHour = events.groupBy { getHourFromTimestamp(it.timestamp) }
+
+    val currentHour = getHourFromTimestamp(System.currentTimeMillis())
+
+
+    return groupedByHour.keys
+        .sorted()
+        .mapNotNull { hour ->
+            val hourEvents = groupedByHour[hour]?.sortedBy { it.timestamp }
+            if (hourEvents.isNullOrEmpty()) return@mapNotNull null
+            val primaryTimeLabel = hourEvents.first().timeLabel
+
+            TimeBlock(
+                timeLabel = primaryTimeLabel,
+                events = hourEvents,
+                isCurrentHour = (hour == currentHour)
+            )
+        }
+}
+
 
 @Composable
 fun DayMateTopBar() {
@@ -154,7 +208,7 @@ fun TimelineItem(event: TimelineEvent) {
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = event.timeRange,
+                        text = formatTimeForDisplay(event.timeRange),
                         fontSize = 14.sp,
                         color = Color.Gray
                     )
@@ -198,7 +252,9 @@ fun TimelineRow(
     isCurrentHour: Boolean = false
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Max),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Box(
@@ -214,9 +270,9 @@ fun TimelineRow(
 
             Spacer(
                 modifier = Modifier
-                    .padding(top = 50.dp)
+                    .padding(top = if (timeLabel.isNotEmpty()) 50.dp else 2.dp)
                     .width(2.dp)
-                    .height(70.dp)
+                    .fillMaxHeight() // يمتد الخط لكامل ارتفاع محتوى الصف
                     .background(Color.LightGray)
             )
 
@@ -255,6 +311,25 @@ fun TimelineRow(
         }
     }
 }
+@Composable
+fun TimelineGroupedRow(
+    block: TimeBlock
+) {
+
+    TimelineRow(
+        timeLabel = block.timeLabel,
+        isCurrentHour = block.isCurrentHour,
+        content = {
+            // نستخدم Column لتكديس بطاقات المهام (TimelineItem)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                block.events.forEach { event ->
+                    TimelineItem(event = event)
+                }
+            }
+        }
+    )
+    Spacer(modifier = Modifier.height(16.dp))
+}
 
 fun isCurrentHour(timestamp: Long): Boolean {
     val currentHourLabel = formatTimestampToHourLabel(System.currentTimeMillis())
@@ -271,11 +346,16 @@ fun TimelineScreen(
     val isDark = isSystemInDarkTheme()
     val backgroundColor = if (isDark) BackgroundDark else BackgroundLight
 
+
+    val timeBlocks = remember(events) {
+        groupEventsIntoTimeBlocks(events)
+    }
+
     Scaffold(
         topBar = { DayMateTopBar() },
         containerColor = backgroundColor
     ) { paddingValues ->
-        if (events.isEmpty()) {
+        if (timeBlocks.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -294,14 +374,9 @@ fun TimelineScreen(
                     .padding(paddingValues)
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                items(events.size) { index ->
-                    val event = events[index]
-
-                    TimelineRow(
-                        timeLabel = event.timeLabel,
-                        content = { TimelineItem(event = event) },
-                        isCurrentHour = isCurrentHour(event.timestamp)
-                    )
+                items(timeBlocks.size) { index ->
+                    val block = timeBlocks[index]
+                    TimelineGroupedRow(block = block)
                 }
             }
         }

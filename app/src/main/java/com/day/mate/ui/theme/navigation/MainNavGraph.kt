@@ -35,7 +35,6 @@ import com.day.mate.ui.theme.screens.timeline.TimelineViewModel
 import com.day.mate.ui.theme.screens.pomodoro.PomodoroScreen
 import com.day.mate.ui.theme.screens.timeline.TimelineScreen
 import com.day.mate.ui.theme.screens.timeline.TimelineViewModelFactory
-import com.day.mate.ui.theme.screens.timeline.fakeEvents
 import com.day.mate.ui.theme.screens.todo.CreateTaskScreen
 import com.day.mate.ui.theme.screens.todo.TasksScreen
 import com.day.mate.ui.theme.screens.todo.TodoViewModel

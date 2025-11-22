@@ -1,7 +1,5 @@
 package com.day.mate.ui.theme.screens.timeline
 
-
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.day.mate.data.local.toTimelineEvents
@@ -9,30 +7,28 @@ import com.day.mate.data.model.TimelineEvent
 import com.day.mate.data.model.toTimelineEvent
 import com.day.mate.data.repository.TodoRepository
 import com.day.mate.data.repository.PrayerRepository
-
+// ✅ الاستيرادات الضرورية لحل الأخطاء
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
-
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.SharingStarted
 
-
-
-import kotlinx.coroutines.flow.combine // لحل خطأ combine
-import kotlinx.coroutines.flow.flowOn   // لحل خطأ .flowOn
-import kotlinx.coroutines.flow.SharingStarted // لحل خطأ SharingStarted (ربما كان خطأ مخفيًا)
-import kotlinx.coroutines.Dispatchers
 
 class TimelineViewModel(
     todoRepository: TodoRepository,
     prayerRepository: PrayerRepository
 ) : ViewModel() {
 
-    // ... (todosFlow بدون تغيير) ...
+    // 1. ✅ يجب إعادة تعريف todosFlow هنا
     private val todosFlow = todoRepository.getAllTodos()
         .map { todos ->
             // تحويل قائمة الـ Todo إلى قائمة TimelineEvent
             todos.map { it.toTimelineEvent() }
         }
+
 
     private val prayerTimingsFlow = prayerRepository.getPrayerTimingsFlow("Cairo", "Egypt")
         .map { timings ->
@@ -53,9 +49,10 @@ class TimelineViewModel(
                 }
             }
             return@map adjustedEvents
-        } // 🚨 النهاية الجديدة لـ prayerTimingsFlow
 
-    // 3. دمج كلا الـ Flows في Flow واحد (بدون تغيير)
+        }
+
+    // 3. دمج كلا الـ Flows في Flow واحد
     val timelineEvents: StateFlow<List<TimelineEvent>> =
         combine(todosFlow, prayerTimingsFlow) { todoEvents, prayerEvents ->
             (todoEvents + prayerEvents)
@@ -65,7 +62,7 @@ class TimelineViewModel(
             .flowOn(Dispatchers.Default)
             .stateIn(
                 scope = viewModelScope,
-                started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000),
+                started = SharingStarted.WhileSubscribed(5000), // ✅ تم حل خطأ SharingStarted
                 initialValue = emptyList()
             )
 }
