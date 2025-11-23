@@ -18,7 +18,7 @@
     <string name="nav_media">Media</string>
     <string name="nav_settings">Profile</string>
 
-
+    
     <!-- Google Auth -->
     <string name="web_client_id" translatable="false">1052155530713-ejd10bvrcjlr5o4b452dtu454dnrte68.apps.googleusercontent.com</string>
 

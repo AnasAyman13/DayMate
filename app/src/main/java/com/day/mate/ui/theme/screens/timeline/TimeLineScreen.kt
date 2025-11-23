@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +43,8 @@ import com.day.mate.ui.theme.*
 import java.time.Instant
 import java.time.ZoneId
 import java.time.LocalDateTime
+import java.time.LocalDate
+import kotlin.random.Random
 
 
 data class TimeBlock(
@@ -50,7 +53,14 @@ data class TimeBlock(
     val isCurrentHour: Boolean
 )
 
+@Composable
+fun formatDateForDisplay(): String {
 
+    val currentLocale = LocalConfiguration.current.locale
+    val formatter = DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", currentLocale)
+
+    return LocalDate.now().format(formatter)
+}
 
 fun formatTimeForDisplay(time24h: String): String {
 
@@ -112,7 +122,22 @@ fun groupEventsIntoTimeBlocks(events: List<TimelineEvent>): List<TimeBlock> {
 fun DayMateTopBar() {
     val isDark = isSystemInDarkTheme()
     val barColor = if (isDark) BackgroundDark else BackgroundLight
-
+    val quotes = listOf(
+        stringResource(R.string.topbar_quote_1),
+        stringResource(R.string.topbar_quote_2),
+        stringResource(R.string.topbar_quote_3),
+        stringResource(R.string.topbar_quote_4),
+        stringResource(R.string.topbar_quote_5),
+        stringResource(R.string.topbar_quote_6),
+        stringResource(R.string.topbar_quote_7),
+        stringResource(R.string.topbar_quote_8),
+        stringResource(R.string.topbar_quote_9),
+        stringResource(R.string.topbar_quote_10),
+        stringResource(R.string.timeline_topbar_title)
+    )
+    val randomQuote = remember {
+        quotes[Random.nextInt(quotes.size)]
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -121,18 +146,19 @@ fun DayMateTopBar() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = Icons.Outlined.WbSunny,
+            painter = painterResource(id = R.drawable.forgrnd),
             contentDescription = null,
-            tint = Color(0xFF03A9F4),
-            modifier = Modifier.size(32.dp)
+            tint = Color.Unspecified,
+            modifier = Modifier.size(52.dp)
         )
         Spacer(Modifier.width(8.dp))
         Text(
-            text = stringResource(R.string.timeline_topbar_title),
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
+            text = randomQuote,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.SemiBold,
             modifier = Modifier.weight(1f),
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(Modifier.width(8.dp))
         IconButton(onClick = { /* More actions */ }) {
@@ -173,23 +199,10 @@ fun TimelineItem(event: TimelineEvent) {
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(event.iconColor.copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(id = iconImageVector),
-                    contentDescription = event.title,
-                    tint = event.iconColor,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
             Spacer(Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
+
                 Text(
                     text = event.title,
                     fontWeight = FontWeight.Bold,
@@ -199,6 +212,15 @@ fun TimelineItem(event: TimelineEvent) {
                     color = if (event.isDone) Color.Gray else MaterialTheme.colorScheme.onBackground
                 )
 
+                if (event.type == EventType.TODO_TASK && !event.category.isNullOrBlank()) {
+                    Text(
+                        text = event.category!!,
+                        fontSize = 13.sp,
+                        color = Color.Gray,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(4.dp))
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Filled.WatchLater,
@@ -230,7 +252,7 @@ fun TimelineItem(event: TimelineEvent) {
             Spacer(Modifier.width(8.dp))
 
             if (event.type == EventType.TODO_TASK) {
-                IconButton(onClick = { /* TODO: Toggle done status in ViewModel */ }) {
+
                     Icon(
                         imageVector = if (event.isDone)
                             Icons.Filled.CheckCircle
@@ -239,7 +261,7 @@ fun TimelineItem(event: TimelineEvent) {
                         contentDescription = null,
                         tint = if (event.isDone) Color(0xFF4CAF50) else Color.Gray
                     )
-                }
+
             }
         }
     }
@@ -272,7 +294,7 @@ fun TimelineRow(
                 modifier = Modifier
                     .padding(top = if (timeLabel.isNotEmpty()) 50.dp else 2.dp)
                     .width(2.dp)
-                    .fillMaxHeight() // يمتد الخط لكامل ارتفاع محتوى الصف
+                    .fillMaxHeight()
                     .background(Color.LightGray)
             )
 
@@ -320,7 +342,6 @@ fun TimelineGroupedRow(
         timeLabel = block.timeLabel,
         isCurrentHour = block.isCurrentHour,
         content = {
-            // نستخدم Column لتكديس بطاقات المهام (TimelineItem)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 block.events.forEach { event ->
                     TimelineItem(event = event)
@@ -330,13 +351,6 @@ fun TimelineGroupedRow(
     )
     Spacer(modifier = Modifier.height(16.dp))
 }
-
-fun isCurrentHour(timestamp: Long): Boolean {
-    val currentHourLabel = formatTimestampToHourLabel(System.currentTimeMillis())
-    val eventHourLabel = formatTimestampToHourLabel(timestamp)
-    return currentHourLabel == eventHourLabel
-}
-
 @Composable
 fun TimelineScreen(
     viewModel: TimelineViewModel = viewModel()
@@ -355,11 +369,34 @@ fun TimelineScreen(
         topBar = { DayMateTopBar() },
         containerColor = backgroundColor
     ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .background(backgroundColor)
+        ) {
+
+
+            Text(
+                text = formatDateForDisplay(),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 8.dp, bottom = 4.dp)
+            )
+
+
+            Divider(
+                color = Color.LightGray.copy(alpha = 0.5f),
+                thickness = 0.5.dp
+            )
         if (timeBlocks.isEmpty()) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
+                    .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -371,7 +408,6 @@ fun TimelineScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 items(timeBlocks.size) { index ->
@@ -382,3 +418,4 @@ fun TimelineScreen(
         }
     }
 }
+    }

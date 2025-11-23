@@ -77,7 +77,7 @@ fun LoginScreen(
                 Icon(
                     painter = painterResource(id = R.drawable.forgrnd),
                     contentDescription = null,
-                    tint = primaryColor,
+                    tint = Color.Unspecified,
                     modifier = Modifier.size(64.dp)
                 )
                 Text(

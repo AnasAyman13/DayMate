@@ -23,5 +23,6 @@ data class TimelineEvent(
     val iconColor: Color,
     val isDone: Boolean = false,
     val isProgress: Float? = null,
-    val timeLabel: String = ""
+    val timeLabel: String = "",
+    val category: String? = null
 )
