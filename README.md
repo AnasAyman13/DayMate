@@ -71,11 +71,15 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 
 **Islam Fawzy**  
 •  Login & SignUp 
+• Firestore (media)
+• Authentication (Login & SignUp)
+
 
 **Youssef Barakat**  
 • Authentication (Login & SignUp)  
 • Firebase  
 • Google Login & SignUp
+• Firestore (Tasks)
 
 **Basem Mohamed**   
 • Biometric Lock  
