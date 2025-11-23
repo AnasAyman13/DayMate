@@ -1,7 +1,7 @@
 package com.day.mate.ui.theme.screens.timeline
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,16 +11,22 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.WatchLater
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
-import androidx.compose.material.icons.outlined.WbSunny
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material.icons.filled.EventNote
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -29,7 +35,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.text.SimpleDateFormat
@@ -38,13 +43,18 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.day.mate.R
 import com.day.mate.data.model.EventType
 import com.day.mate.data.model.TimelineEvent
-import com.day.mate.formatTimestampToHourLabel
 import com.day.mate.ui.theme.*
 import java.time.Instant
 import java.time.ZoneId
 import java.time.LocalDateTime
 import java.time.LocalDate
 import kotlin.random.Random
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Divider
+import androidx.compose.ui.unit.DpOffset
 
 
 data class TimeBlock(
@@ -54,34 +64,191 @@ data class TimeBlock(
 )
 
 @Composable
-fun formatDateForDisplay(): String {
-
-    val currentLocale = LocalConfiguration.current.locale
-    val formatter = DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", currentLocale)
-
-    return LocalDate.now().format(formatter)
+fun getTranslatedTitle(event: TimelineEvent): String {
+    return when (event.title) {
+        "Fajr Prayer" -> stringResource(R.string.fajr)
+        "Dhuhr Prayer" -> stringResource(R.string.dhuhr)
+        "Asr Prayer" -> stringResource(R.string.asr)
+        "Maghrib Prayer" -> stringResource(R.string.maghrib)
+        "Isha Prayer" -> stringResource(R.string.isha)
+        else -> event.title
+    }
 }
 
+@Composable
+fun getTranslatedCategory(category: String): String {
+    return when (category) {
+        "Work" -> stringResource(R.string.category_work)
+        "Study" -> stringResource(R.string.category_study)
+        "Personal" -> stringResource(R.string.category_personal)
+        "Health" -> stringResource(R.string.category_health)
+        "General" ->stringResource(R.string.category_General)
+        else -> category
+    }
+}
+
+@Composable
+fun TimelineMenu(viewModel: TimelineViewModel) {
+
+    val selectedDate by viewModel.selectedDate.collectAsState()
+    val hideCompleted by viewModel.hideCompleted.collectAsState()
+    var isMenuExpanded by remember { mutableStateOf(false) }
+    val isViewingTomorrow = selectedDate.isAfter(LocalDate.now())
+
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val surfaceColor = MaterialTheme.colorScheme.surface
+
+    val isRtl = LocalConfiguration.current.locale.language == "ar"
+
+    val horizontalOffset = if (isRtl) {
+
+        180.dp
+    } else {
+        (-300).dp
+    }
+
+    IconButton(onClick = { isMenuExpanded = true }) {
+        Icon(
+            imageVector = Icons.Filled.MoreVert,
+            contentDescription = stringResource(R.string.more),
+            tint = onSurfaceColor
+        )
+    }
+    DropdownMenu(
+        expanded = isMenuExpanded,
+        onDismissRequest = { isMenuExpanded = false },
+        offset = DpOffset(x = horizontalOffset, y = 0.dp),
+
+        modifier = Modifier
+            .background(surfaceColor)
+            .clip(RoundedCornerShape(12.dp))
+            .border(0.5.dp, primaryColor.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+    ) {
+
+        DropdownMenuItem(
+            text = {
+                Text(
+                    text = stringResource(if (isViewingTomorrow) R.string.menu_view_today else R.string.menu_view_tomorrow),
+                    color = onSurfaceColor
+                )
+            },
+
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.EventNote,
+                    contentDescription = null,
+                    tint = primaryColor
+                )
+            },
+            onClick = {
+                if (isViewingTomorrow) {
+                    viewModel.viewToday()
+                } else {
+                    viewModel.viewTomorrow()
+                }
+                isMenuExpanded = false
+            },
+
+            colors = MenuDefaults.itemColors(
+
+                leadingIconColor = primaryColor,
+                textColor = onSurfaceColor,
+                trailingIconColor = onSurfaceColor,
+                disabledTextColor = Color.Gray,
+                disabledLeadingIconColor = Color.LightGray,
+                disabledTrailingIconColor = Color.LightGray
+            )
+        )
+        DropdownMenuItem(
+            text = {
+                Text(
+                    text = stringResource(
+                        if (hideCompleted) R.string.menu_show_completed else R.string.menu_hide_completed
+                    ),
+                    color = onSurfaceColor
+                )
+            },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.VisibilityOff,
+                    contentDescription = null,
+                    tint = primaryColor
+                )
+            },
+            onClick = {
+                viewModel.toggleHideCompleted()
+                isMenuExpanded = false
+            },
+            colors = MenuDefaults.itemColors(leadingIconColor = primaryColor, textColor = onSurfaceColor)
+        )
+
+        Divider(color = primaryColor.copy(alpha = 0.3f), thickness = 0.5.dp)
+        DropdownMenuItem(
+            text = {
+                Text(
+                    text = stringResource(R.string.menu_mark_all_done),
+                    color = onSurfaceColor
+                )
+            },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.DoneAll,
+                    contentDescription = null,
+                    tint = primaryColor
+                )
+            },
+            onClick = {
+                viewModel.markAllTasksAsDone(selectedDate)
+                isMenuExpanded = false
+            },
+            colors = MenuDefaults.itemColors(leadingIconColor = primaryColor, textColor = onSurfaceColor)
+        )
+    }
+}
+@Composable
+fun formatDateForDisplay(dateToFormat: LocalDate): String {
+    val currentLocale = LocalConfiguration.current.locale
+
+    val formatter = DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", currentLocale)
+    return dateToFormat.format(formatter)
+}
+
+fun translateNumerals(text: String): String {
+    return text
+        .replace('0', '٠')
+        .replace('1', '١')
+        .replace('2', '٢')
+        .replace('3', '٣')
+        .replace('4', '٤')
+        .replace('5', '٥')
+        .replace('6', '٦')
+        .replace('7', '٧')
+        .replace('8', '٨')
+        .replace('9', '٩')
+}
+
+@Composable
 fun formatTimeForDisplay(time24h: String): String {
 
-    return try {
-        val inputFormatter = DateTimeFormatter.ofPattern("HH:mm")
-        val time = LocalTime.parse(time24h, inputFormatter)
+    val currentLanguage = LocalConfiguration.current.locale.language
 
-        val outputFormatter = DateTimeFormatter.ofPattern("hh:mm", Locale("ar"))
+    val outputLocale = if (currentLanguage == "ar") Locale("ar") else Locale.US
 
-        time.format(outputFormatter)
-    } catch (e: Exception) {
-        try {
-            val inputFormatter = SimpleDateFormat("HH:mm", Locale.US)
-            val date: Date? = inputFormatter.parse(time24h)
-            val outputFormatter = SimpleDateFormat("hh:mm", Locale("ar"))
+    try {
+        val inputFormatter = SimpleDateFormat("HH:mm", Locale.US)
+        val date: Date? = inputFormatter.parse(time24h)
 
-            if (date != null) outputFormatter.format(date) else time24h
-        } catch (e2: Exception) {
-            time24h
+        val outputFormatter = SimpleDateFormat("h:mm a", outputLocale)
+
+        if (date != null) {
+            return outputFormatter.format(date)
         }
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
+
+    return time24h
 }
 fun getHourFromTimestamp(timestamp: Long): Int {
     return try {
@@ -97,13 +264,15 @@ fun getHourFromTimestamp(timestamp: Long): Int {
 fun groupEventsIntoTimeBlocks(events: List<TimelineEvent>): List<TimeBlock> {
     if (events.isEmpty()) return emptyList()
 
-    val groupedByHour = events.groupBy { getHourFromTimestamp(it.timestamp) }
+
+    val sortedEvents = events.sortedBy { it.timestamp }
+    val groupedByHour = sortedEvents.groupBy { getHourFromTimestamp(it.timestamp) }
 
     val currentHour = getHourFromTimestamp(System.currentTimeMillis())
-
-
     return groupedByHour.keys
-        .sorted()
+        .sortedBy { hour ->
+            groupedByHour[hour]?.first()?.timestamp ?: 0L
+        }
         .mapNotNull { hour ->
             val hourEvents = groupedByHour[hour]?.sortedBy { it.timestamp }
             if (hourEvents.isNullOrEmpty()) return@mapNotNull null
@@ -116,10 +285,8 @@ fun groupEventsIntoTimeBlocks(events: List<TimelineEvent>): List<TimeBlock> {
             )
         }
 }
-
-
 @Composable
-fun DayMateTopBar() {
+fun DayMateTopBar(viewModel: TimelineViewModel) {
     val isDark = isSystemInDarkTheme()
     val barColor = if (isDark) BackgroundDark else BackgroundLight
     val quotes = listOf(
@@ -161,16 +328,9 @@ fun DayMateTopBar() {
             color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(Modifier.width(8.dp))
-        IconButton(onClick = { /* More actions */ }) {
-            Icon(
-                imageVector = Icons.Filled.MoreVert,
-                contentDescription = stringResource(R.string.more),
-                tint = MaterialTheme.colorScheme.onBackground
-            )
-        }
+        TimelineMenu(viewModel = viewModel)
     }
 }
-
 @Composable
 fun TimelineItem(event: TimelineEvent) {
     val isDark = isSystemInDarkTheme()
@@ -182,7 +342,13 @@ fun TimelineItem(event: TimelineEvent) {
 
     val borderColor = event.iconColor.copy(alpha = 0.3f)
     val containerColor = event.iconColor.copy(alpha = 0.1f)
-
+    val currentLanguage = LocalConfiguration.current.locale.language
+    val rawTimeText = formatTimeForDisplay(event.timeRange)
+    val displayedTime = if (currentLanguage == "ar") {
+        translateNumerals(rawTimeText)
+    } else {
+        rawTimeText
+    }
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -199,12 +365,26 @@ fun TimelineItem(event: TimelineEvent) {
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(event.iconColor.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = iconImageVector),
+                    contentDescription = event.title,
+                    tint = event.iconColor,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
             Spacer(Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-
+                val translatedTitle = getTranslatedTitle(event)
                 Text(
-                    text = event.title,
+                    text = translatedTitle,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     textDecoration = if (event.isDone && event.type == EventType.TODO_TASK)
@@ -212,15 +392,6 @@ fun TimelineItem(event: TimelineEvent) {
                     color = if (event.isDone) Color.Gray else MaterialTheme.colorScheme.onBackground
                 )
 
-                if (event.type == EventType.TODO_TASK && !event.category.isNullOrBlank()) {
-                    Text(
-                        text = event.category!!,
-                        fontSize = 13.sp,
-                        color = Color.Gray,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(Modifier.height(4.dp))
-                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Filled.WatchLater,
@@ -230,7 +401,7 @@ fun TimelineItem(event: TimelineEvent) {
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = formatTimeForDisplay(event.timeRange),
+                        text = displayedTime,
                         fontSize = 14.sp,
                         color = Color.Gray
                     )
@@ -249,9 +420,13 @@ fun TimelineItem(event: TimelineEvent) {
                     )
                 }
             }
+
             Spacer(Modifier.width(8.dp))
 
             if (event.type == EventType.TODO_TASK) {
+                Column(
+                    horizontalAlignment = Alignment.End
+                ) {
 
                     Icon(
                         imageVector = if (event.isDone)
@@ -261,18 +436,40 @@ fun TimelineItem(event: TimelineEvent) {
                         contentDescription = null,
                         tint = if (event.isDone) Color(0xFF4CAF50) else Color.Gray
                     )
-
+                    if (!event.category.isNullOrBlank()) {
+                        Spacer(Modifier.height(4.dp))
+                        val translatedCategory = getTranslatedCategory(event.category!!)
+                        Text(
+                            text = translatedCategory,
+                            fontSize = 10.sp,
+                            color = Color.Gray,
+                            textAlign = TextAlign.End,
+                            maxLines = 1,
+                            modifier = Modifier.widthIn(max = 60.dp)
+                        )
+                    }
+                }
             }
         }
     }
 }
-
 @Composable
 fun TimelineRow(
     timeLabel: String,
     content: @Composable () -> Unit,
     isCurrentHour: Boolean = false
-) {
+)
+{
+    val currentLanguage = LocalConfiguration.current.locale.language
+
+    val rawTimeText = formatTimeForDisplay(timeLabel.take(5))
+    val displayedTime = if (currentLanguage == "ar") {
+        translateNumerals(rawTimeText)
+    } else {
+
+        rawTimeText
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -284,7 +481,7 @@ fun TimelineRow(
             contentAlignment = Alignment.TopCenter
         ) {
             Text(
-                text = timeLabel,
+                text = displayedTime,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.Gray
@@ -359,14 +556,36 @@ fun TimelineScreen(
 
     val isDark = isSystemInDarkTheme()
     val backgroundColor = if (isDark) BackgroundDark else BackgroundLight
-
+    val selectedDate by viewModel.selectedDate.collectAsState()
 
     val timeBlocks = remember(events) {
         groupEventsIntoTimeBlocks(events)
     }
+    val listState = rememberLazyListState()
+    val currentHour = getHourFromTimestamp(System.currentTimeMillis())
+
+    val firstCurrentHourIndex = remember(timeBlocks) {
+        timeBlocks.indexOfFirst { block ->
+            getHourFromTimestamp(block.events.first().timestamp) >= currentHour
+        }.coerceAtLeast(0)
+    }
+
+    LaunchedEffect(timeBlocks) {
+        if (timeBlocks.isNotEmpty() && firstCurrentHourIndex > 0) {
+            listState.animateScrollToItem(firstCurrentHourIndex)
+        }
+    }
+    val currentLanguage = LocalConfiguration.current.locale.language
+
+    val rawDateText = formatDateForDisplay(selectedDate)
+    val displayedDate = if (currentLanguage == "ar") {
+        translateNumerals(rawDateText)
+    } else {
+        rawDateText
+    }
 
     Scaffold(
-        topBar = { DayMateTopBar() },
+        topBar = { DayMateTopBar(viewModel = viewModel) },
         containerColor = backgroundColor
     ) { paddingValues ->
         Column(
@@ -378,7 +597,7 @@ fun TimelineScreen(
 
 
             Text(
-                text = formatDateForDisplay(),
+                text = displayedDate,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -406,6 +625,7 @@ fun TimelineScreen(
             }
         } else {
             LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp, vertical = 8.dp)

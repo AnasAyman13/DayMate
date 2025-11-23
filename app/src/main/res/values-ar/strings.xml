@@ -180,6 +180,12 @@
     <string name="desc_category_icon">أيقونة الفئة</string>
     <string name="desc_task_options">خيارات المهمة</string>
 
+        <string name="category_work">عمل</string>
+        <string name="category_study">دراسة/تعليم</string>
+        <string name="category_personal">شخصي</string>
+        <string name="category_health">صحة/رياضة</string>
+        <string name="category_General">عامة</string>
+
 
 //topBar quotes
     <string name="topbar_quote_1">نظم يومك.. تهب لك الحياة أهدافك</string>
@@ -192,5 +198,13 @@
     <string name="topbar_quote_8">مهمة واحدة مكتملة خير من عشرة مؤجلة</string>
     <string name="topbar_quote_9">تفاصيل يومك، تصنع فارق حياتك</string>
     <string name="topbar_quote_10">وقتك محدود، فاستغله في ما يعنيك</string>
+
+
+
+        <string name="menu_view_tomorrow">عرض أحداث الغد</string>
+        <string name="menu_view_today">العودة لليوم</string>
+        <string name="menu_hide_completed">إخفاء المهام المكتملة</string>
+        <string name="menu_show_completed">إظهار المهام المكتملة</string>
+        <string name="menu_mark_all_done">تحديد الكل كمكتمل</string>
 
 </resources>
