@@ -49,8 +49,8 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 • To-Do List Screen (UI + Logic + RoomDB)  
 • UI/UX  
 • Splash Screen  
-• Profile Screen(UI+Logic & it's screens) 
-• Icons (App Icon + All In-App Icons)  
+• Profile Screen(UI+Logic & it's screens)
+• Icons (App Icon + All In-App Icons) 
 • Managing & Organization  
 • Testing  
 • Pomodoro settings 
@@ -70,26 +70,15 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 • NavigationBar  
 
 **Islam Fawzy**  
-• Facebook Login & SignUp  
-• Google Login & SignUp  
+•  Login & SignUp 
 
 **Youssef Barakat**  
 • Authentication (Login & SignUp)  
 • Firebase  
+• Google Login & SignUp
 
-**Basem Mohamed**  
-• Voice Notes  
+**Basem Mohamed**   
 • Biometric Lock  
-
----
-
-# **KPIs (Key Performance Indicators)**
-Metrics for project success include:  
-• Response time: **<300ms**  
-• System uptime: **>99%**  
-• Cloud sync success rate: **>95%**  
-• User adoption & satisfaction: **≥4.5/5**  
-• Task completion success rate: **>90%**
 
 ---
 
