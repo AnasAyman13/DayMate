@@ -31,14 +31,27 @@ android {
     lint {
         disable += "NullSafeMutableLiveData"
     }
+    signingConfigs {
+        create("release") {
+            // ⚠️ لازم يكون ملف daymate.keystore موجود في:  app/
+            storeFile = file("daymate.keystore")
+            storePassword = "123456"
+            keyAlias = "daymate_key"
+            keyPassword = "123456"
+        }
+    }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
