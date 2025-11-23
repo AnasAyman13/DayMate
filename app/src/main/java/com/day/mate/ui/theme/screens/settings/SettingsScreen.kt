@@ -26,6 +26,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import com.day.mate.AuthActivity
 import com.day.mate.R
 import com.day.mate.data.model.User
@@ -33,9 +34,9 @@ import com.day.mate.util.LocaleUtils
 
 @Composable
 fun SettingsScreenContainer(
+    navController: NavHostController,
     viewModel: SettingsViewModel = viewModel(),
-    onBackClick: () -> Unit = {},
-    onNavigate: (String) -> Unit = {}
+    onBackClick: () -> Unit = {}
 ) {
     LaunchedEffect(Unit) {
         viewModel.loadUser()
@@ -46,7 +47,8 @@ fun SettingsScreenContainer(
 
     LaunchedEffect(state.isLoggedOut) {
         if (state.isLoggedOut) {
-            Toast.makeText(context, "Logged out successfully", Toast.LENGTH_SHORT).show()
+
+            Toast.makeText(context, "Logged out succsusfuly", Toast.LENGTH_SHORT).show()
             val intent = Intent(context, AuthActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             context.startActivity(intent)
@@ -62,7 +64,8 @@ fun SettingsScreenContainer(
         onToggleLanguage = { lang ->
             activity?.let { LocaleUtils.setLocaleAndRestart(it, lang) }
         },
-        onLogout = { viewModel.onLogoutClicked() }
+        onLogout = { viewModel.onLogoutClicked() },
+        onNavigate = { route -> navController.navigate(route) }
     )
 }
 
@@ -74,12 +77,12 @@ fun SettingsScreen(
     onToggleCloudSync: (Boolean) -> Unit,
     onToggleNotifications: (Boolean) -> Unit,
     onToggleLanguage: (String) -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onNavigate: (String) -> Unit
 ) {
     val scroll = rememberScrollState()
     val context = LocalContext.current
     val savedLang = LocaleUtils.getSavedLanguage(context) ?: java.util.Locale.getDefault().language
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -95,7 +98,7 @@ fun SettingsScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBackClick) {
-                Icon(Icons.Outlined.ArrowBack, contentDescription = null)
+                Icon(Icons.Outlined.ArrowBack, contentDescription = stringResource(R.string.desc_back_button))
             }
             Text(
                 stringResource(R.string.settings_title_and_profile),
@@ -110,7 +113,6 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // Appearance + language toggle
         SettingsCard(title = stringResource(R.string.settings_appearance)) {
             SettingsToggleRow(
                 icon = Icons.Outlined.DarkMode,
@@ -118,7 +120,6 @@ fun SettingsScreen(
                 checked = state.darkModeEnabled,
                 onCheckedChange = onToggleDarkMode
             )
-
             Divider(modifier = Modifier.padding(vertical = 4.dp))
 
             SettingsClickableRow(
@@ -160,12 +161,17 @@ fun SettingsScreen(
             SettingsClickableRow(
                 Icons.Outlined.Help,
                 stringResource(R.string.settings_help_support)
-            ) { }
+            ) { onNavigate("help_support") }
             SettingsClickableRow(
                 Icons.Outlined.Gavel,
                 stringResource(R.string.settings_terms_service)
-            ) { }
+            ) { onNavigate("terms") }
+            SettingsClickableRow(
+                Icons.Outlined.Code,
+                stringResource(R.string.settings_developers)
+            ) { onNavigate("developers") }
         }
+
 
         Spacer(Modifier.height(12.dp))
 
@@ -286,33 +292,6 @@ private fun SettingsClickableRow(
             Icons.Outlined.ChevronRight,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun SettingsPreview() {
-    val mockUser = User(
-        id = "1",
-        name = "Alex Doe",
-        email = "alex.doe@daymate.com",
-    )
-    val state = SettingsState(
-        user = mockUser,
-        darkModeEnabled = false,
-        cloudSyncEnabled = true,
-        notificationsEnabled = true
-    )
-    MaterialTheme {
-        SettingsScreen(
-            state = state,
-            onBackClick = {},
-            onToggleDarkMode = {},
-            onToggleCloudSync = {},
-            onToggleNotifications = {},
-            onToggleLanguage = {},
-            onLogout = {}
         )
     }
 }

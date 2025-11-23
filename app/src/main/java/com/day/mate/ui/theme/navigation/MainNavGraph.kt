@@ -30,9 +30,11 @@ import com.day.mate.ui.theme.AppGold
 import com.day.mate.ui.theme.DarkBg
 import com.day.mate.ui.theme.navigation.BottomNavigationBar
 import com.day.mate.ui.theme.navigation.BottomNavItem
+import com.day.mate.ui.theme.screens.settings.DeveloperScreen
 import com.day.mate.ui.theme.screens.timeline.TimelineViewModel
-
 import com.day.mate.ui.theme.screens.pomodoro.PomodoroScreen
+import com.day.mate.ui.theme.screens.settings.HelpSupportScreen
+import com.day.mate.ui.theme.screens.settings.TermsScreen
 import com.day.mate.ui.theme.screens.timeline.TimelineScreen
 import com.day.mate.ui.theme.screens.timeline.TimelineViewModelFactory
 import com.day.mate.ui.theme.screens.todo.CreateTaskScreen
@@ -45,36 +47,23 @@ fun MainNavGraph() {
     val navController = rememberNavController()
     val context = LocalContext.current.applicationContext
 
-    // --- إعداد الـ Repositories و API ---
     val database = remember { AppDatabase.getInstance(context) }
-
     val todoRepository = remember {
         TodoRepository(database.todoDao(), database.categoryDao())
     }
-
-    // 🆕 Repository الخاص بالصلاة: يعتمد على RetrofitInstance.api
     val prayerRepository = remember {
         PrayerRepository(RetrofitInstance.api)
     }
-
-    // --- إعداد الـ ViewModels Factories ---
-
-    // Todo Factory (لـ TasksScreen)
     val todoFactory = remember(todoRepository) { TodoViewModelFactory(todoRepository) }
-
-    // 🆕 Timeline Factory (لـ TimelineScreen)
     val timelineFactory = remember(todoRepository, prayerRepository) {
         TimelineViewModelFactory(todoRepository, prayerRepository)
     }
-
     val todoViewModel: TodoViewModel = viewModel(factory = todoFactory)
-
 
     LaunchedEffect(Unit) {
         todoViewModel.syncFromFirestore()
     }
 
-    // --- إدارة حالة الـ BackStack ---
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -86,7 +75,7 @@ fun MainNavGraph() {
             if (showFab) {
                 FloatingActionButton(
                     onClick = {
-                        todoViewModel.clearForm() // استخدام الـ ViewModel المتاح هنا
+                        todoViewModel.clearForm()
                         navController.navigate("task_screen/new")
                     },
                     containerColor = AppGold,
@@ -103,9 +92,8 @@ fun MainNavGraph() {
             startDestination = BottomNavItem.TimeLine.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            // --- الشاشات الرئيسية ---
+            // الشاشات الرئيسية
             composable(BottomNavItem.TimeLine.route) {
-                // 🚀 الاستدعاء النهائي: استخدام TimelineViewModel الحقيقي
                 val timelineViewModel: TimelineViewModel = viewModel(
                     modelClass = TimelineViewModel::class.java,
                     factory = timelineFactory
@@ -124,13 +112,11 @@ fun MainNavGraph() {
             composable(BottomNavItem.Media.route) { BiometricLockScreen(navController = navController) }
             composable(BottomNavItem.Prayer.route) { PrayerScreen() }
             composable(BottomNavItem.Settings.route) {
-                SettingsScreenContainer(onBackClick = { navController.popBackStack() })
-            }
-            composable("media_vault") {
-                VaultScreen(navController = navController)
+                // عدل SettingsScreenContainer ليأخذ navController
+                SettingsScreenContainer(navController = navController, onBackClick = { navController.popBackStack() })
             }
 
-            // --- شاشة عرض الملفات ---
+            // شاشة عرض الملفات
             composable(
                 route = "viewer/{uri}/{type}",
                 arguments = listOf(
@@ -143,7 +129,7 @@ fun MainNavGraph() {
                 VaultViewerScreen(navController = navController, uri = uri, type = type)
             }
 
-            // --- إنشاء/تعديل مهمة ---
+            // إنشاء/تعديل مهمة
             composable(
                 route = "task_screen/{taskId}",
                 arguments = listOf(navArgument("taskId") { type = NavType.StringType })
@@ -154,6 +140,14 @@ fun MainNavGraph() {
                     viewModel = todoViewModel,
                     taskIdString = taskIdString
                 )
+            }
+
+            // إعدادات: الشاشات الجديدة
+            composable("developers") { DeveloperScreen(onBack = { navController.popBackStack() }) }
+            composable("terms") { TermsScreen(onBack = { navController.popBackStack() }) }
+            composable("help_support") { HelpSupportScreen(onBack = { navController.popBackStack() }) }
+            composable("media_vault") {
+                VaultScreen(navController = navController)
             }
         }
     }
