@@ -58,7 +58,7 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 
 **Mohamed Yousry**  
 
-• UI/UX 
+• UI/UX  
 • Media Screen (UI + Logic + RoomDB)  
 • Login & SignUp (UI)  
 • Onboarding  
@@ -66,12 +66,12 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 
 **Menna Ayman**  
 • Pomodoro (UI & Logic)  
-• Timeline Screen (UI & Logic)
+• Timeline Screen (UI & Logic) 
 • NavigationBar  
 
 **Islam Fawzy**  
 •  Login & SignUp 
-• Firestore (media)
+• Firestore (media) 
 • Authentication (Login & SignUp)
 
 
