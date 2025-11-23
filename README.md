@@ -49,12 +49,16 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 • To-Do List Screen (UI + Logic + RoomDB)  
 • UI/UX  
 • Splash Screen  
-• Profile Screen  
+• Profile Screen(UI + Logic & it's screens) 
 • Icons (App Icon + All In-App Icons)  
 • Managing & Organization  
 • Testing  
+• Pomodoro settings 
+• Translation 
 
 **Mohamed Yousry**  
+
+• UI/UX 
 • Media Screen (UI + Logic + RoomDB)  
 • Login & SignUp (UI)  
 • Onboarding  
@@ -62,7 +66,8 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 
 **Menna Ayman**  
 • Pomodoro (UI & Logic)  
-• Timeline Screen (UI & Logic)  
+• Timeline Screen (UI & Logic)
+• NavigationBar  
 
 **Islam Fawzy**  
 • Facebook Login & SignUp  
