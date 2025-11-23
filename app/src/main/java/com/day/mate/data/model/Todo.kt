@@ -42,6 +42,7 @@ fun Todo.toTimelineEvent(): TimelineEvent {
         iconColor = PrimaryColor,
         isDone = this.isDone,
         isProgress = null,
-        timeLabel = formatTimestampToHourLabel(timestamp)
+        timeLabel = formatTimestampToHourLabel(timestamp),
+        category = this.category
     )
 }

@@ -184,4 +184,15 @@
     <string name="desc_category_icon">Category Icon</string>
     <string name="desc_task_options">Task Options</string>
 
+// topBar quotes
+    <string name="topbar_quote_1">Organize your day, and life will grant you your goals.</string>
+    <string name="topbar_quote_2">The start is half the work, and today is your chance.</string>
+    <string name="topbar_quote_3">Do not postpone today\'s effort until tomorrow, Time is life.</string>
+    <string name="topbar_quote_4">Focus now, and you will find blessing in your time.</string>
+    <string name="topbar_quote_5">Prayer first, then everything will fall into place.</string>
+    <string name="topbar_quote_6">Make every  minute a step towards the peak.</string>
+    <string name="topbar_quote_7">A break is part of achievement. Recharge your energy.</string>
+    <string name="topbar_quote_8">One completed task is better than ten postponed ones.</string>
+    <string name="topbar_quote_9">The details of your day make the difference in your life.</string>
+    <string name="topbar_quote_10">Your time is limited, so spend it on what matters.</string>
 </resources>
