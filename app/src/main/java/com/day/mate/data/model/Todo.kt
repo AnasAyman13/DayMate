@@ -25,7 +25,7 @@ data class Todo(
 )
 fun formatTimestampTo12HourLabel(timestamp: Long): String {
     val date = Date(timestamp)
-    val formatter = SimpleDateFormat("hh:mm a", Locale("ar"))
+    val formatter = SimpleDateFormat("hh:mm a", Locale.forLanguageTag("ar"))
     return formatter.format(date)
 }
 fun Todo.toTimelineEvent(): TimelineEvent {
