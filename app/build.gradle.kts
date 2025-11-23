@@ -32,7 +32,7 @@ android {
         disable += "NullSafeMutableLiveData"
     }
     signingConfigs {
-        create("release") {
+        create("shared") {
             // ⚠️ لازم يكون ملف daymate.keystore موجود في:  app/
             storeFile = file("daymate.keystore")
             storePassword = "123456"
@@ -44,14 +44,14 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("shared")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
         debug {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("shared")
         }
     }
 
