@@ -53,7 +53,7 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 • Icons (App Icon + All In-App Icons)  
 • Managing & Organization  
 • Testing  
-• Pomodoro settings 
+• Pomodoro settings  
 • Translation 
 
 **Mohamed Yousry**  
