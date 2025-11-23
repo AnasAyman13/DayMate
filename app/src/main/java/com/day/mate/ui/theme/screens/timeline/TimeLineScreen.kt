@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -54,6 +55,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Divider
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 
 
@@ -289,6 +293,14 @@ fun groupEventsIntoTimeBlocks(events: List<TimelineEvent>): List<TimeBlock> {
 fun DayMateTopBar(viewModel: TimelineViewModel) {
     val isDark = isSystemInDarkTheme()
     val barColor = if (isDark) BackgroundDark else BackgroundLight
+    val BrushColor1 = MaterialTheme.colorScheme.primary
+    val BrushColor2 = Color(0xFFD4AF37)
+
+    val quoteBrush = remember {
+        Brush.linearGradient(
+            colors = listOf(BrushColor1, BrushColor2)
+        )
+    }
     val quotes = listOf(
         stringResource(R.string.topbar_quote_1),
         stringResource(R.string.topbar_quote_2),
@@ -316,16 +328,20 @@ fun DayMateTopBar(viewModel: TimelineViewModel) {
             painter = painterResource(id = R.drawable.forgrnd),
             contentDescription = null,
             tint = Color.Unspecified,
-            modifier = Modifier.size(52.dp)
+            modifier = Modifier.size(62.dp)
         )
         Spacer(Modifier.width(8.dp))
+        val GoldColor = Color(0xFFD4AF37)
         Text(
             text = randomQuote,
             fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.ExtraBold,
             modifier = Modifier.weight(1f),
             textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onBackground
+            fontStyle = FontStyle.Italic,
+            style = TextStyle(
+                brush = quoteBrush
+            )
         )
         Spacer(Modifier.width(8.dp))
         TimelineMenu(viewModel = viewModel)

@@ -83,6 +83,7 @@
     <string name="settings_log_out">Log Out</string>
     <string name="settings_change_to_arabic">Change language to Arabic</string>
     <string name="settings_change_to_english">Change language to English</string>
+    <string name="settings_developers">Developers</string>
 
 
 
@@ -185,14 +186,33 @@
     <string name="desc_task_options">Task Options</string>
 
 // topBar quotes
-    <string name="topbar_quote_1">Organize your day, and life will grant you your goals.</string>
-    <string name="topbar_quote_2">The start is half the work, and today is your chance.</string>
-    <string name="topbar_quote_3">Do not postpone today\'s effort until tomorrow, Time is life.</string>
-    <string name="topbar_quote_4">Focus now, and you will find blessing in your time.</string>
-    <string name="topbar_quote_5">Prayer first, then everything will fall into place.</string>
-    <string name="topbar_quote_6">Make every  minute a step towards the peak.</string>
-    <string name="topbar_quote_7">A break is part of achievement. Recharge your energy.</string>
-    <string name="topbar_quote_8">One completed task is better than ten postponed ones.</string>
-    <string name="topbar_quote_9">The details of your day make the difference in your life.</string>
-    <string name="topbar_quote_10">Your time is limited, so spend it on what matters.</string>
+    <string name="topbar_quote_1">Organize your day, and life will grant you your goals</string>
+    <string name="topbar_quote_2">The start is half the work, and today is your chance</string>
+    <string name="topbar_quote_3">Every struggle is building the strength you
+</string>
+    <string name="topbar_quote_4">Focus now, and you will find blessing in your time</string>
+    <string name="topbar_quote_5">Prayer first, then everything will fall into place</string>
+    <string name="topbar_quote_6">Make every  minute a step towards the peak</string>
+    <string name="topbar_quote_7">Hope is the spark; hard work is the fire
+</string>
+    <string name="topbar_quote_8">Keep going—your moment is on its way</string>
+    <string name="topbar_quote_9">Where there is effort, there is always a way</string>
+    <string name="topbar_quote_10">Don’t give up; the future is kinder than you </string>
+    <string name="topbar_quote_11">Progress is progress, no matter how slow.
+ </string>
+    <string name="topbar_quote_12">Stay hopeful, stay patient, stay persistent </string>
+    <string name="topbar_quote_13">The harder you work, the luckier you </string>
+    <string name="topbar_quote_14">Hope wins when you refuse to quit </string>
+
+
+    <string name="category_work">Work</string>
+    <string name="category_study">Study/Education</string>
+    <string name="category_personal">Personal</string>
+    <string name="category_health">Health/Fitness</string>
+    <string name="category_General">General</string>
+    <string name="menu_view_tomorrow">View Tomorrow\'s Tasks</string>
+    <string name="menu_view_today">View Today</string>
+    <string name="menu_hide_completed">Hide Completed Tasks</string>
+    <string name="menu_show_completed">Show Completed Tasks</string>
+    <string name="menu_mark_all_done">Mark All Done</string>
 </resources>

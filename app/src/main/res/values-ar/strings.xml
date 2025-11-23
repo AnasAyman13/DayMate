@@ -189,16 +189,20 @@
 
 
 //topBar quotes
-    <string name="topbar_quote_1">نظم يومك.. تهب لك الحياة أهدافك</string>
-    <string name="topbar_quote_2">البداية هي نصف العمل، واليوم هو فرصتك</string>
-    <string name="topbar_quote_3">لا تؤجل همة اليوم لغد، الوقت هو الحياة</string>
-    <string name="topbar_quote_4">ركز الآن، وستجد البركة في وقتك</string>
-    <string name="topbar_quote_5">الصلاة أولاً، ثم كل شيء سيأخذ مكانه</string>
-    <string name="topbar_quote_6">اجعل كل دقيقة خطوة نحو القمة</string>
-    <string name="topbar_quote_7">الاستراحة جزء من الإنجاز، أعد شحن طاقتك</string>
-    <string name="topbar_quote_8">مهمة واحدة مكتملة خير من عشرة مؤجلة</string>
-    <string name="topbar_quote_9">تفاصيل يومك، تصنع فارق حياتك</string>
-    <string name="topbar_quote_10">وقتك محدود، فاستغله في ما يعنيك</string>
+    <string name="topbar_quote_1">نظّم يومك، وستمنحك الحياة أهدافك.</string>
+    <string name="topbar_quote_2">البداية هي نصف العمل، ويومك هذا هو فرصتك.</string>
+    <string name="topbar_quote_3">كل عثرة تبني القوة التي تحتاجها.</string>
+    <string name="topbar_quote_4">ركّز الآن، وستجد البركة في وقتك.</string>
+    <string name="topbar_quote_5">الصلاة أولاً، ثم سيعود كل شيء لمكانه.</string>
+    <string name="topbar_quote_6">اجعل كل دقيقة خطوة نحو القمة.</string>
+    <string name="topbar_quote_7">الأمل هو الشرارة؛ والعمل الجاد هو النار.</string>
+    <string name="topbar_quote_8">استمر—لحظتك قادمة في الطريق.</string>
+    <string name="topbar_quote_9">حيث يوجد الجهد، يوجد دائماً الطريق.</string>
+    <string name="topbar_quote_10">لا تستسلم؛ المستقبل أرحم مما تظن.</string>
+    <string name="topbar_quote_11">التقدم يبقى تقدماً، مهما كان بطيئاً.</string>
+    <string name="topbar_quote_12">كن متفائلاً، كن صبوراً، كن مثابراً.</string>
+    <string name="topbar_quote_13">كلما عملت بجهد أكبر، كنت أوفر حظاً.</string>
+    <string name="topbar_quote_14">الأمل ينتصر حين ترفض الاستسلام.</string>
 
 
 
