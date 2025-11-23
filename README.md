@@ -66,19 +66,19 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 
 **Menna Ayman**  
 • Pomodoro (UI & Logic)  
-• Timeline Screen (UI & Logic) 
+• Timeline Screen (UI & Logic)  
 • NavigationBar  
 
 **Islam Fawzy**  
-•  Login & SignUp 
+•  Login & SignUp  
 • Firestore (media)  
-• Authentication (Login & SignUp)
+• Authentication (Login & SignUp) 
 
 
 **Youssef Barakat**  
 • Authentication (Login & SignUp)  
 • Firebase  
-• Google Login & SignUp
+• Google Login & SignUp  
 • Firestore (Tasks)
 
 **Basem Mohamed**   
