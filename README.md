@@ -49,7 +49,7 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 • To-Do List Screen (UI + Logic + RoomDB)  
 • UI/UX  
 • Splash Screen  
-• Profile Screen(UI + Logic & it's screens) 
+• Profile Screen(UI+Logic & it's screens) 
 • Icons (App Icon + All In-App Icons)  
 • Managing & Organization  
 • Testing  
