@@ -22,11 +22,28 @@ class SplashScreen : ComponentActivity() {
             DayMateDarkTheme {
                 SplashScreenComposable {
                     if (isFirstTime) {
+
                         sharedPref.edit().putBoolean("isFirstTime", false).apply()
+
                         startActivity(Intent(this, OnboardingActivity1::class.java))
+
+                        // ⭐ ترانزيشن الخروج من الـ Splash
+                        overridePendingTransition(
+                            android.R.anim.fade_in,
+                            android.R.anim.fade_out
+                        )
+
                     } else {
+
                         startActivity(Intent(this, AuthActivity::class.java))
+
+                        // ⭐ ترانزيشن انزلاق
+                        overridePendingTransition(
+                            android.R.anim.slide_in_left,
+                            android.R.anim.slide_out_right
+                        )
                     }
+
                     finish()
                 }
             }
