@@ -65,6 +65,7 @@ fun SettingsScreenContainer(
             activity?.let { LocaleUtils.setLocaleAndRestart(it, lang) }
         },
         onLogout = { viewModel.onLogoutClicked() },
+        onChangePassword = { viewModel.onChangePasswordClicked(context) },
         onNavigate = { route -> navController.navigate(route) }
     )
 }
@@ -78,7 +79,8 @@ fun SettingsScreen(
     onToggleNotifications: (Boolean) -> Unit,
     onToggleLanguage: (String) -> Unit,
     onLogout: () -> Unit,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    onChangePassword: () -> Unit
 ) {
     val scroll = rememberScrollState()
     val context = LocalContext.current
@@ -154,7 +156,7 @@ fun SettingsScreen(
             SettingsClickableRow(
                 Icons.Outlined.Password,
                 stringResource(R.string.settings_change_password)
-            ) { }
+            ) { onChangePassword() }
         }
 
         SettingsCard(title = stringResource(R.string.settings_support_legal)) {
