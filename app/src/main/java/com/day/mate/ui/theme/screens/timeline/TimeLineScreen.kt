@@ -628,18 +628,38 @@ fun TimelineScreen(
                 color = Color.LightGray.copy(alpha = 0.5f),
                 thickness = 0.5.dp
             )
-        if (timeBlocks.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = stringResource(R.string.timeline_empty_or_loading),
-                    color = Color.Gray
-                )
-            }
-        } else {
+            val isLoading by viewModel.isLoading.collectAsState(initial = true) // 🚨 تأكد من جلب هذا المتغير
+            val events by viewModel.timelineEvents.collectAsState()
+
+            // ... (بقية الكود) ...
+
+            if (isLoading) {
+                // حالة التحميل (Loading)
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
+            } else if (timeBlocks.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.no_events_message),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 32.dp)
+                    )
+                }
+            } else {
             LazyColumn(
                 state = listState,
                 modifier = Modifier
@@ -654,4 +674,4 @@ fun TimelineScreen(
         }
     }
 }
-    }
+}

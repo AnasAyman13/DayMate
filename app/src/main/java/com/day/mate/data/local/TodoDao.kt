@@ -27,7 +27,8 @@ interface TodoDao {
 
     @Query("DELETE FROM todos")
     suspend fun clearAll()
-
+    @Query("UPDATE todos SET isDone = 1 WHERE date = :dateString AND isDone = 0")
+    suspend fun markAllTasksAsDoneByDate(dateString: String)
     // (New Function)
     @Query("SELECT COUNT(*) FROM todos WHERE category = :categoryName")
     suspend fun countTasksWithCategory(categoryName: String): Int

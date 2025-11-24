@@ -206,7 +206,7 @@
 
 
     <string name="category_work">Work</string>
-    <string name="category_study">Study/Education</string>
+    <string name="category_study">Study</string>
     <string name="category_personal">Personal</string>
     <string name="category_health">Health/Fitness</string>
     <string name="category_General">General</string>
@@ -215,4 +215,6 @@
     <string name="menu_hide_completed">Hide Completed Tasks</string>
     <string name="menu_show_completed">Show Completed Tasks</string>
     <string name="menu_mark_all_done">Mark All Done</string>
+
+    <string name="no_events_message">There is no events</string>
 </resources>

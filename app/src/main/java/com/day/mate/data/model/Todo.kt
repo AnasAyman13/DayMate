@@ -23,6 +23,7 @@ data class Todo(
 
     val isDone: Boolean
 )
+
 fun formatTimestampTo12HourLabel(timestamp: Long): String {
     val date = Date(timestamp)
     val formatter = SimpleDateFormat("hh:mm a", Locale.forLanguageTag("ar"))

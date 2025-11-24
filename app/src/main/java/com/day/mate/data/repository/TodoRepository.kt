@@ -28,6 +28,9 @@ class TodoRepository(
         val newId = todoDao.insert(todo.toEntity()).toInt()
         return newId
     }
+    suspend fun markAllTasksAsDone(dateString: String) {
+        todoDao.markAllTasksAsDoneByDate(dateString)
+    }
 
     suspend fun update(todo: Todo) {
         todoDao.update(todo.toEntity())
@@ -59,6 +62,7 @@ class TodoRepository(
         categoryDao.deleteCategoryByName(name)
     }
 }
+
 
 
 // --- Mapping functions ---
