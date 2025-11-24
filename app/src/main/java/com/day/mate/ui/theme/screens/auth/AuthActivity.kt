@@ -34,7 +34,7 @@ class AuthActivity : ComponentActivity() {
 
             val idToken = account?.idToken
             if (idToken != null) {
-                authViewModel.firebaseAuthWithGoogle(idToken)
+                authViewModel.firebaseAuthWithGoogle(idToken,this)
             } else {
                 println("Google Sign-In failed: ID Token is null")
             }

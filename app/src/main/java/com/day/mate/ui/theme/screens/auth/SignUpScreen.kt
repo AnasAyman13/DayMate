@@ -53,7 +53,7 @@ fun SignUpScreen(
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
         try {
             val account: GoogleSignInAccount? = task.getResult(ApiException::class.java)
-            account?.idToken?.let { viewModel.firebaseAuthWithGoogle(it) } ?: run {
+            account?.idToken?.let { viewModel.firebaseAuthWithGoogle(it,context) } ?: run {
                 Toast.makeText(context, "Google Sign-up failed: Token missing", Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {

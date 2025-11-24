@@ -26,11 +26,12 @@ class AuthViewModel : ViewModel() {
 
     private lateinit var googleSignInClient: GoogleSignInClient
 
-
-
+    private fun saveLoginMethod(context: Context, method: String) {
+        val prefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+        prefs.edit().putString("login_method", method).apply()
+    }
 
     // --- Google Sign-In Functions ---
-
     fun initGoogleClient(context: Context, webClientId: String) {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(webClientId)
@@ -46,12 +47,13 @@ class AuthViewModel : ViewModel() {
         return googleSignInClient.signInIntent
     }
 
-    fun firebaseAuthWithGoogle(idToken: String) {
+    fun firebaseAuthWithGoogle(idToken: String, context: Context) {
         _state.value = AuthUiState.Loading
         val credential = GoogleAuthProvider.getCredential(idToken, null)
 
         auth.signInWithCredential(credential).addOnCompleteListener { task ->
             if (task.isSuccessful) {
+                saveLoginMethod(context, "google")
                 val firebaseUser = auth.currentUser
                 if (firebaseUser == null) {
                     _state.value = AuthUiState.Error("Google login failed: no user")
@@ -106,6 +108,7 @@ class AuthViewModel : ViewModel() {
             if (task.isSuccessful) {
                 val user = auth.currentUser
                 if (user != null && user.isEmailVerified) {
+                    saveLoginMethod(context, "password")
                     Toast.makeText(context, "Welcome back!", Toast.LENGTH_SHORT).show()
                     _state.value = AuthUiState.Success
 

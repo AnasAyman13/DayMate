@@ -1,5 +1,8 @@
 package com.day.mate.ui.screens.settings
 
+import android.content.Context
+import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.day.mate.data.model.User
@@ -66,6 +69,29 @@ class SettingsViewModel : ViewModel() {
         viewModelScope.launch {
             auth.signOut()
             _uiState.value = _uiState.value.copy(isLoggedOut = true)
+        }
+    }
+    fun onChangePasswordClicked(context: Context) {
+
+        val user = auth.currentUser
+        if (user == null) {
+            Toast.makeText(context, "No user is currently logged in.", Toast.LENGTH_LONG).show()
+            return
+        }
+        val prefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+        val method = prefs.getString("login_method", "unknown")
+
+        when (method) {
+            "google" -> { Toast.makeText(context, "You are signed in with Google!", Toast.LENGTH_LONG).show() }
+            "password" -> {
+                val email = user.email
+                if (email != null) {
+                    auth.sendPasswordResetEmail(email)
+                        .addOnSuccessListener { Toast.makeText(context, "A password reset email has been sent to $email.", Toast.LENGTH_LONG).show() }
+                }
+            }
+
+            else -> { Toast.makeText(context, "Unable to detect your login method.", Toast.LENGTH_LONG).show() }
         }
     }
 }
