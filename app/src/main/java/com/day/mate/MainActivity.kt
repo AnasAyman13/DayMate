@@ -8,13 +8,24 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.day.mate.data.local.AppDatabase
+import com.day.mate.data.repository.TodoRepository
 import com.day.mate.ui.theme.DayMateTheme
 import com.day.mate.ui.theme.screens.media.MainNavGraph
+import com.day.mate.ui.theme.screens.todo.TodoViewModel
+import com.day.mate.ui.theme.screens.todo.TodoViewModelFactory
 import com.day.mate.util.LocaleUtils
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var todoRepository: TodoRepository
+
+    private val todoViewModel: TodoViewModel by viewModels {
+        TodoViewModelFactory(todoRepository)
+    }
 
     // ⚡ ضروري علشان اللغة تتطبق قبل UI
     override fun attachBaseContext(newBase: Context?) {
@@ -24,6 +35,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val db = AppDatabase.getInstance(this)
+        todoRepository = TodoRepository(
+            todoDao = db.todoDao(),
+            categoryDao = db.categoryDao()
+        )
+        todoViewModel.initReminderScheduler(this)
 
         // 🗺️ طلب صلاحية الموقع
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)

@@ -84,6 +84,10 @@
             android:name="com.day.mate.data.local.AdhanReceiver"
             android:enabled="true"
             android:exported="false" />
+        <receiver
+            android:name="com.day.mate.data.local.reminder.ReminderReceiver"
+            android:exported="false" />
+
 
         <receiver
             android:name=".ui.theme.screens.prayer.BootReceiver"

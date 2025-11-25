@@ -1,7 +1,9 @@
 package com.day.mate.ui.theme.screens.todo
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.day.mate.data.local.reminder.ReminderScheduler
 import com.day.mate.data.model.Todo
 import com.day.mate.data.repository.TodoRepository
 import com.google.firebase.auth.FirebaseAuth
@@ -40,6 +42,12 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
     val time: StateFlow<LocalTime> = _time.asStateFlow()
     private val _remindMe = MutableStateFlow(true)
     val remindMe: StateFlow<Boolean> = _remindMe.asStateFlow()
+
+    private var reminderScheduler: ReminderScheduler? = null
+
+    fun initReminderScheduler(context: Context) {
+        reminderScheduler = ReminderScheduler(context)
+    }
 
 
     init {
@@ -149,6 +157,9 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
             val remoteId = addTodoToFirestore(insertedTodo)
 
             repository.update(insertedTodo.copy(remoteId = remoteId))
+
+            // Schedule reminder
+            reminderScheduler?.schedule(insertedTodo.copy(remoteId = remoteId))
         }
     }
 
@@ -173,6 +184,14 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
             )
             repository.update(updatedTodo)
             updateTodoInFirestore(updatedTodo)
+
+            // Cancel old reminder
+            reminderScheduler?.cancel(id)
+
+            // Schedule new reminder
+            if (updatedTodo.remindMe) {
+                reminderScheduler?.schedule(updatedTodo)
+            }
         }
     }
 
@@ -299,6 +318,7 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
         viewModelScope.launch {
             repository.delete(todo)
             deleteTodoFromFirestore(todo)
+            reminderScheduler?.cancel(todo.id)
         }
     }
 }
