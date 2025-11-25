@@ -13,7 +13,7 @@ class ReminderReceiver : BroadcastReceiver() {
 
         if (todoId == -1) return
 
-        // هنا بنعرض النوتفكيشن بصوت + فايبريشن + Click يفتح الاب
+
         NotificationHelper.showTodoReminderNotification(
             context = context,
             todoId = todoId,
