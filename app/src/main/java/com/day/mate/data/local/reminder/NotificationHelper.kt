@@ -20,13 +20,11 @@ object NotificationHelper {
         title: String,
         description: String
     ) {
-        // لازم نتأكد إن الـ Channel موجود
+
         createNotificationChannelIfNeeded(context)
 
-        // الصوت (ممكن بعدين نحطه من raw لو حابب)
         val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
 
-        // لما تدوس على النوتفكيشن تفتح الاب وتوصل التاسك
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra(ReminderConstants.EXTRA_TODO_ID, todoId)
@@ -34,15 +32,15 @@ object NotificationHelper {
 
         val pendingIntent = PendingIntent.getActivity(
             context,
-            todoId, // نخلي الـ requestCode هو الـ id علشان يبقى مميز
+            todoId,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val vibrationPattern = longArrayOf(0, 800, 400, 800, 400, 800) // فايبريشن قوي شوية
+        val vibrationPattern = longArrayOf(0, 800, 400, 800, 400, 800)
 
         val notification = NotificationCompat.Builder(context, ReminderConstants.CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_todo_filled) // حط أي أيقونة موجودة عندك
+            .setSmallIcon(R.drawable.ic_todo_filled)
             .setContentTitle(title)
             .setContentText(description.ifEmpty { "You have a task to do" })
             .setStyle(
@@ -60,7 +58,6 @@ object NotificationHelper {
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // ممكن نستخدم id مخصوص لكل تاسك
         val notificationId = ReminderConstants.NOTIFICATION_ID_BASE + todoId
         notificationManager.notify(notificationId, notification)
     }

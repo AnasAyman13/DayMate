@@ -20,7 +20,7 @@ class ReminderScheduler(private val context: Context) {
     fun schedule(todo: Todo) {
         if (!todo.remindMe) return
 
-        // date: "2025-11-07" , time: "13:30"
+
         val date = LocalDate.parse(todo.date)
         val time = LocalTime.parse(todo.time)
         val dateTime = LocalDateTime.of(date, time)
