@@ -86,11 +86,6 @@
             android:exported="false" />
 
         <receiver
-            android:name=".reminder.TaskReminderReceiver"
-            android:exported="true" />
-
-
-        <receiver
             android:name=".ui.theme.screens.prayer.BootReceiver"
             android:enabled="true"
             android:exported="false">
@@ -99,17 +94,6 @@
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
             </intent-filter>
         </receiver>
-
-        <receiver
-            android:name="com.day.mate.reminder.TaskBootReceiver"
-            android:enabled="true"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-            </intent-filter>
-        </receiver>
-
 
 
 
