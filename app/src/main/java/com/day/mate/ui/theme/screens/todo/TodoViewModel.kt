@@ -1,9 +1,14 @@
 package com.day.mate.ui.theme.screens.todo
 
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.day.mate.data.model.Todo
 import com.day.mate.data.repository.TodoRepository
+import com.day.mate.reminder.TaskReminderReceiver
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,7 +17,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
@@ -299,6 +306,73 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
         viewModelScope.launch {
             repository.delete(todo)
             deleteTodoFromFirestore(todo)
+        }
+    }
+
+    fun scheduleReminder(context: Context, todo: Todo) {
+        try {
+            if (!todo.remindMe) return
+
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+            val localDate = LocalDate.parse(todo.date)
+            val localTime = LocalTime.parse(todo.time)
+
+            // تحويل التاريخ والوقت إلى milliseconds
+            val triggerTime = LocalDateTime.of(localDate, localTime)
+                .atZone(ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli()
+
+            val intent = Intent(context, TaskReminderReceiver::class.java).apply {
+                putExtra("title", todo.title)
+                putExtra("description", todo.description)
+            }
+
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                todo.id,   // مهم يكون unique
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                if (!alarmManager.canScheduleExactAlarms()) {
+                    return
+                }
+            }
+
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                triggerTime,
+                pendingIntent
+            )
+
+
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun cancelReminder(context: Context, todo: Todo) {
+        try {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+            val intent = Intent(context, TaskReminderReceiver::class.java)
+
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                todo.id,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            alarmManager.cancel(pendingIntent)
+
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }

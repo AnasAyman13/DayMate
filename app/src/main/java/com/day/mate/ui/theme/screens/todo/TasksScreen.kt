@@ -98,6 +98,13 @@ fun TasksScreen(
     var categoryErrorMessage by remember { mutableStateOf("") }
     val context = LocalContext.current
 
+    LaunchedEffect(allTodos) {
+        val last = allTodos.lastOrNull()
+        if (last != null && last.remindMe) {
+            viewModel.scheduleReminder(context, last)
+        }
+    }
+
     if (isLandscape) {
         // Landscape Layout
         Row(
