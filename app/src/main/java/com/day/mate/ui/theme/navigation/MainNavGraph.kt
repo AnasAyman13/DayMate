@@ -43,7 +43,7 @@ import com.day.mate.ui.theme.screens.todo.TodoViewModel
 import com.day.mate.ui.theme.screens.todo.TodoViewModelFactory
 
 @Composable
-fun MainNavGraph() {
+fun MainNavGraph(taskIdFromNotification: Int? = -1) {
     val navController = rememberNavController()
     val context = LocalContext.current.applicationContext
 
@@ -69,6 +69,12 @@ fun MainNavGraph() {
 
     val showFab = currentRoute == BottomNavItem.TimeLine.route ||
             currentRoute == BottomNavItem.Todo.route
+
+    LaunchedEffect(taskIdFromNotification) {
+        if (taskIdFromNotification != null && taskIdFromNotification != -1) {
+            navController.navigate(BottomNavItem.Todo.route)
+        }
+    }
 
     Scaffold(
         floatingActionButton = {
