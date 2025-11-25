@@ -186,6 +186,7 @@
         <string name="category_personal">شخصي</string>
         <string name="category_health">صحة/رياضة</string>
         <string name="category_General">عامة</string>
+        <string name="delete_toast">هل تريد حذف هذه المهمة؟</string>
 
 
 //topBar quotes

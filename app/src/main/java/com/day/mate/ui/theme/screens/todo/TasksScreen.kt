@@ -41,7 +41,6 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.verticalScroll
 import kotlin.math.roundToInt
@@ -58,6 +57,7 @@ private fun getCategoryStyle(category: String): CategoryStyle {
     }
 }
 private data class CategoryStyle(val color: Color, val icon: ImageVector)
+
 
 @Composable
 fun TasksScreen(
@@ -235,7 +235,7 @@ fun TasksScreen(
                     ListHeader(stringResource(R.string.header_in_progress))
                 }
                 items(inProgress, key = { "task_${it.id}" }) { todo ->
-                    TaskItem(
+                    SwipeToDeleteTaskItem(
                         todo = todo,
                         onToggle = { viewModel.toggleTodoDone(todo) },
                         onDelete = { viewModel.deleteTodo(todo) },
@@ -248,7 +248,7 @@ fun TasksScreen(
                     ListHeader(stringResource(R.string.header_completed))
                 }
                 items(completed, key = { "task_${it.id}" }) { todo ->
-                    TaskItem(
+                    SwipeToDeleteTaskItem(
                         todo = todo,
                         onToggle = { viewModel.toggleTodoDone(todo) },
                         onDelete = { viewModel.deleteTodo(todo) },
@@ -259,14 +259,9 @@ fun TasksScreen(
                 if (inProgress.isEmpty() && completed.isEmpty()) {
                     item(key = "empty_state") {
                         Text(
-                            stringResource(
-                                R.string.empty_tasks,
-                                selectedDate.format(DateTimeFormatter.ofPattern("dd MMMM"))
-                            ),
+                            stringResource(R.string.empty_tasks, selectedDate.format(DateTimeFormatter.ofPattern("dd MMMM"))),
                             color = DarkTextHint,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 50.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 50.dp),
                             textAlign = TextAlign.Center
                         )
                     }
@@ -340,11 +335,7 @@ fun TasksScreen(
                         .clip(CircleShape)
                         .background(DarkField)
                 ) {
-                    Icon(
-                        Icons.Default.Settings,
-                        stringResource(R.string.manage_categories),
-                        tint = DarkTextHint
-                    )
+                    Icon(Icons.Default.Settings, stringResource(R.string.manage_categories), tint = DarkTextHint)
                 }
             }
             Spacer(Modifier.height(24.dp))
@@ -357,7 +348,7 @@ fun TasksScreen(
                     ListHeader(stringResource(R.string.header_in_progress))
                 }
                 items(inProgress, key = { "task_${it.id}" }) { todo ->
-                    TaskItem(
+                    SwipeToDeleteTaskItem(
                         todo = todo,
                         onToggle = { viewModel.toggleTodoDone(todo) },
                         onDelete = { viewModel.deleteTodo(todo) },
@@ -370,7 +361,7 @@ fun TasksScreen(
                     ListHeader(stringResource(R.string.header_completed))
                 }
                 items(completed, key = { "task_${it.id}" }) { todo ->
-                    TaskItem(
+                    SwipeToDeleteTaskItem(
                         todo = todo,
                         onToggle = { viewModel.toggleTodoDone(todo) },
                         onDelete = { viewModel.deleteTodo(todo) },
@@ -381,14 +372,9 @@ fun TasksScreen(
                 if (inProgress.isEmpty() && completed.isEmpty()) {
                     item(key = "empty_state") {
                         Text(
-                            stringResource(
-                                R.string.empty_tasks,
-                                selectedDate.format(DateTimeFormatter.ofPattern("dd MMMM"))
-                            ),
+                            stringResource(R.string.empty_tasks, selectedDate.format(DateTimeFormatter.ofPattern("dd MMMM"))),
                             color = DarkTextHint,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 50.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 50.dp),
                             textAlign = TextAlign.Center
                         )
                     }
@@ -397,18 +383,46 @@ fun TasksScreen(
         }
     }
 
-    MaterialDialog(
-        dialogState = dateDialogState,
-        backgroundColor = DarkBg,
-        buttons = {
-            positiveButton(stringResource(R.string.dialog_ok))
-            negativeButton(stringResource(R.string.dialog_cancel))
-        }
-    ) {
-        Box(
-            modifier = Modifier
+    // Dialog للتقويم - مختلف حسب الـ orientation
+    if (isLandscape) {
+        // Landscape - مع scroll
+        MaterialDialog(
+            dialogState = dateDialogState,
+            backgroundColor = DarkBg,
+            buttons = {
+                positiveButton(stringResource(R.string.dialog_ok))
+                negativeButton(stringResource(R.string.dialog_cancel))
+            }
+        ) {
+            Column(modifier = Modifier
                 .fillMaxWidth()
-                .height(350.dp)
+                .heightIn(max = 300.dp)
+                .verticalScroll(rememberScrollState())
+            ) {
+                datepicker(
+                    initialDate = selectedDate,
+                    title = stringResource(R.string.select_date),
+                    onDateChange = { selectedDate = it },
+                    colors = com.vanpra.composematerialdialogs.datetime.date.DatePickerDefaults.colors(
+                        headerBackgroundColor = MaterialTheme.colorScheme.primary,
+                        headerTextColor = MaterialTheme.colorScheme.onPrimary,
+                        calendarHeaderTextColor = DarkText,
+                        dateActiveBackgroundColor = AppGold,
+                        dateActiveTextColor = DarkBg,
+                        dateInactiveTextColor = DarkText
+                    )
+                )
+            }
+        }
+    } else {
+        // Portrait - بدون scroll (عادي)
+        MaterialDialog(
+            dialogState = dateDialogState,
+            backgroundColor = DarkBg,
+            buttons = {
+                positiveButton(stringResource(R.string.dialog_ok))
+                negativeButton(stringResource(R.string.dialog_cancel))
+            }
         ) {
             datepicker(
                 initialDate = selectedDate,
@@ -433,12 +447,9 @@ fun TasksScreen(
             onError = { errorKey ->
                 val errorId = try {
                     context.resources.getIdentifier(errorKey, "string", context.packageName)
-                } catch (e: Exception) {
-                    0
-                }
+                } catch (e: Exception) { 0 }
 
-                categoryErrorMessage =
-                    if (errorId != 0) context.getString(errorId) else errorKey
+                categoryErrorMessage = if (errorId != 0) context.getString(errorId) else errorKey
                 showManageCategoriesDialog = false
                 showCategoryErrorDialog = true
             }
@@ -470,12 +481,7 @@ fun ManageCategoriesDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Text(
-                stringResource(R.string.dialog_manage_categories),
-                color = DarkText
-            )
-        },
+        title = { Text(stringResource(R.string.dialog_manage_categories), color = DarkText) },
         text = {
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
                 items(categories, key = { it }) { categoryName ->
@@ -492,8 +498,7 @@ fun ManageCategoriesDialog(
                         }) {
                             Icon(
                                 Icons.Default.Delete,
-                                contentDescription = stringResource(R.string.dialog_delete) +
-                                        " $categoryName",
+                                contentDescription = stringResource(R.string.dialog_delete) + " $categoryName",
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
@@ -521,13 +526,131 @@ fun ListHeader(text: String) {
         modifier = Modifier.padding(bottom = 8.dp, top = 8.dp)
     )
 }
+@Composable
+fun SwipeToDeleteTaskItem(
+    todo: Todo,
+    onToggle: () -> Unit,
+    onDelete: () -> Unit,
+    onEdit: () -> Unit,
+    isCompact: Boolean = false
+) {
+    var offsetX by remember { mutableStateOf(0f) }
+    val animatedOffsetX by animateFloatAsState(
+        targetValue = offsetX,
+        animationSpec = tween(durationMillis = 100, easing = LinearEasing),
+        label = "swipe_animation"
+    )
+
+    val density = LocalDensity.current
+    val swipeThreshold = with(density) { 100.dp.toPx() }
+    val maxSwipe = with(density) { 200.dp.toPx() }
+
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = if (isCompact) 4.dp else 8.dp)
+    ) {
+        // Background Delete Icon - بس يظهر لما offsetX أقل من 0
+        if (animatedOffsetX < -10f) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(RoundedCornerShape(if (isCompact) 12.dp else 16.dp))
+                    .background(Color(0xFF8B0000)), // أحمر غامق
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Delete",
+                    tint = Color.White,
+                    modifier = Modifier.padding(end = 24.dp)
+                )
+            }
+        }
+
+        // Task Card with Swipe
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset { IntOffset(animatedOffsetX.roundToInt(), 0) }
+                .pointerInput(todo.id) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            if (offsetX < -swipeThreshold) {
+                                showDeleteDialog = true
+                                offsetX = 0f
+                            } else {
+                                offsetX = 0f
+                            }
+                        },
+                        onDragCancel = {
+                            offsetX = 0f
+                        },
+                        onHorizontalDrag = { _, dragAmount ->
+                            val newOffset = (offsetX + dragAmount)
+                            offsetX = when {
+                                newOffset > 0 -> 0f
+                                newOffset < -maxSwipe -> -maxSwipe
+                                else -> newOffset
+                            }
+                        }
+                    )
+                }
+        ) {
+            TaskItem(
+                todo = todo,
+                onToggle = onToggle,
+                onDelete = onDelete,
+                onEdit = onEdit,
+                isCompact = isCompact
+            )
+        }
+    }
+    // Dialog للتأكيد
+    if (showDeleteDialog) {12
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = {
+                Text(
+                    stringResource(R.string.dialog_delete),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            text = {
+                Text(
+                    stringResource(R.string.delete_toast),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDelete()
+                        showDeleteDialog = false
+                    }
+                ) {
+                    Text(stringResource(R.string.dialog_ok), color = Color(0xFF8B0000))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text(stringResource(R.string.dialog_cancel), color = DarkTextHint)
+                }
+            },
+            containerColor = DarkBg
+        )
+    }
+}
 
 @Composable
 fun TaskItem(
     todo: Todo,
     onToggle: () -> Unit,
     onDelete: () -> Unit,
-    onEdit: () -> Unit
+    onEdit: () -> Unit,
+    isCompact: Boolean
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     val style = getCategoryStyle(todo.category)
@@ -587,6 +710,7 @@ fun TaskItem(
                     fontSize = 16.sp
                 )
 
+
                 if (todo.description.isNotBlank()) {
                     Text(
                         text = todo.description,
@@ -601,11 +725,8 @@ fun TaskItem(
                 if (todo.time.isNotBlank()) {
                     Text(
                         text = try {
-                            LocalTime.parse(todo.time)
-                                .format(DateTimeFormatter.ofPattern("hh:mm a"))
-                        } catch (e: Exception) {
-                            todo.time
-                        },
+                            LocalTime.parse(todo.time).format(DateTimeFormatter.ofPattern("hh:mm a"))
+                        } catch (e: Exception) { todo.time },
                         color = if (todo.isDone) DarkTextHint else AppGold,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold
@@ -629,24 +750,14 @@ fun TaskItem(
                     modifier = Modifier.background(DarkField.copy(alpha = 0.9f))
                 ) {
                     DropdownMenuItem(
-                        text = {
-                            Text(
-                                stringResource(R.string.menu_edit),
-                                color = DarkText
-                            )
-                        },
+                        text = { Text(stringResource(R.string.menu_edit), color = DarkText) },
                         onClick = {
                             onEdit()
                             menuExpanded = false
                         }
                     )
                     DropdownMenuItem(
-                        text = {
-                            Text(
-                                stringResource(R.string.menu_delete),
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        },
+                        text = { Text(stringResource(R.string.menu_delete), color = MaterialTheme.colorScheme.error) },
                         onClick = {
                             onDelete()
                             menuExpanded = false
@@ -658,6 +769,7 @@ fun TaskItem(
     }
 }
 
+
 @Composable
 fun DateButton(
     date: LocalDate,
@@ -667,8 +779,7 @@ fun DateButton(
     taskCount: Int = 0
 ) {
     val locale = Locale.getDefault()
-    val dayName =
-        date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, locale).uppercase()
+    val dayName = date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, locale).uppercase()
     val dayNumber = date.dayOfMonth.toString()
     val isToday = date == LocalDate.now()
 
@@ -786,9 +897,7 @@ fun CategoryButton(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(18.dp))
-                .background(
-                    if (isSelected) MaterialTheme.colorScheme.primary else DarkField
-                )
+                .background(if (isSelected) MaterialTheme.colorScheme.primary else DarkField)
                 .clickable { onClick() }
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             contentAlignment = Alignment.Center
