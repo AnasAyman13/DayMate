@@ -45,12 +45,12 @@ class MainActivity : AppCompatActivity() {
                 ActivityCompat.requestPermissions(this, arrayOf(permission), 101)
             }
         }
-        val taskIdFromNotification = intent?.getIntExtra("task_id", -1)
+
 
         // 🎨 واجهة التطبيق
         setContent {
             DayMateTheme {
-                MainNavGraph(taskIdFromNotification)
+                MainNavGraph()
             }
         }
     }
