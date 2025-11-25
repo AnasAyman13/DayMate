@@ -1,11 +1,16 @@
 package com.day.mate
 
 import android.Manifest
+import android.app.AlarmManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -63,12 +68,28 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        //Check & request exact alarm permission (Android 12+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = getSystemService(AlarmManager::class.java)
+            if (!alarmManager.canScheduleExactAlarms()) {
+                Toast.makeText(this, "Please Allow Exact Alarms for reminders.",Toast.LENGTH_LONG).show()
+                openExactAlarmSettings()
+            }
+        }
+
 
         // 🎨 واجهة التطبيق
         setContent {
             DayMateTheme {
                 MainNavGraph()
             }
+        }
+    }
+    private fun openExactAlarmSettings() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+            intent.data = Uri.parse("package:$packageName")
+            startActivity(intent)
         }
     }
 }
