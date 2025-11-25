@@ -3,6 +3,7 @@ package com.day.mate.ui.theme.screens.todo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,17 +17,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-// --- ✅ [الترجمة] ---
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-// --------------------
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-// --- ✅ [الترجمة] ---
 import com.day.mate.R
-// --------------------
 import com.day.mate.ui.theme.*
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
@@ -34,6 +32,7 @@ import com.vanpra.composematerialdialogs.datetime.time.timepicker
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import androidx.compose.ui.text.TextStyle
 
@@ -46,6 +45,16 @@ fun CreateTaskScreen(
 ) {
     val isEditMode = taskIdString != "new"
     val taskId = if (isEditMode) taskIdString?.toIntOrNull() else null
+
+    // ✅ تحديد الألوان حسب الوضع (دارك/لايت)
+    val isDarkMode = isSystemInDarkTheme()
+
+    val backgroundColor = if (isDarkMode) DarkBg else Color.White
+    val textColor = if (isDarkMode) DarkText else Color.Black
+    val fieldColor = if (isDarkMode) DarkField else Color(0xFFF5F5F5)
+    val hintColor = if (isDarkMode) DarkTextHint else Color.Gray
+    val accentColor = AppGold // ثابت في الحالتين
+    val dialogBgColor = if (isDarkMode) DarkBg else Color.White
 
     LaunchedEffect(key1 = taskId) {
         if (isEditMode && taskId != null) {
@@ -64,16 +73,26 @@ fun CreateTaskScreen(
     val dateDialogState = rememberMaterialDialogState()
     val timeDialogState = rememberMaterialDialogState()
 
-    val isButtonEnabled by remember(title) {
-        derivedStateOf { title.isNotBlank() }
+    // ✅ التحقق من أن التاريخ والوقت ليسوا في الماضي
+    val isDateTimeValid by remember(date, time) {
+        derivedStateOf {
+            val selectedDateTime = LocalDateTime.of(date, time)
+            val now = LocalDateTime.now()
+            !selectedDateTime.isBefore(now)
+        }
+    }
+
+    val isButtonEnabled by remember(title, isDateTimeValid) {
+        derivedStateOf { title.isNotBlank() && isDateTimeValid }
     }
 
     var showAddCategoryDialog by remember { mutableStateOf(false) }
+    var showPastDateError by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(backgroundColor)
     ) {
 
         TopAppBar(
@@ -84,7 +103,7 @@ fun CreateTaskScreen(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = textColor
                 )
             },
             navigationIcon = {
@@ -92,17 +111,16 @@ fun CreateTaskScreen(
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = stringResource(R.string.desc_back_button),
-                        tint = MaterialTheme.colorScheme.onBackground
+                        tint = textColor
                     )
                 }
             },
             actions = { Spacer(modifier = Modifier.width(68.dp)) },
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.background
+                containerColor = backgroundColor
             )
         )
 
-        // --- Rest of the Screen (Scrollable) ---
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -110,8 +128,15 @@ fun CreateTaskScreen(
                 .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
 
-
-            TaskTextField(value = title, onValueChange = viewModel::onTitleChange, label = stringResource(R.string.form_title))
+            TaskTextField(
+                value = title,
+                onValueChange = viewModel::onTitleChange,
+                label = stringResource(R.string.form_title),
+                fieldColor = fieldColor,
+                textColor = textColor,
+                hintColor = hintColor,
+                accentColor = accentColor
+            )
             Spacer(Modifier.height(16.dp))
 
             Box {
@@ -120,7 +145,12 @@ fun CreateTaskScreen(
                     onValueChange = {},
                     label = stringResource(R.string.form_date),
                     enabled = false,
-                    trailingIcon = { Icon(Icons.Default.CalendarToday, "") }
+                    trailingIcon = { Icon(Icons.Default.CalendarToday, "") },
+                    isError = !isDateTimeValid,
+                    fieldColor = fieldColor,
+                    textColor = textColor,
+                    hintColor = hintColor,
+                    accentColor = accentColor
                 )
                 Spacer(modifier = Modifier.matchParentSize().clickable { dateDialogState.show() })
             }
@@ -132,29 +162,55 @@ fun CreateTaskScreen(
                     onValueChange = {},
                     label = stringResource(R.string.form_time),
                     enabled = false,
-                    trailingIcon = { Icon(Icons.Default.AccessTime, "") }
+                    trailingIcon = { Icon(Icons.Default.AccessTime, "") },
+                    isError = !isDateTimeValid,
+                    fieldColor = fieldColor,
+                    textColor = textColor,
+                    hintColor = hintColor,
+                    accentColor = accentColor
                 )
                 Spacer(modifier = Modifier.matchParentSize().clickable { timeDialogState.show() })
             }
+
+            // ✅ رسالة خطأ إذا كان التاريخ في الماضي
+            if (!isDateTimeValid) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.error_past_date),
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(start = 16.dp)
+                )
+            }
+
             Spacer(Modifier.height(16.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(stringResource(R.string.form_remind_me), modifier = Modifier.padding(start = 8.dp).weight(1f), color = MaterialTheme.colorScheme.onBackground)
+                Text(
+                    stringResource(R.string.form_remind_me),
+                    modifier = Modifier.padding(start = 8.dp).weight(1f),
+                    color = textColor
+                )
                 Switch(
                     checked = remindMe,
                     onCheckedChange = viewModel::onRemindMeChange,
                     colors = SwitchDefaults.colors(
-                        checkedThumbColor = MaterialTheme.colorScheme.background,
-                        checkedTrackColor = AppGold,
-                        uncheckedThumbColor = DarkField,
-                        uncheckedTrackColor = DarkTextHint
+                        checkedThumbColor = backgroundColor,
+                        checkedTrackColor = accentColor,
+                        uncheckedThumbColor = fieldColor,
+                        uncheckedTrackColor = hintColor
                     )
                 )
             }
             Spacer(Modifier.height(24.dp))
 
-            Text(stringResource(R.string.form_category), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+            Text(
+                stringResource(R.string.form_category),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = textColor
+            )
             Spacer(Modifier.height(10.dp))
             Row(
                 Modifier.horizontalScroll(rememberScrollState()),
@@ -169,7 +225,10 @@ fun CreateTaskScreen(
                 }
                 Button(
                     onClick = { showAddCategoryDialog = true },
-                    colors = ButtonDefaults.buttonColors(containerColor = DarkField, contentColor = DarkText),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = fieldColor,
+                        contentColor = textColor
+                    ),
                     shape = RoundedCornerShape(18.dp),
                     modifier = Modifier.padding(end = 8.dp)
                 ) {
@@ -186,26 +245,34 @@ fun CreateTaskScreen(
                 onValueChange = viewModel::onDescriptionChange,
                 label = stringResource(R.string.form_description),
                 singleLine = false,
-                modifier = Modifier.height(100.dp)
+                modifier = Modifier.height(100.dp),
+                fieldColor = fieldColor,
+                textColor = textColor,
+                hintColor = hintColor,
+                accentColor = accentColor
             )
             Spacer(Modifier.height(32.dp))
 
             Button(
                 onClick = {
-                    if (isEditMode && taskId != null) {
-                        viewModel.updateTask(taskId)
+                    if (isDateTimeValid) {
+                        if (isEditMode && taskId != null) {
+                            viewModel.updateTask(taskId)
+                        } else {
+                            viewModel.createTask()
+                        }
+                        navController.popBackStack()
                     } else {
-                        viewModel.createTask()
+                        showPastDateError = true
                     }
-                    navController.popBackStack()
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 enabled = isButtonEnabled,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = AppGold,
-                    contentColor = DarkBg,
-                    disabledContainerColor = DarkField,
-                    disabledContentColor = DarkTextHint
+                    containerColor = accentColor,
+                    contentColor = if (isDarkMode) DarkBg else Color.Black,
+                    disabledContainerColor = fieldColor,
+                    disabledContentColor = hintColor
                 ),
                 shape = RoundedCornerShape(16.dp)
             ) {
@@ -218,23 +285,26 @@ fun CreateTaskScreen(
         }
     }
 
-
     if (showAddCategoryDialog) {
         var newCategoryName by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { showAddCategoryDialog = false },
-            title = { Text(stringResource(R.string.dialog_add_category), color = DarkText) },
+            title = { Text(stringResource(R.string.dialog_add_category), color = textColor) },
             text = {
                 OutlinedTextField(
                     value = newCategoryName,
                     onValueChange = { newCategoryName = it },
                     label = { Text(stringResource(R.string.dialog_category_name)) },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = DarkField, unfocusedContainerColor = DarkField,
-                        focusedBorderColor = AppGold, unfocusedBorderColor = DarkField,
-                        focusedLabelColor = AppGold, unfocusedLabelColor = DarkTextHint,
-                        focusedTextColor = DarkText, unfocusedTextColor = DarkText,
-                        cursorColor = AppGold
+                        focusedContainerColor = fieldColor,
+                        unfocusedContainerColor = fieldColor,
+                        focusedBorderColor = accentColor,
+                        unfocusedBorderColor = fieldColor,
+                        focusedLabelColor = accentColor,
+                        unfocusedLabelColor = hintColor,
+                        focusedTextColor = textColor,
+                        unfocusedTextColor = textColor,
+                        cursorColor = accentColor
                     )
                 )
             },
@@ -245,24 +315,42 @@ fun CreateTaskScreen(
                         viewModel.onCategoryChange(newCategoryName)
                         showAddCategoryDialog = false
                     }
-                ) { Text(stringResource(R.string.dialog_add), color = AppGold) }
+                ) { Text(stringResource(R.string.dialog_add), color = accentColor) }
             },
             dismissButton = {
-                TextButton(onClick = { showAddCategoryDialog = false }) { Text(stringResource(R.string.dialog_cancel), color = DarkTextHint) }
+                TextButton(onClick = { showAddCategoryDialog = false }) {
+                    Text(stringResource(R.string.dialog_cancel), color = hintColor)
+                }
             },
-            containerColor = DarkBg
+            containerColor = dialogBgColor
         )
     }
 
     MaterialDialog(dialogState = dateDialogState, buttons = {
-        positiveButton(stringResource(R.string.dialog_ok), textStyle = TextStyle(color = AppGold))
-        negativeButton(stringResource(R.string.dialog_cancel), textStyle = TextStyle(color = DarkTextHint))
-    }) { datepicker(initialDate = date, title = stringResource(R.string.select_date), onDateChange = viewModel::onDateChange) }
+        positiveButton(stringResource(R.string.dialog_ok), textStyle = TextStyle(color = accentColor))
+        negativeButton(stringResource(R.string.dialog_cancel), textStyle = TextStyle(color = hintColor))
+    }) {
+        datepicker(
+            initialDate = date,
+            title = stringResource(R.string.select_date),
+            allowedDateValidator = { selectedDate ->
+                // ✅ السماح فقط بالتواريخ من اليوم فصاعداً
+                !selectedDate.isBefore(LocalDate.now())
+            },
+            onDateChange = viewModel::onDateChange
+        )
+    }
 
     MaterialDialog(dialogState = timeDialogState, buttons = {
-        positiveButton(stringResource(R.string.dialog_ok), textStyle = TextStyle(color = AppGold))
-        negativeButton(stringResource(R.string.dialog_cancel), textStyle = TextStyle(color = DarkTextHint))
-    }) { timepicker(initialTime = time, title = stringResource(R.string.select_time), onTimeChange = viewModel::onTimeChange) }
+        positiveButton(stringResource(R.string.dialog_ok), textStyle = TextStyle(color = accentColor))
+        negativeButton(stringResource(R.string.dialog_cancel), textStyle = TextStyle(color = hintColor))
+    }) {
+        timepicker(
+            initialTime = time,
+            title = stringResource(R.string.select_time),
+            onTimeChange = viewModel::onTimeChange
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -274,26 +362,39 @@ fun TaskTextField(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     singleLine: Boolean = true,
-    trailingIcon: @Composable (() -> Unit)? = null
+    trailingIcon: @Composable (() -> Unit)? = null,
+    isError: Boolean = false,
+    fieldColor: Color,
+    textColor: Color,
+    hintColor: Color,
+    accentColor: Color
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
         enabled = enabled,
+        isError = isError,
         colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = DarkField, unfocusedContainerColor = DarkField,
-            disabledContainerColor = DarkField, disabledBorderColor = DarkField,
-            disabledLabelColor = DarkTextHint, disabledTextColor = DarkText,
-            disabledTrailingIconColor = DarkTextHint,
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = DarkField,
-            focusedLabelColor = MaterialTheme.colorScheme.primary,
-            unfocusedLabelColor = DarkTextHint,
-            focusedTextColor = DarkText, unfocusedTextColor = DarkText,
-            cursorColor = MaterialTheme.colorScheme.primary,
-            focusedTrailingIconColor = MaterialTheme.colorScheme.primary,
-            unfocusedTrailingIconColor = DarkTextHint
+            focusedContainerColor = fieldColor,
+            unfocusedContainerColor = fieldColor,
+            disabledContainerColor = fieldColor,
+            disabledBorderColor = fieldColor,
+            disabledLabelColor = hintColor,
+            disabledTextColor = textColor,
+            disabledTrailingIconColor = hintColor,
+            focusedBorderColor = accentColor,
+            unfocusedBorderColor = fieldColor,
+            focusedLabelColor = accentColor,
+            unfocusedLabelColor = hintColor,
+            focusedTextColor = textColor,
+            unfocusedTextColor = textColor,
+            cursorColor = accentColor,
+            focusedTrailingIconColor = accentColor,
+            unfocusedTrailingIconColor = hintColor,
+            errorBorderColor = MaterialTheme.colorScheme.error,
+            errorLabelColor = MaterialTheme.colorScheme.error,
+            errorTrailingIconColor = MaterialTheme.colorScheme.error
         ),
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -301,5 +402,3 @@ fun TaskTextField(
         trailingIcon = trailingIcon
     )
 }
-
-// (CategoryButton definition is in TasksScreen.kt)

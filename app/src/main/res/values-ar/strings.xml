@@ -180,7 +180,7 @@
     <string name="desc_toggle_task">تغيير حالة المهمة</string>
     <string name="desc_category_icon">أيقونة الفئة</string>
     <string name="desc_task_options">خيارات المهمة</string>
-
+    <string name="error_past_date">لا يمكن إنشاء مهمة في الماضي</string>
         <string name="category_work">عمل</string>
         <string name="category_study">دراسة/تعليم</string>
         <string name="category_personal">شخصي</string>
