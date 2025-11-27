@@ -50,6 +50,12 @@
     <string name="reset">Reset</string>
     <string name="skip">Skip</string>
     <string name="completed_sessions">Completed Focus Sessions: %1$d</string>
+    <string name="notification_break_finished_title">%s is over!</string>
+    <string name="notification_break_finished_content">Time to return to your focus session.</string>
+
+
+    <string name="daily_reminder_title">Good Morning!</string>
+    <string name="daily_reminder_content">Time to organize your tasks and focus sessions for the day. Open the app to plan your day!</string>
 
     <!-- settings dialog -->
     <string name="settings_title">Settings</string>

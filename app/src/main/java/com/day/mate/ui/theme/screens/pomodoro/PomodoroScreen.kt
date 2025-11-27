@@ -39,12 +39,25 @@ import androidx.compose.ui.unit.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import com.day.mate.R
 import com.day.mate.data.local.TimerMode
 import kotlinx.coroutines.delay
 import java.util.Locale
 @Composable
-fun PomodoroScreen(viewModel: TimerViewModel = viewModel()) {
+fun PomodoroScreen() {
+    val applicationContext = LocalContext.current.applicationContext
+
+    val viewModel: TimerViewModel = viewModel(factory = remember {
+        object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return TimerViewModel(applicationContext) as T
+            }
+        }
+    })
+
     val context = LocalContext.current
     val timerState by viewModel.timerState.collectAsState()
     val progress = remember(timerState) { viewModel.progress() }

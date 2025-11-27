@@ -45,6 +45,12 @@
     <string name="reset">إعادة</string>
     <string name="skip">تخطي</string>
     <string name="completed_sessions">عدد الجلسات المكتملة: %1$d</string>
+    <string name="notification_break_finished_title">انتهت فترة %s!</string>
+    <string name="notification_break_finished_content">حان وقت العودة إلى جلسة التركيز.</string>
+
+
+    <string name="daily_reminder_title">صباح الخير!</string>
+    <string name="daily_reminder_content">حان وقت تنظيم المهام وجلسات التركيز لهذا اليوم. افتح التطبيق لتخطيط يومك!</string>
 
     <!-- Settings dialog -->
     <string name="focus_label">التركيز</string>

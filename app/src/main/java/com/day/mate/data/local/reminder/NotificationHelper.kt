@@ -87,4 +87,69 @@ object NotificationHelper {
             manager.createNotificationChannel(channel)
         }
     }
+    fun showGeneralNotification(
+        context: Context,
+        title: String,
+        content: String,
+        notificationId: Int, // رقم تعريف فريد
+    ) {
+        // 1. إنشاء القناة إذا لم تكن موجودة (استدعاء نفس الدالة)
+        createNotificationChannelIfNeeded(context)
+
+        // 2. يمكنك تغيير soundUri ليكون مختلفاً عن تنبيهات المهام إذا أردتِ
+        val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION) // تغيير من TYPE_ALARM
+
+        // 3. PendingIntent بدون أي بيانات إضافية (Intent بسيط يفتح MainActivity)
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            notificationId, // استخدام رقم تعريف الإشعار العام
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // 4. بناء الإشعار
+        val notification = NotificationCompat.Builder(context, ReminderConstants.CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_todo_filled) // ⚠️ يجب التأكد من استخدام أيقونة مناسبة
+            .setContentTitle(title)
+            .setContentText(content)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(content))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM) // تصنيف مختلف
+            .setSound(soundUri)
+            .setVibrate(longArrayOf(0, 500, 200, 500)) // نمط اهتزاز أبسط
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        // 5. عرض الإشعار
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(notificationId, notification)
+    }
+    fun showPomodoroNotification(
+        context: Context,
+        title: String,
+        content: String,
+        notificationId: Int
+    ) {
+        createNotificationChannelIfNeeded(context)
+
+
+
+        val notification = NotificationCompat.Builder(context, ReminderConstants.CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_pomodoro_filled)
+            .setContentTitle(title)
+            .setContentText(content)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .build()
+
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        notificationManager.notify(notificationId, notification)
+    }
 }
