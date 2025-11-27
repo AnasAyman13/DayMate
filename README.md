@@ -58,11 +58,13 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 
 **Mohamed Yousry**  
 
-• UI/UX  
+• Main UI/UX  
 • Media Screen (UI + Logic + RoomDB)  
 • Login & SignUp (UI)  
-• Onboarding  
-• Prayer Screen (UI + Logic)  
+• 3 Onboardings 
+• Prayer Screen (UI + Logic) & "Qibla-direction" System
+• Notifications & "Athan" Sound System
+• Testing  
 
 **Menna Ayman**  
 • Pomodoro (UI & Logic)  
