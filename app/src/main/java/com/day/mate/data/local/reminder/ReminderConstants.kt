@@ -12,11 +12,11 @@ object ReminderConstants {
 
     const val NOTIFICATION_ID_BASE = 1000
 
-    // 🚨 ثوابت البومودورو: هذه تضمن الفصل الكامل
     const val TYPE_POMODORO_BREAK = 101
     const val NOTIFICATION_ID_POMODORO = 2000
 
-    // 🚨 مفاتيح مخصصة لبيانات إشعار البومودورو
+    const val TYPE_DAILY_REMINDER = 102
+    const val NOTIFICATION_ID_DAILY = 3000
     const val EXTRA_NOTIFICATION_TYPE = "extra_notification_type"
     const val EXTRA_NOTIFICATION_TITLE = "extra_notification_title"
     const val EXTRA_NOTIFICATION_CONTENT = "extra_notification_content"

@@ -11,6 +11,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
+import java.util.Calendar
+
 
 class ReminderScheduler(private val context: Context) {
 
@@ -64,6 +66,42 @@ class ReminderScheduler(private val context: Context) {
         alarmManager.cancel(pendingIntent)
     }
     @SuppressLint("ScheduleExactAlarm")
+    fun scheduleDailyReminder(hour: Int = 18, minute: Int = 30) {
+
+        // 1. تحديد الوقت المستهدف (مثل 8:00 صباحاً)
+        val calendar: Calendar = Calendar.getInstance().apply {
+            timeInMillis = System.currentTimeMillis()
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
+            if (before(Calendar.getInstance())) {
+                add(Calendar.DATE, 1)
+            }
+        }
+        val title = context.getString(R.string.daily_reminder_title)
+        val content = context.getString(R.string.daily_reminder_content)
+
+
+        val intent = Intent(context, ReminderReceiver::class.java).apply {
+            putExtra(ReminderConstants.EXTRA_NOTIFICATION_TYPE, ReminderConstants.TYPE_DAILY_REMINDER)
+            putExtra(ReminderConstants.EXTRA_NOTIFICATION_TITLE, title)
+            putExtra(ReminderConstants.EXTRA_NOTIFICATION_CONTENT, content)
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            ReminderConstants.NOTIFICATION_ID_DAILY,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager.setInexactRepeating(
+            AlarmManager.RTC_WAKEUP,
+            calendar.timeInMillis,
+            AlarmManager.INTERVAL_DAY,
+            pendingIntent
+        )
+    }
+    @SuppressLint("ScheduleExactAlarm")
     fun schedulePomodoroBreak(triggerDateTime: LocalDateTime, breakType: String) {
 
         val triggerAtMillis = triggerDateTime
@@ -108,4 +146,5 @@ class ReminderScheduler(private val context: Context) {
 
         alarmManager.cancel(pendingIntent)
     }
+
 }

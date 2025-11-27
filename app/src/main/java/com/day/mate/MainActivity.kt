@@ -17,6 +17,7 @@ import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.day.mate.data.local.AppDatabase
+import com.day.mate.data.local.reminder.ReminderScheduler
 import com.day.mate.data.repository.TodoRepository
 import com.day.mate.ui.theme.DayMateTheme
 import com.day.mate.ui.theme.screens.media.MainNavGraph
@@ -32,7 +33,6 @@ class MainActivity : AppCompatActivity() {
         TodoViewModelFactory(todoRepository)
     }
 
-    // ⚡ ضروري علشان اللغة تتطبق قبل UI
     override fun attachBaseContext(newBase: Context?) {
         val localeUpdated = newBase?.let { LocaleUtils.applySavedLocale(it) }
         super.attachBaseContext(localeUpdated)
@@ -40,6 +40,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val scheduler = ReminderScheduler(applicationContext)
+        scheduler.scheduleDailyReminder(hour = 18, minute = 30)
         val db = AppDatabase.getInstance(this)
         todoRepository = TodoRepository(
             todoDao = db.todoDao(),
@@ -47,7 +49,7 @@ class MainActivity : AppCompatActivity() {
         )
         todoViewModel.initReminderScheduler(this)
 
-        // 🗺️ طلب صلاحية الموقع
+
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED
         ) {

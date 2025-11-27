@@ -50,7 +50,7 @@
 
 
     <string name="daily_reminder_title">صباح الخير!</string>
-    <string name="daily_reminder_content">حان وقت تنظيم المهام وجلسات التركيز لهذا اليوم. افتح التطبيق لتخطيط يومك!</string>
+    <string name="daily_reminder_content">حان وقت تنظيم المهام وجلسات التركيز لهذا اليوم. افتح DAY MATE لتخطيط يومك!</string>
 
     <!-- Settings dialog -->
     <string name="focus_label">التركيز</string>
