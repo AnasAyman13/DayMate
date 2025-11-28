@@ -1,15 +1,10 @@
 package com.day.mate.ui.onboardingActivity1
-import android.content.Intent
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import com.day.mate.R
+
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,87 +14,21 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.day.mate.AuthActivity
-import com.day.mate.MainActivity
-import com.day.mate.ui.onboardingActivity2.OnboardingActivity2
-import com.day.mate.ui.theme.*
+import com.day.mate.R
+import com.day.mate.ui.theme.Teal // افتراض أنك تستخدم Teal هنا
 
-
-class OnboardingActivity1 : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val sharedPref = getSharedPreferences("DayMatePrefs", MODE_PRIVATE)
-        val onboardingShown = sharedPref.getBoolean("onboarding_shown", false)
-
-        if (onboardingShown) {
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
-            return
-        }
-        setContent {
-            DayMateDarkTheme {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
-                ) {
-                    OnboardingScreen1(
-                        onContinue = {
-                            val intent = Intent(this, OnboardingActivity2::class.java)
-                            startActivity(intent)
-                            finish()
-                        },
-                        onSkip = {
-                            val intent = Intent(this, AuthActivity::class.java)
-                            startActivity(intent)
-                            finish()
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-@Composable
-fun DayMateDarkTheme(content: @Composable () -> Unit) {
-    val colors = darkColorScheme(
-        primary = Primary,
-        background = BackgroundDark,
-        surface = Color(0xFF0F1A1C),
-        onBackground = CharcoalLight,
-        onPrimary = Color.Black
-    )
-
-    MaterialTheme(
-        colorScheme = colors,
-        typography = Typography(
-            titleLarge = TextStyle(
-                fontFamily = FontFamily.Default,
-                fontWeight = FontWeight.Bold,
-                fontSize = 32.sp,
-                color = colors.onBackground
-            ),
-            bodyLarge = TextStyle(
-                fontFamily = FontFamily.Default,
-                fontSize = 16.sp,
-                color = colors.onBackground.copy(alpha = 0.8f)
-            )
-        ),
-        content = content
-    )
-}
+// تم حذف OnboardingActivity1 بالكامل
+// تم حذف PageDot بالكامل
 
 @Composable
 fun OnboardingScreen1(
-    onContinue: () -> Unit,
-    onSkip: () -> Unit
+    onContinue: () -> Unit, // للانتقال إلى الصفحة 2 في الـ Pager
+    onSkip: () -> Unit       // لإنهاء الـ Onboarding والانتقال إلى Auth
 ) {
     val backgroundDark = Color(0xFF101F22)
     val accentTeal = Color(0xFF008080)
@@ -120,7 +49,7 @@ fun OnboardingScreen1(
                 .offset(y = 80.dp)
         ) {
 
-            // frosted glass card
+            // froast card (Illustration)
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
@@ -229,22 +158,7 @@ fun OnboardingScreen1(
             )
         }
 
-        // ===== Footer =====
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 140.dp)
-        ) {
-            PageDot(active = true)
-            Spacer(Modifier.width(8.dp))
-            PageDot(active = false)
-            Spacer(Modifier.width(8.dp))
-            PageDot(active = false)
-        }
-
+        // تم حذف Row الخاص بالنقاط هنا
 
         Column(
             modifier = Modifier
@@ -279,23 +193,5 @@ fun OnboardingScreen1(
             )
 
         }
-    }
-}
-
-@Composable
-private fun PageDot(active: Boolean) {
-    Box(
-        modifier = Modifier
-            .size(8.dp)
-            .clip(CircleShape)
-            .background(if (active) Primary else Primary.copy(alpha = 0.3f))
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewOnboardingDark() {
-    DayMateDarkTheme {
-        OnboardingScreen1(onContinue = {}, onSkip = {})
     }
 }

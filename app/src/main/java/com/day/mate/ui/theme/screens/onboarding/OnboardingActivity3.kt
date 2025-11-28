@@ -1,15 +1,8 @@
 package com.day.mate.ui.onboardingActivity3
 
-import android.R.attr.id
-import android.content.Intent
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -25,40 +18,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.day.mate.MainActivity
 import com.day.mate.R
-import com.day.mate.ui.onboardingActivity1.DayMateDarkTheme
-import com.day.mate.AuthActivity
-import com.day.mate.ui.screens.SignUpScreen
-import com.day.mate.ui.theme.Primary
 import com.day.mate.ui.theme.Teal
-import kotlin.let
 
-class OnboardingActivity3 : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            DayMateDarkTheme {
-                OnboardingScreen3(
-                    onStart = {
-                        // حفظ إن المستخدم خلص الـ Onboarding
-                        val sharedPref = getSharedPreferences("DayMatePrefs", MODE_PRIVATE)
-                        sharedPref.edit().putBoolean("isFirstTime", false).apply()
-
-                        // الانتقال إلى الشاشة الرئيسية
-                        val intent = Intent(this, AuthActivity::class.java)
-                        startActivity(intent)
-                        finish()
-                    }
-                )
-            }
-        }
-    }
-}
+// تم حذف OnboardingActivity3 بالكامل
+// تم حذف PageDot بالكامل
 
 @Composable
 fun OnboardingScreen3(
-    onStart: () -> Unit
+    onStart: () -> Unit // لإنهاء الـ Onboarding والانتقال إلى Auth
 ) {
     val backgroundDark = Color(0xFF101F22)
     val accentTeal = Color(0xFF13C8EC)
@@ -78,7 +46,7 @@ fun OnboardingScreen3(
                 .offset(y = (30).dp)
         ) {
 
-            // Vault Icon Section (Main Illustration)
+            // Vault Icon Section (Illustration)
             Box(
                 modifier = Modifier
                     .padding(top = 10.dp)
@@ -128,17 +96,7 @@ fun OnboardingScreen3(
                 .padding(bottom = 48.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Page indicators
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                PageDot(active = false)
-                Spacer(Modifier.width(8.dp))
-                PageDot(active = false)
-                Spacer(Modifier.width(8.dp))
-                PageDot(active = true)
-            }
+            // تم حذف Row الخاص بالنقاط هنا
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -159,23 +117,5 @@ fun OnboardingScreen3(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun PageDot(active: Boolean) {
-    Box(
-        modifier = Modifier
-            .size(8.dp)
-            .clip(CircleShape)
-            .background(if (active) Primary else Primary.copy(alpha = 0.3f))
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewOnboarding3() {
-    DayMateDarkTheme {
-        OnboardingScreen3(onStart = {})
     }
 }
