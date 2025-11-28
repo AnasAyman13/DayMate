@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val scheduler = ReminderScheduler(applicationContext)
-        scheduler.scheduleDailyReminder(hour = 18, minute = 30)
+        scheduler.scheduleDailyReminder(hour = 10, minute = 0)
         val db = AppDatabase.getInstance(this)
         todoRepository = TodoRepository(
             todoDao = db.todoDao(),
