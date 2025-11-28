@@ -10,12 +10,17 @@
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- ✅ للأجهزة Android 12 وأعلى -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+
+    <!-- ✅ للأجهزة Android 14 وأعلى (إضافي للحماية) -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <!-- ✅ للتأكد من عمل الـ Alarm في وضع Doze -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
@@ -35,11 +40,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DayMate">
 
-
-
-
-
-    <activity
+        <!-- ✅ شاشة السبلاش - أول ما يفتح التطبيق -->
+        <activity
             android:name=".SplashScreen"
             android:exported="true"
             android:theme="@style/Theme.DayMate">
@@ -49,57 +51,55 @@
             </intent-filter>
         </activity>
 
+        <!-- ✅ شاشة الـ Onboarding الجديدة (Pager) -->
         <activity
-            android:name=".ui.onboardingActivity1.OnboardingActivity1"
+            android:name=".ui.onboarding.OnboardingPagerActivity"
             android:exported="false"
             android:theme="@style/Theme.DayMate" />
 
-        <activity
-            android:name="com.day.mate.ui.onboardingActivity2.OnboardingActivity2"
-            android:exported="false"
-            android:theme="@style/Theme.DayMate" />
 
-        <activity
-            android:name="com.day.mate.ui.onboardingActivity3.OnboardingActivity3"
-            android:exported="false"
-            android:theme="@style/Theme.DayMate" />
-
+        <!-- ✅ الشاشة الرئيسية -->
         <activity
             android:name="com.day.mate.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.DayMate" />
 
+        <!-- ✅ شاشة المصادقة (Login/Register) -->
         <activity
             android:name=".AuthActivity"
             android:exported="true"
             android:theme="@style/Theme.DayMate" />
 
+        <!-- ✅ خدمة الأذان -->
         <service
             android:name=".services.AdhanService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
+        <!-- ✅ الـ Receiver للأذان -->
         <receiver
-            android:name="com.day.mate.data.local.AdhanReceiver"
+            android:name="com.day.mate.ui.theme.screens.prayer.AdhanReceiver"
             android:enabled="true"
             android:exported="false" />
+
+        <!-- ✅ الـ Receiver للتذكيرات -->
         <receiver
             android:name="com.day.mate.data.local.reminder.ReminderReceiver"
             android:exported="false" />
 
-
+        <!-- ✅ الـ Receiver لإعادة جدولة الأذان بعد إعادة تشغيل الجهاز -->
         <receiver
             android:name=".ui.theme.screens.prayer.BootReceiver"
             android:enabled="true"
-            android:exported="false">
+            android:exported="true"
+            android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </receiver>
-
-
 
     </application>
 

@@ -1,8 +1,5 @@
 package com.day.mate.ui.onboardingActivity2
-import android.content.Intent
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
+
 import androidx.annotation.FloatRange
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -28,45 +25,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.day.mate.AuthActivity
-import com.day.mate.MainActivity
-import com.day.mate.ui.theme.*
 import com.day.mate.R
-import com.day.mate.ui.onboardingActivity1.DayMateDarkTheme
-import com.day.mate.ui.onboardingActivity3.OnboardingActivity3
+import com.day.mate.ui.theme.SoftGold
+import com.day.mate.ui.theme.SkyBlue
+import com.day.mate.ui.theme.Teal
 
+// تم حذف OnboardingActivity2 بالكامل
+// تم حذف PageDot بالكامل
 
-class OnboardingActivity2 : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            DayMateDarkTheme {
-                DayMateOnboardingScreen(
-                    progress = 0.6f,
-                    onContinue = {
-                        // بعد ما المستخدم يضغط "Continue" يروح على MainActivity
-                        val intent = Intent(this, OnboardingActivity3::class.java)
-                        startActivity(intent)
-                        finish()
-                    },
-                    onSkip = {
-                        // لو المستخدم ضغط "Skip"
-                        val intent = Intent(this, AuthActivity::class.java)
-                        startActivity(intent)
-                        finish()
-                    }
-                )
-            }
-        }
-    }
-}
-
-/** ---------- Onboarding Screen ---------- */
 @Composable
 fun DayMateOnboardingScreen(
     @FloatRange(from = 0.0, to = 1.0) progress: Float,
-    onContinue: () -> Unit,
-    onSkip: () -> Unit
+    onContinue: () -> Unit, // للانتقال إلى الصفحة 3 في الـ Pager
+    onSkip: () -> Unit       // لإنهاء الـ Onboarding
 ) {
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp
@@ -81,7 +52,7 @@ fun DayMateOnboardingScreen(
     ) {
         Spacer(Modifier.height(36.dp))
 
-        // Main circle visual
+        // Main circle visual (Illustration)
         Box(
             modifier = Modifier
                 .size(centralSize)
@@ -180,19 +151,8 @@ fun DayMateOnboardingScreen(
 
         Spacer(Modifier.weight(1f))
 
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            PageDot(active = false)
-            Spacer(Modifier.width(8.dp))
-            PageDot(active = true)
-            Spacer(Modifier.width(8.dp))
-            PageDot(active = false)
-        }
-
-        Spacer(Modifier.height(18.dp))
+        // تم حذف Row الخاص بالنقاط هنا
+        // تم حذف Spacer(Modifier.height(18.dp))
 
         Button(
             onClick = onContinue,
@@ -223,23 +183,6 @@ fun DayMateOnboardingScreen(
     }
 }
 
-@Composable
-private fun PageDot(active: Boolean) {
-    Box(
-        modifier = Modifier
-            .size(8.dp)
-            .clip(CircleShape)
-            .background(if (active) Primary else Primary.copy(alpha = 0.3f))
-    )
-}
-
+// دالة مساعدة لتحويل Dp إلى Px
 @Composable
 private fun Dp.toPxSafe(): Float = this.value * LocalDensity.current.density
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewOnboardingDark() {
-    DayMateDarkTheme {
-        DayMateOnboardingScreen(progress = 0.6f, onContinue = {}, onSkip = {})
-    }
-}
