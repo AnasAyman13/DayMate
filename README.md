@@ -47,23 +47,21 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 
 **Anas Ayman**  
 • To-Do List Screen (UI + Logic + RoomDB)  
-• UI/UX  
+• Main UI/UX  
 • Splash Screen  
 • Profile Screen(UI+Logic & it's screens)  
 • Icons (App Icon + All In-App Icons)  
-• Managing & Organization  
 • Testing  
 • Pomodoro settings  
-• Translation 
+• Translation      
+• Managing & Organization  
 
 **Mohamed Yousry**  
-
-• Main UI/UX  
+• UI/UX Details                
 • Media Screen (UI + Logic + RoomDB)  
 • Login & SignUp (UI)  
-• 3 Onboardings 
-• Prayer Screen (UI + Logic) & "Qibla-direction" System
-• Notifications & "Athan" Sound System
+• 3 Onboardings with Modern Animations     
+• Prayer Screen (UI + Logic) & "Qibla-direction" & "Athan" System  
 • Testing  
 
 **Menna Ayman**  
