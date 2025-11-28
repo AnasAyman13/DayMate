@@ -1,4 +1,5 @@
 package com.day.mate.ui.theme.screens.pomodoro
+
 import com.day.mate.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,6 +24,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
+
 @Composable
 fun PomodoroSettingsScreen(
     onCancel: () -> Unit,
@@ -48,88 +50,113 @@ fun PomodoroSettingsScreen(
     var longMinutes by remember { mutableStateOf(longM) }
     var longSeconds by remember { mutableStateOf(longS) }
 
-    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
-    Surface(
-        shape = RoundedCornerShape(20.dp), // أصغر شويه ليصبح احترافي
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
-        tonalElevation = 6.dp,
-        modifier = Modifier
-            .fillMaxWidth(0.95f) // اخلي الديالوج أصغر شويه
-            .padding(vertical = 8.dp)
+
+    val cardWidthFraction = if (isLandscape) 0.9f else 0.95f
+
+    val horizontalPadding = if (isLandscape) 32.dp else 16.dp
+
+
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
-        Column(
-            Modifier
-                .padding(horizontal = 16.dp, vertical = 24.dp)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
+            tonalElevation = 6.dp,
+            modifier = Modifier
+                .fillMaxWidth(cardWidthFraction)
+                .padding(vertical = 8.dp)
         ) {
-            Text(
-                text = stringResource(R.string.settings_title),
-                fontSize = 28.sp,
-                fontWeight = FontWeight.ExtraBold
-            )
 
-            TimeRow(
-                label = stringResource(R.string.focus_label),
-                icon = Icons.Outlined.PsychologyAlt,
-                iconTint = MaterialTheme.colorScheme.primary,
-                hours = focusHours,
-                minutes = focusMinutes,
-                seconds = focusSeconds,
-                onHoursChange = { focusHours = it },
-                onMinutesChange = { focusMinutes = it },
-                onSecondsChange = { focusSeconds = it }
-            )
-
-            TimeRow(
-                label = stringResource(R.string.short_break_label),
-                icon = Icons.Outlined.LocalCafe,
-                iconTint = MaterialTheme.colorScheme.secondary,
-                hours = shortHours,
-                minutes = shortMinutes,
-                seconds = shortSeconds,
-                onHoursChange = { shortHours = it },
-                onMinutesChange = { shortMinutes = it },
-                onSecondsChange = { shortSeconds = it }
-            )
-
-            TimeRow(
-                label = stringResource(R.string.long_break_label),
-                icon = Icons.Outlined.Bedtime,
-                iconTint = MaterialTheme.colorScheme.tertiary,
-                hours = longHours,
-                minutes = longMinutes,
-                seconds = longSeconds,
-                onHoursChange = { longHours = it },
-                onMinutesChange = { longMinutes = it },
-                onSecondsChange = { longSeconds = it }
-            )
-
-            Spacer(Modifier.height(16.dp))
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            LazyColumn(
+                modifier = Modifier
+                    .padding(horizontal = horizontalPadding, vertical = 24.dp)
+                    .fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                contentPadding = PaddingValues(bottom = 16.dp)
             ) {
-                OutlinedButton(
-                    onClick = onCancel,
-                    shape = CircleShape,
-                    modifier = Modifier.weight(1f).height(50.dp)
-                ) {
-                    Text(stringResource(R.string.cancel_button), fontSize = 18.sp)
+                item {
+                    Text(
+                        text = stringResource(R.string.settings_title),
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
                 }
-                Button(
-                    onClick = {
-                        val focusSecs = focusHours * 3600 + focusMinutes * 60 + focusSeconds
-                        val shortSecs = shortHours * 3600 + shortMinutes * 60 + shortSeconds
-                        val longSecs = longHours * 3600 + longMinutes * 60 + longSeconds
-                        onSave(focusSecs, shortSecs, longSecs)
-                    },
-                    shape = CircleShape,
-                    modifier = Modifier.weight(1f).height(50.dp)
-                ) {
-                    Text(stringResource(R.string.save_button), fontSize = 18.sp)
+
+                item {
+                    TimeRow(
+                        label = stringResource(R.string.focus_label),
+                        icon = Icons.Outlined.PsychologyAlt,
+                        iconTint = MaterialTheme.colorScheme.primary,
+                        hours = focusHours,
+                        minutes = focusMinutes,
+                        seconds = focusSeconds,
+                        onHoursChange = { focusHours = it },
+                        onMinutesChange = { focusMinutes = it },
+                        onSecondsChange = { focusSeconds = it }
+                    )
+                }
+
+                item {
+                    TimeRow(
+                        label = stringResource(R.string.short_break_label),
+                        icon = Icons.Outlined.LocalCafe,
+                        iconTint = MaterialTheme.colorScheme.secondary,
+                        hours = shortHours,
+                        minutes = shortMinutes,
+                        seconds = shortSeconds,
+                        onHoursChange = { shortHours = it },
+                        onMinutesChange = { shortMinutes = it },
+                        onSecondsChange = { shortSeconds = it }
+                    )
+                }
+
+                item {
+                    TimeRow(
+                        label = stringResource(R.string.long_break_label),
+                        icon = Icons.Outlined.Bedtime,
+                        iconTint = MaterialTheme.colorScheme.tertiary,
+                        hours = longHours,
+                        minutes = longMinutes,
+                        seconds = longSeconds,
+                        onHoursChange = { longHours = it },
+                        onMinutesChange = { longMinutes = it },
+                        onSecondsChange = { longSeconds = it }
+                    )
+                }
+
+                item {
+                    Spacer(Modifier.height(16.dp))
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = onCancel,
+                            shape = CircleShape,
+                            modifier = Modifier.weight(1f).height(50.dp)
+                        ) {
+                            Text(stringResource(R.string.cancel_button), fontSize = 18.sp)
+                        }
+                        Button(
+                            onClick = {
+                                val focusSecs = focusHours * 3600 + focusMinutes * 60 + focusSeconds
+                                val shortSecs = shortHours * 3600 + shortMinutes * 60 + shortSeconds
+                                val longSecs = longHours * 3600 + longMinutes * 60 + longSeconds
+                                onSave(focusSecs, shortSecs, longSecs)
+                            },
+                            shape = CircleShape,
+                            modifier = Modifier.weight(1f).height(50.dp)
+                        ) {
+                            Text(stringResource(R.string.save_button), fontSize = 18.sp)
+                        }
+                    }
                 }
             }
         }
@@ -148,27 +175,51 @@ fun TimeRow(
     onMinutesChange: (Int) -> Unit,
     onSecondsChange: (Int) -> Unit
 ) {
+
     Row(
-        Modifier
+        modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+
         Box(
-            Modifier
+            modifier = Modifier
                 .size(54.dp)
                 .background(iconTint.copy(alpha = 0.15f), shape = CircleShape)
         ) {
             Icon(icon, null, tint = iconTint, modifier = Modifier.align(Alignment.Center).size(30.dp))
         }
         Spacer(Modifier.width(16.dp))
+
+
         Text(label, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.width(100.dp))
         Spacer(Modifier.width(12.dp))
-        TimeComponentPicker((0..12).map { it.toString() }, hours, onHoursChange, stringResource(R.string.unit_hours))
+
+
+        TimeComponentPicker(
+            items = (0..12).map { it.toString() },
+            selected = hours,
+            onSelected = onHoursChange,
+            label = stringResource(R.string.unit_hours),
+            modifier = Modifier.weight(1f)
+        )
         Spacer(Modifier.width(8.dp))
-        TimeComponentPicker((0..59).map { it.toString().padStart(2, '0') }, minutes, onMinutesChange, stringResource(R.string.unit_minutes))
+        TimeComponentPicker(
+            items = (0..59).map { it.toString().padStart(2, '0') },
+            selected = minutes,
+            onSelected = onMinutesChange,
+            label = stringResource(R.string.unit_minutes),
+            modifier = Modifier.weight(1f)
+        )
         Spacer(Modifier.width(8.dp))
-        TimeComponentPicker((0..59).map { it.toString().padStart(2, '0') }, seconds, onSecondsChange, stringResource(R.string.unit_seconds))
+        TimeComponentPicker(
+            items = (0..59).map { it.toString().padStart(2, '0') },
+            selected = seconds,
+            onSelected = onSecondsChange,
+            label = stringResource(R.string.unit_seconds),
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 @Composable
@@ -177,7 +228,7 @@ fun TimeComponentPicker(
     selected: Int,
     onSelected: (Int) -> Unit,
     label: String,
-    boxWidth: Dp = 52.dp,
+    modifier: Modifier = Modifier,
     boxHeight: Dp = 64.dp
 ) {
     val state = rememberLazyListState(selected)
@@ -188,7 +239,7 @@ fun TimeComponentPicker(
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(boxWidth)
+        modifier = modifier
     ) {
         Box(
             modifier = Modifier
@@ -197,7 +248,7 @@ fun TimeComponentPicker(
                 .border(
                     width = 1.4.dp,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
-                    shape = RoundedCornerShape(6.dp)   // مربع نظيف
+                    shape = RoundedCornerShape(6.dp)
                 )
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
@@ -220,7 +271,7 @@ fun TimeComponentPicker(
                         Text(
                             text = v,
                             fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = if (isSel) 20.sp else 15.sp,  // ← تم تكبير المختار شويه
+                            fontSize = if (isSel) 20.sp else 15.sp,
                             color =
                                 if (isSel) MaterialTheme.colorScheme.primary
                                 else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
