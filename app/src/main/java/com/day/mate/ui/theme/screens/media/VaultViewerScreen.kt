@@ -21,18 +21,27 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.day.mate.R
 import com.day.mate.data.local.VaultType
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(
+    ExperimentalMaterial3Api::class,
+    ExperimentalFoundationApi::class,
+    UnstableApi::class // تم إضافة هذا التعليق التوضيحي لحل تحذير ExoPlayer
+)
 @Composable
 fun VaultViewerScreen(
     navController: NavController,
@@ -146,6 +155,82 @@ fun VaultViewerScreen(
                         modifier = Modifier.fillMaxSize()
                     )
                 }
+
+                // ===================================================================
+                // 🎧 حالة تشغيل الصوت (AUDIO) - مُحسّنة
+                // ===================================================================
+
+                VaultType.AUDIO -> {
+                    val exoPlayer = remember {
+                        ExoPlayer.Builder(context).build().apply {
+                            val mediaItem = MediaItem.fromUri(uriParsed)
+                            setMediaItem(mediaItem)
+
+                            addListener(object : Player.Listener {
+                                override fun onPlayerError(error: PlaybackException) {
+                                    Log.e("EXO_ERROR", "Audio Playback Error for URI: $uri", error)
+                                    Toast.makeText(
+                                        context,
+                                        "فشل تشغيل الصوت: ${error.errorCodeName}",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            })
+
+                            prepare()
+                            playWhenReady = true
+                        }
+                    }
+
+                    DisposableEffect(key1 = Unit) {
+                        onDispose {
+                            exoPlayer.release()
+                        }
+                    }
+
+                    // حاوية Box لتنظيم الأيقونة وواجهة التحكم
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+
+                        // 1. الأيقونة والرسالة (في المنتصف)
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.forgrnd), // الأيقونة التي اخترتها
+                                contentDescription = "Audio File",
+                                tint = Color.White.copy(alpha = 0.8f),
+                                modifier = Modifier.size(96.dp)
+                            )
+                            Spacer(Modifier.height(24.dp))
+                            Text(
+                                text = "Audio Playing",
+                                color = Color.White,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        // 2. واجهة التحكم (في الأسفل)
+                        AndroidView(
+                            factory = { ctx ->
+                                PlayerView(ctx).apply {
+                                    useController = true
+                                    player = exoPlayer
+                                    // إخفاء العرض الفيديو (Surface) وإظهار المتحكمات
+                                    setControllerShowTimeoutMs(0)
+                                    setShowFastForwardButton(false)
+                                    setShowRewindButton(false)
+                                    layoutParams = ViewGroup.LayoutParams(
+                                        ViewGroup.LayoutParams.MATCH_PARENT,
+                                        ViewGroup.LayoutParams.WRAP_CONTENT
+                                    )
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.BottomCenter) // تثبيت واجهة التحكم في الأسفل
+                                .padding(bottom = 32.dp, start = 16.dp, end = 16.dp),
+                        )
+                    }
+                }
+
 
                 VaultType.DOCUMENT -> {
                     // إطلاق Intent لفتح الملف في تطبيق خارجي

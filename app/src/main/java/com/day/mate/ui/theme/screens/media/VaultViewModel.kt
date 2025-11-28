@@ -59,6 +59,8 @@ class VaultViewModel(app: Application) : AndroidViewModel(app) {
             "Photos" -> items.value.filter { it.type == VaultType.PHOTO }
             "Videos" -> items.value.filter { it.type == VaultType.VIDEO }
             "Documents" -> items.value.filter { it.type == VaultType.DOCUMENT }
+            "Audio" -> items.value.filter { it.type == VaultType.AUDIO }
+
             else -> items.value
         }
     }

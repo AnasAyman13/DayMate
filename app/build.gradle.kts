@@ -141,6 +141,7 @@ dependencies {
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.appcompat:appcompat:1.6.1") // Use the latest stable version
 
-
-
+    implementation("com.google.accompanist:accompanist-pager:0.32.0")
+// تأكد من استخدام أحدث إصدار
+    implementation("com.google.accompanist:accompanist-pager-indicators:0.32.0")
 }

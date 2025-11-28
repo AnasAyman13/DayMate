@@ -2,13 +2,11 @@ package com.day.mate
 
 import android.content.Context
 import android.content.Intent
-import android.media.MediaPlayer
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import com.day.mate.ui.onboardingActivity1.DayMateDarkTheme
-import com.day.mate.ui.onboardingActivity1.OnboardingActivity1
-import com.google.firebase.auth.FirebaseAuth
+import com.day.mate.ui.onboarding.OnboardingPagerActivity
+import com.day.mate.ui.theme.DayMateTheme
 
 class SplashScreen : ComponentActivity() {
 
@@ -19,13 +17,11 @@ class SplashScreen : ComponentActivity() {
         val isFirstTime = sharedPref.getBoolean("isFirstTime", true)
 
         setContent {
-            DayMateDarkTheme {
+            DayMateTheme {
                 SplashScreenComposable {
                     if (isFirstTime) {
-
-                        sharedPref.edit().putBoolean("isFirstTime", false).apply()
-
-                        startActivity(Intent(this, OnboardingActivity1::class.java))
+                        // ✅ الانتقال إلى شاشة الـ Onboarding الجديدة
+                        startActivity(Intent(this, OnboardingPagerActivity::class.java))
 
                         // ⭐ ترانزيشن الخروج من الـ Splash
                         overridePendingTransition(
@@ -34,7 +30,7 @@ class SplashScreen : ComponentActivity() {
                         )
 
                     } else {
-
+                        // ✅ الانتقال مباشرة إلى شاشة المصادقة
                         startActivity(Intent(this, AuthActivity::class.java))
 
                         // ⭐ ترانزيشن انزلاق
