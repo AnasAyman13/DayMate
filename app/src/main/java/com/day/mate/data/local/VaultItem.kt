@@ -12,5 +12,8 @@ data class VaultItem(
 )
 
 enum class VaultType {
-    PHOTO, VIDEO, DOCUMENT
+    PHOTO,
+    VIDEO,
+    AUDIO,  // ✅ إضافة
+    DOCUMENT
 }

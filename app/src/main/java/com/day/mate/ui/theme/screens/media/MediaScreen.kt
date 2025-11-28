@@ -3,7 +3,7 @@ package com.day.mate.ui.theme.screens.media
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.provider.OpenableColumns // ✅ استيراد ضروري لجلب اسم الملف
+import android.provider.OpenableColumns
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -46,6 +46,7 @@ fun VaultScreen(
     val items = when (selectedFilter) {
         "Photos" -> allItems.filter { it.type == VaultType.PHOTO }
         "Videos" -> allItems.filter { it.type == VaultType.VIDEO }
+        "Audio" -> allItems.filter { it.type == VaultType.AUDIO }
         "Documents" -> allItems.filter { it.type == VaultType.DOCUMENT }
         else -> allItems
     }
@@ -60,6 +61,7 @@ fun VaultScreen(
                 val type = when {
                     mimeType?.startsWith("image/") == true -> VaultType.PHOTO
                     mimeType?.startsWith("video/") == true -> VaultType.VIDEO
+                    mimeType?.startsWith("audio/") == true -> VaultType.AUDIO
                     mimeType == "application/pdf" -> VaultType.DOCUMENT
                     else -> {
                         Log.e("VaultScreen", "Unknown or unsupported MIME type ($mimeType) for URI: $uri")
@@ -76,7 +78,7 @@ fun VaultScreen(
                         uri,
                         Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                     )
-                    Log.d("VAULT_PERMISSION", "Permission granted for URI: $uri") // تسجيل النجاح
+                    Log.d("VAULT_PERMISSION", "Permission granted for URI: $uri")
                 } catch (e: Exception) {
                     Log.e("VAULT_PERMISSION", "FAILED to grant persistable permission for URI: $uri", e)
                     e.printStackTrace()
@@ -92,7 +94,10 @@ fun VaultScreen(
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { picker.launch(arrayOf("image/*", "video/*", "application/pdf")) },
+                onClick = {
+                    // ✅ إضافة audio/* للأنواع المدعومة
+                    picker.launch(arrayOf("image/*", "video/*", "audio/*", "application/pdf"))
+                },
                 containerColor = Color(0xFFFFD700),
                 shape = RoundedCornerShape(16.dp)
             ) {
@@ -153,7 +158,8 @@ fun VaultScreen(
 
                 Spacer(Modifier.height(16.dp))
 
-                val filters = listOf("All", "Photos", "Videos", "Documents")
+                // ✅ إضافة "Audio" للفلاتر
+                val filters = listOf("All", "Photos", "Videos", "Audio", "Documents")
                 Row(
                     modifier = Modifier
                         .horizontalScroll(rememberScrollState())
@@ -194,7 +200,12 @@ fun VaultScreen(
                         VaultItemCard(
                             item = item,
                             onClick = {
-                                navController.navigate("viewer/${Uri.encode(item.uri)}/${item.type.name}")
+                                // ✅ للملفات الصوتية نفتحها خارج التطبيق مباشرة
+                                if (item.type == VaultType.AUDIO) {
+                                    openAudioExternally(context, Uri.parse(item.uri))
+                                } else {
+                                    navController.navigate("viewer/${Uri.encode(item.uri)}/${item.type.name}")
+                                }
                             },
                             overlayContent = {
                                 IconButton(
@@ -212,7 +223,21 @@ fun VaultScreen(
     }
 }
 
-// دالة مساعدة للحصول على اسم الملف (يجب تعريفها خارج Composable)
+// ✅ دالة لفتح الملفات الصوتية خارج التطبيق
+fun openAudioExternally(context: Context, uri: Uri) {
+    try {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "audio/*")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(Intent.createChooser(intent, "Play Audio"))
+    } catch (e: Exception) {
+        Log.e("VaultScreen", "Failed to open audio file", e)
+    }
+}
+
+// دالة مساعدة للحصول على اسم الملف
 fun getFileName(context: Context, uri: Uri): String {
     var result: String? = null
     if (uri.scheme == "content") {
@@ -258,6 +283,25 @@ fun VaultItemCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(Icons.Default.PlayCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(48.dp))
+                }
+
+                // ✅ إضافة كارت للصوتيات
+                VaultType.AUDIO -> Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.linearGradient(
+                                listOf(Color(0xFF6A1B9A), Color(0xFFAB47BC))
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.MusicNote,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(64.dp)
+                    )
                 }
 
                 VaultType.DOCUMENT -> Box(
