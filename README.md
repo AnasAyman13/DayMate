@@ -67,7 +67,8 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 **Menna Ayman**  
 • Pomodoro (UI & Logic)  
 • Timeline Screen (UI & Logic)  
-• NavigationBar  
+• NavigationBar 
+• Notification
 
 **Islam Fawzy**  
 •  Login & SignUp  
@@ -80,6 +81,7 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 • Firebase  
 • Google Login & SignUp  
 • Firestore (Tasks)
+• Alarm
 
 **Basem Mohamed**   
 • Biometric Lock  
