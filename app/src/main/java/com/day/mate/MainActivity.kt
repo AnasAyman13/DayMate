@@ -47,36 +47,35 @@ class MainActivity : AppCompatActivity() {
         )
         todoViewModel.initReminderScheduler(this)
 
-        // 🗺️ طلب صلاحية الموقع
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                1
-            )
-        }
-
-        // 🔔 طلب صلاحية الإشعارات (Android 13+)
+        // 🔔 طلب صلاحية الإشعارات (Android 13+) - مرة واحدة فقط
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val permission = Manifest.permission.POST_NOTIFICATIONS
-            if (ContextCompat.checkSelfPermission(this, permission)
-                != PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(this, arrayOf(permission), 101)
+            // التحقق من الإذن أولاً
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                // التحقق إذا كنا طلبنا الإذن قبل كده ولا لأ
+                if (!shouldShowRequestPermissionRationale(permission)) {
+                    // أول مرة يطلب الإذن
+                    ActivityCompat.requestPermissions(this, arrayOf(permission), 101)
+                }
             }
         }
 
-        //Check & request exact alarm permission (Android 12+)
+        // ⏰ التحقق من صلاحية المنبه الدقيق (Android 12+) - مرة واحدة فقط
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val alarmManager = getSystemService(AlarmManager::class.java)
             if (!alarmManager.canScheduleExactAlarms()) {
-                Toast.makeText(this, "Please Allow Exact Alarms for reminders.",Toast.LENGTH_LONG).show()
-                openExactAlarmSettings()
+                // التحقق إذا طلبنا الإذن قبل كده من SharedPreferences
+                val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                val hasAskedBefore = prefs.getBoolean("exact_alarm_asked", false)
+
+                if (!hasAskedBefore) {
+                    Toast.makeText(this, "Please Allow Exact Alarms for reminders.", Toast.LENGTH_LONG).show()
+                    openExactAlarmSettings()
+                    // حفظ إننا طلبنا الإذن
+                    prefs.edit().putBoolean("exact_alarm_asked", true).apply()
+                }
             }
         }
-
 
         // 🎨 واجهة التطبيق
         setContent {
@@ -85,6 +84,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
     private fun openExactAlarmSettings() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)

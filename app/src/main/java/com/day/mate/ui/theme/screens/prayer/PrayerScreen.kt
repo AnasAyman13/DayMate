@@ -66,9 +66,16 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
     val scroll = rememberScrollState()
     val bgGradient = Brush.verticalGradient(listOf(Color(0xFF042825), Color(0xFF073B3A)))
 
+    var hasRequestedPermission by remember { mutableStateOf(false) }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { }
+    ) { isGranted ->
+        if (isGranted) {
+            viewModel.loadPrayerTimes(ctx = ctx)
+        }
+        hasRequestedPermission = true
+    }
 
     // Launcher لفتح إعدادات الجدولة الدقيقة
     val settingsLauncher = rememberLauncherForActivityResult(
@@ -78,14 +85,18 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
         viewModel.loadPrayerTimes(ctx = ctx)
     }
 
-    // طلب إذن الموقع عند بدء التشغيل
+    // طلب إذن الموقع عند دخول صفحة الصلاة فقط
     LaunchedEffect(Unit) {
-        if (ActivityCompat.checkSelfPermission(
-                ctx,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        if (!hasRequestedPermission) {
+            if (ActivityCompat.checkSelfPermission(
+                    ctx,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            } else {
+                hasRequestedPermission = true
+            }
         }
     }
 
