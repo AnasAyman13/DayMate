@@ -9,8 +9,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import android.content.Context
+import com.day.mate.R
+import com.day.mate.data.local.reminder.ReminderScheduler
+import java.time.LocalDateTime // 🚨 تم إضافة هذا الـ Import
 
-class TimerViewModel : ViewModel() {
+class TimerViewModel(context: Context) : ViewModel() {
+
+    private val scheduler = ReminderScheduler(context)
 
     private val _timerState = MutableStateFlow(TimerState())
     val timerState = _timerState.asStateFlow()
@@ -21,10 +27,13 @@ class TimerViewModel : ViewModel() {
     var shortBreakTime = 5 * 60
     var longBreakTime = 15 * 60
     private val totalFocusSessions = 4
+
     fun skipTimer() {
         timerJob?.cancel()
+        scheduler.cancelPomodoroBreak()
         handleSessionEnd()
     }
+
     fun updateTimesRaw(focusSeconds: Int, shortBreakSeconds: Int, longBreakSeconds: Int) {
         focusTime = focusSeconds
         shortBreakTime = shortBreakSeconds
@@ -35,6 +44,7 @@ class TimerViewModel : ViewModel() {
             totalSeconds = focusTime
         )
     }
+
     fun startTimer() {
         val state = _timerState.value
         if (state.isRunning) return
@@ -56,6 +66,7 @@ class TimerViewModel : ViewModel() {
             }
         }
     }
+
     fun handleSessionEnd() {
         val state = _timerState.value
         when (state.mode) {
@@ -72,6 +83,13 @@ class TimerViewModel : ViewModel() {
                     totalSeconds = if (nextMode == TimerMode.LONG_BREAK) longBreakTime else shortBreakTime,
                     isFinished = false
                 )
+
+                val breakDurationSeconds = if (nextMode == TimerMode.LONG_BREAK) longBreakTime else shortBreakTime
+                val breakType = if (nextMode == TimerMode.LONG_BREAK) "Long Break" else "Short Break"
+
+                val triggerDateTime = LocalDateTime.now().plusSeconds(breakDurationSeconds.toLong())
+
+                scheduler.schedulePomodoroBreak(triggerDateTime, breakType)
             }
             else -> {
                 _timerState.value = state.copy(
@@ -80,16 +98,21 @@ class TimerViewModel : ViewModel() {
                     totalSeconds = focusTime,
                     isFinished = false
                 )
+                scheduler.cancelPomodoroBreak()
             }
         }
     }
+
     fun pauseTimer() {
         val state = _timerState.value
         _timerState.value = state.copy(isRunning = false)
         timerJob?.cancel()
     }
+
+
     fun resetTimer() {
         timerJob?.cancel()
+        scheduler.cancelPomodoroBreak()
         val state = _timerState.value
         val newSeconds = when (state.mode) {
             TimerMode.FOCUS -> focusTime
@@ -103,6 +126,7 @@ class TimerViewModel : ViewModel() {
             isFinished = false
         )
     }
+
     fun progress(): Float {
         val state = _timerState.value
         return state.secondsLeft.toFloat() / state.totalSeconds

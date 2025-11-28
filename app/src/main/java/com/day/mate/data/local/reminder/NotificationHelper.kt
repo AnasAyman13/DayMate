@@ -87,4 +87,67 @@ object NotificationHelper {
             manager.createNotificationChannel(channel)
         }
     }
+    fun showGeneralNotification(
+        context: Context,
+        title: String,
+        content: String,
+        notificationId: Int,
+    ) {
+
+        createNotificationChannelIfNeeded(context)
+
+
+        val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            notificationId,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+
+        val notification = NotificationCompat.Builder(context, ReminderConstants.CHANNEL_ID)
+            .setSmallIcon(R.drawable.forgrnd)
+            .setContentTitle(title)
+            .setContentText(content)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(content))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setSound(soundUri)
+            .setVibrate(longArrayOf(0, 500, 200, 500))
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(notificationId, notification)
+    }
+    fun showPomodoroNotification(
+        context: Context,
+        title: String,
+        content: String,
+        notificationId: Int
+    ) {
+        createNotificationChannelIfNeeded(context)
+
+
+
+        val notification = NotificationCompat.Builder(context, ReminderConstants.CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_pomodoro_filled)
+            .setContentTitle(title)
+            .setContentText(content)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .build()
+
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        notificationManager.notify(notificationId, notification)
+    }
 }
