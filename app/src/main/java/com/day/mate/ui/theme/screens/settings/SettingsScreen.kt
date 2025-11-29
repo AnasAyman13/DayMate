@@ -2,6 +2,8 @@ package com.day.mate.ui.screens.settings
 
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,23 +34,72 @@ import com.day.mate.R
 import com.day.mate.data.model.User
 import com.day.mate.util.LocaleUtils
 
+/**
+ * Opens the system notification settings screen for this app.
+ * User can enable/disable notifications and channels from Android Settings.
+ */
+fun openAppNotificationSettings(activity: Activity) {
+    val intent = Intent().apply {
+        when {
+            // Android 8.0+ (Oreo and above): direct app notification settings
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O -> {
+                action = android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, activity.packageName)
+            }
+            // Android 5.0 - 7.1: legacy action for app notification settings
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP -> {
+                action = "android.settings.APP_NOTIFICATION_SETTINGS"
+                putExtra("app_package", activity.packageName)
+                putExtra("app_uid", activity.applicationInfo.uid)
+            }
+            // Older versions: open app details page as a fallback
+            else -> {
+                action = android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                addCategory(Intent.CATEGORY_DEFAULT)
+                data = Uri.parse("package:${activity.packageName}")
+            }
+        }
+    }
+    activity.startActivity(intent)
+}
+
+/**
+ * SettingsScreenContainer
+ *
+ * Main container for the settings screen that manages the ViewModel.
+ * Creates ViewModel with proper factory to inject Context dependency.
+ *
+ * @param navController Navigation controller for navigating between screens
+ * @param onBackClick Callback when back button is pressed
+ */
 @Composable
 fun SettingsScreenContainer(
     navController: NavHostController,
-    viewModel: SettingsViewModel = viewModel(),
     onBackClick: () -> Unit = {}
 ) {
-    LaunchedEffect(Unit) {
-        viewModel.loadUser()
-    }
-    val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val activity = context as? Activity
 
+    // ✅ Create ViewModel with Factory that provides Context
+    val viewModel: SettingsViewModel = viewModel(
+        factory = SettingsViewModelFactory(context.applicationContext)
+    )
+
+    // Load user data when the screen is first composed
+    LaunchedEffect(Unit) {
+        viewModel.loadUser()
+    }
+
+    val state by viewModel.uiState.collectAsState()
+
+    // Observe logout state and navigate to AuthActivity when user logs out
     LaunchedEffect(state.isLoggedOut) {
         if (state.isLoggedOut) {
-
-            Toast.makeText(context, "Logged out succsusfuly", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                context,
+                context.getString(R.string.toast_logged_out_successfully),
+                Toast.LENGTH_SHORT
+            ).show()
             val intent = Intent(context, AuthActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             context.startActivity(intent)
@@ -60,7 +111,11 @@ fun SettingsScreenContainer(
         onBackClick = onBackClick,
         onToggleDarkMode = { viewModel.toggleDarkMode(it) },
         onToggleCloudSync = { viewModel.toggleCloudSync(it) },
-        onToggleNotifications = { viewModel.toggleNotifications(it) },
+        // When user taps notifications row, open system notification settings for this app
+        onToggleNotifications = {
+            activity?.let { openAppNotificationSettings(it) }
+        },
+        // Toggle between Arabic and English and restart the app with new locale
         onToggleLanguage = { lang ->
             activity?.let { LocaleUtils.setLocaleAndRestart(it, lang) }
         },
@@ -70,13 +125,29 @@ fun SettingsScreenContainer(
     )
 }
 
+/**
+ * SettingsScreen
+ *
+ * Stateless UI composable for the settings screen.
+ * Displays user profile, appearance settings, account settings, and support options.
+ *
+ * @param state Current UI state containing user data and settings
+ * @param onBackClick Callback when back button is pressed
+ * @param onToggleDarkMode Callback when dark mode is toggled
+ * @param onToggleCloudSync Callback when cloud sync is toggled
+ * @param onToggleNotifications Callback when notifications row is clicked
+ * @param onToggleLanguage Callback when language is changed
+ * @param onLogout Callback when logout is clicked
+ * @param onNavigate Callback for navigation to other screens
+ * @param onChangePassword Callback when change password is clicked
+ */
 @Composable
 fun SettingsScreen(
     state: SettingsState,
     onBackClick: () -> Unit,
     onToggleDarkMode: (Boolean) -> Unit,
     onToggleCloudSync: (Boolean) -> Unit,
-    onToggleNotifications: (Boolean) -> Unit,
+    onToggleNotifications: () -> Unit,
     onToggleLanguage: (String) -> Unit,
     onLogout: () -> Unit,
     onNavigate: (String) -> Unit,
@@ -84,7 +155,11 @@ fun SettingsScreen(
 ) {
     val scroll = rememberScrollState()
     val context = LocalContext.current
-    val savedLang = LocaleUtils.getSavedLanguage(context) ?: java.util.Locale.getDefault().language
+
+    // Get currently saved language or fall back to device default
+    val savedLang = LocaleUtils.getSavedLanguage(context)
+        ?: java.util.Locale.getDefault().language
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -94,13 +169,17 @@ fun SettingsScreen(
     ) {
         Spacer(Modifier.height(16.dp))
 
+        // Top app bar row (back button + title)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBackClick) {
-                Icon(Icons.Outlined.ArrowBack, contentDescription = stringResource(R.string.desc_back_button))
+                Icon(
+                    Icons.Outlined.ArrowBack,
+                    contentDescription = stringResource(R.string.desc_back_button)
+                )
             }
             Text(
                 stringResource(R.string.settings_title_and_profile),
@@ -111,10 +190,12 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(16.dp))
 
+        // User profile (name + email)
         ProfileHeader(user = state.user)
 
         Spacer(Modifier.height(20.dp))
 
+        // Appearance section (dark mode + language)
         SettingsCard(title = stringResource(R.string.settings_appearance)) {
             SettingsToggleRow(
                 icon = Icons.Outlined.DarkMode,
@@ -124,6 +205,7 @@ fun SettingsScreen(
             )
             Divider(modifier = Modifier.padding(vertical = 4.dp))
 
+            // Language change item: toggles between Arabic and English
             SettingsClickableRow(
                 icon = Icons.Outlined.Language,
                 title = if (savedLang == "en")
@@ -137,21 +219,14 @@ fun SettingsScreen(
             )
         }
 
-        SettingsCard(title = stringResource(R.string.settings_data_sync)) {
-            SettingsToggleRow(
-                icon = Icons.Outlined.CloudSync,
-                title = stringResource(R.string.settings_cloud_sync),
-                checked = state.cloudSyncEnabled,
-                onCheckedChange = onToggleCloudSync
-            )
-        }
-
+        // Account section (notifications + change password)
         SettingsCard(title = stringResource(R.string.settings_account)) {
+            // Open system notification settings for this app
             SettingsClickableRow(
                 Icons.Outlined.Notifications,
                 stringResource(R.string.settings_notifications)
             ) {
-                onToggleNotifications(!state.notificationsEnabled)
+                onToggleNotifications()
             }
             SettingsClickableRow(
                 Icons.Outlined.Password,
@@ -159,6 +234,7 @@ fun SettingsScreen(
             ) { onChangePassword() }
         }
 
+        // Support & Legal section (help, terms, developers)
         SettingsCard(title = stringResource(R.string.settings_support_legal)) {
             SettingsClickableRow(
                 Icons.Outlined.Help,
@@ -174,9 +250,9 @@ fun SettingsScreen(
             ) { onNavigate("developers") }
         }
 
-
         Spacer(Modifier.height(12.dp))
 
+        // Logout button
         Button(
             onClick = { onLogout() },
             modifier = Modifier
@@ -203,6 +279,13 @@ fun SettingsScreen(
     }
 }
 
+/**
+ * ProfileHeader
+ *
+ * Displays user profile information (name and email).
+ *
+ * @param user User data to display
+ */
 @Composable
 private fun ProfileHeader(user: User) {
     Column(
@@ -218,6 +301,14 @@ private fun ProfileHeader(user: User) {
     }
 }
 
+/**
+ * SettingsCard
+ *
+ * Reusable card container for a settings group/section.
+ *
+ * @param title Section title
+ * @param content Card content composable
+ */
 @Composable
 private fun SettingsCard(title: String, content: @Composable ColumnScope.() -> Unit) {
     Card(
@@ -238,6 +329,16 @@ private fun SettingsCard(title: String, content: @Composable ColumnScope.() -> U
     }
 }
 
+/**
+ * SettingsToggleRow
+ *
+ * Reusable row with icon, label, and Switch for boolean settings.
+ *
+ * @param icon Icon to display
+ * @param title Setting title/label
+ * @param checked Current toggle state
+ * @param onCheckedChange Callback when toggle is changed
+ */
 @Composable
 private fun SettingsToggleRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -266,6 +367,15 @@ private fun SettingsToggleRow(
     }
 }
 
+/**
+ * SettingsClickableRow
+ *
+ * Reusable clickable row with icon, label, and chevron arrow.
+ *
+ * @param icon Icon to display
+ * @param title Setting title/label
+ * @param onClick Callback when row is clicked
+ */
 @Composable
 private fun SettingsClickableRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -294,6 +404,38 @@ private fun SettingsClickableRow(
             Icons.Outlined.ChevronRight,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+        )
+    }
+}
+
+/**
+ * Preview for SettingsScreen
+ */
+@Preview(showBackground = true)
+@Composable
+private fun SettingsScreenPreview() {
+    val mockUser = User(
+        id = "1",
+        name = "John Doe",
+        email = "john.doe@example.com"
+    )
+    val state = SettingsState(
+        user = mockUser,
+        darkModeEnabled = false,
+        cloudSyncEnabled = true,
+        notificationsEnabled = true
+    )
+    MaterialTheme {
+        SettingsScreen(
+            state = state,
+            onBackClick = {},
+            onToggleDarkMode = {},
+            onToggleCloudSync = {},
+            onToggleNotifications = {},
+            onToggleLanguage = {},
+            onLogout = {},
+            onNavigate = {},
+            onChangePassword = {}
         )
     }
 }

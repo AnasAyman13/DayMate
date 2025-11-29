@@ -3,7 +3,6 @@ package com.day.mate.ui.theme.screens.todo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,23 +18,33 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.day.mate.R
-import com.day.mate.ui.theme.*
+import com.day.mate.ui.theme.AppGold
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import androidx.compose.ui.text.TextStyle
 
+/**
+ * CreateTaskScreen
+ *
+ * Screen for creating or editing tasks.
+ * Supports both dark and light mode through MaterialTheme.
+ *
+ * @param navController Navigation controller for back navigation
+ * @param viewModel ViewModel managing task data
+ * @param taskIdString Task ID for editing, or "new" for creating
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateTaskScreen(
@@ -46,15 +55,13 @@ fun CreateTaskScreen(
     val isEditMode = taskIdString != "new"
     val taskId = if (isEditMode) taskIdString?.toIntOrNull() else null
 
-    // ✅ تحديد الألوان حسب الوضع (دارك/لايت)
-    val isDarkMode = isSystemInDarkTheme()
-
-    val backgroundColor = if (isDarkMode) DarkBg else Color.White
-    val textColor = if (isDarkMode) DarkText else Color.Black
-    val fieldColor = if (isDarkMode) DarkField else Color(0xFFF5F5F5)
-    val hintColor = if (isDarkMode) DarkTextHint else Color.Gray
-    val accentColor = AppGold // ثابت في الحالتين
-    val dialogBgColor = if (isDarkMode) DarkBg else Color.White
+    //  Use MaterialTheme colors (respects user's dark/light mode preference)
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val textColor = MaterialTheme.colorScheme.onBackground
+    val fieldColor = MaterialTheme.colorScheme.surfaceVariant
+    val hintColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val accentColor = AppGold
+    val dialogBgColor = MaterialTheme.colorScheme.surface
 
     LaunchedEffect(key1 = taskId) {
         if (isEditMode && taskId != null) {
@@ -73,7 +80,7 @@ fun CreateTaskScreen(
     val dateDialogState = rememberMaterialDialogState()
     val timeDialogState = rememberMaterialDialogState()
 
-    // ✅ التحقق من أن التاريخ والوقت ليسوا في الماضي
+    // Validate that date/time is not in the past
     val isDateTimeValid by remember(date, time) {
         derivedStateOf {
             val selectedDateTime = LocalDateTime.of(date, time)
@@ -94,7 +101,6 @@ fun CreateTaskScreen(
             .fillMaxSize()
             .background(backgroundColor)
     ) {
-
         TopAppBar(
             title = {
                 Text(
@@ -127,7 +133,7 @@ fun CreateTaskScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
-
+            // Title field
             TaskTextField(
                 value = title,
                 onValueChange = viewModel::onTitleChange,
@@ -139,6 +145,7 @@ fun CreateTaskScreen(
             )
             Spacer(Modifier.height(16.dp))
 
+            // Date picker
             Box {
                 TaskTextField(
                     value = date.format(DateTimeFormatter.ofPattern("dd MMMM yyyy")),
@@ -152,10 +159,13 @@ fun CreateTaskScreen(
                     hintColor = hintColor,
                     accentColor = accentColor
                 )
-                Spacer(modifier = Modifier.matchParentSize().clickable { dateDialogState.show() })
+                Spacer(modifier = Modifier
+                    .matchParentSize()
+                    .clickable { dateDialogState.show() })
             }
             Spacer(Modifier.height(16.dp))
 
+            // Time picker
             Box {
                 TaskTextField(
                     value = time.format(DateTimeFormatter.ofPattern("hh:mm a")),
@@ -169,10 +179,12 @@ fun CreateTaskScreen(
                     hintColor = hintColor,
                     accentColor = accentColor
                 )
-                Spacer(modifier = Modifier.matchParentSize().clickable { timeDialogState.show() })
+                Spacer(modifier = Modifier
+                    .matchParentSize()
+                    .clickable { timeDialogState.show() })
             }
 
-            // ✅ رسالة خطأ إذا كان التاريخ في الماضي
+            // Error message for past date/time
             if (!isDateTimeValid) {
                 Spacer(Modifier.height(4.dp))
                 Text(
@@ -185,18 +197,21 @@ fun CreateTaskScreen(
 
             Spacer(Modifier.height(16.dp))
 
+            // Remind me switch
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     stringResource(R.string.form_remind_me),
-                    modifier = Modifier.padding(start = 8.dp).weight(1f),
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .weight(1f),
                     color = textColor
                 )
                 Switch(
                     checked = remindMe,
                     onCheckedChange = viewModel::onRemindMeChange,
                     colors = SwitchDefaults.colors(
-                        checkedThumbColor = backgroundColor,
+                        checkedThumbColor = MaterialTheme.colorScheme.surface,
                         checkedTrackColor = accentColor,
                         uncheckedThumbColor = fieldColor,
                         uncheckedTrackColor = hintColor
@@ -205,6 +220,7 @@ fun CreateTaskScreen(
             }
             Spacer(Modifier.height(24.dp))
 
+            // Category selection
             Text(
                 stringResource(R.string.form_category),
                 fontSize = 16.sp,
@@ -216,11 +232,12 @@ fun CreateTaskScreen(
                 Modifier.horizontalScroll(rememberScrollState()),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                categories.forEach { category ->
+                categories.forEach { categoryKey ->
+                    // نستخدم CategoryLabel للعرض، ونبعت الـ key للـ ViewModel
                     CategoryButton(
-                        text = category,
-                        isSelected = selectedCategory == category,
-                        onClick = { viewModel.onCategoryChange(category) }
+                        text = CategoryLabel(categoryKey),
+                        isSelected = selectedCategory == categoryKey,
+                        onClick = { viewModel.onCategoryChange(categoryKey) }
                     )
                 }
                 Button(
@@ -240,6 +257,7 @@ fun CreateTaskScreen(
 
             Spacer(Modifier.height(24.dp))
 
+            // Description field
             TaskTextField(
                 value = description,
                 onValueChange = viewModel::onDescriptionChange,
@@ -253,6 +271,7 @@ fun CreateTaskScreen(
             )
             Spacer(Modifier.height(32.dp))
 
+            // Create/Save button
             Button(
                 onClick = {
                     if (isDateTimeValid) {
@@ -266,11 +285,13 @@ fun CreateTaskScreen(
                         showPastDateError = true
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
                 enabled = isButtonEnabled,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = accentColor,
-                    contentColor = if (isDarkMode) DarkBg else Color.Black,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                     disabledContainerColor = fieldColor,
                     disabledContentColor = hintColor
                 ),
@@ -285,6 +306,7 @@ fun CreateTaskScreen(
         }
     }
 
+    // Add category dialog
     if (showAddCategoryDialog) {
         var newCategoryName by remember { mutableStateOf("") }
         AlertDialog(
@@ -326,25 +348,32 @@ fun CreateTaskScreen(
         )
     }
 
-    MaterialDialog(dialogState = dateDialogState, buttons = {
-        positiveButton(stringResource(R.string.dialog_ok), textStyle = TextStyle(color = accentColor))
-        negativeButton(stringResource(R.string.dialog_cancel), textStyle = TextStyle(color = hintColor))
-    }) {
+    // Date picker dialog
+    MaterialDialog(
+        dialogState = dateDialogState,
+        buttons = {
+            positiveButton(stringResource(R.string.dialog_ok), textStyle = TextStyle(color = accentColor))
+            negativeButton(stringResource(R.string.dialog_cancel), textStyle = TextStyle(color = hintColor))
+        }
+    ) {
         datepicker(
             initialDate = date,
             title = stringResource(R.string.select_date),
             allowedDateValidator = { selectedDate ->
-                // ✅ السماح فقط بالتواريخ من اليوم فصاعداً
                 !selectedDate.isBefore(LocalDate.now())
             },
             onDateChange = viewModel::onDateChange
         )
     }
 
-    MaterialDialog(dialogState = timeDialogState, buttons = {
-        positiveButton(stringResource(R.string.dialog_ok), textStyle = TextStyle(color = accentColor))
-        negativeButton(stringResource(R.string.dialog_cancel), textStyle = TextStyle(color = hintColor))
-    }) {
+    // Time picker dialog
+    MaterialDialog(
+        dialogState = timeDialogState,
+        buttons = {
+            positiveButton(stringResource(R.string.dialog_ok), textStyle = TextStyle(color = accentColor))
+            negativeButton(stringResource(R.string.dialog_cancel), textStyle = TextStyle(color = hintColor))
+        }
+    ) {
         timepicker(
             initialTime = time,
             title = stringResource(R.string.select_time),
@@ -353,6 +382,12 @@ fun CreateTaskScreen(
     }
 }
 
+/**
+ * TaskTextField
+ *
+ * Reusable outlined text field for task input.
+ * Supports custom colors for theming.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskTextField(

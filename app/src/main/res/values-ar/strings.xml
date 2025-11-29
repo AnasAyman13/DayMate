@@ -187,15 +187,17 @@
     <string name="desc_category_icon">أيقونة الفئة</string>
     <string name="desc_task_options">خيارات المهمة</string>
     <string name="error_past_date">لا يمكن إنشاء مهمة في الماضي</string>
-        <string name="category_work">عمل</string>
-        <string name="category_study">دراسة/تعليم</string>
-        <string name="category_personal">شخصي</string>
-        <string name="category_health">صحة/رياضة</string>
-        <string name="category_General">عامة</string>
         <string name="delete_toast">هل تريد حذف هذه المهمة؟</string>
+    <string name="category_study">المذاكرة</string>
+    <string name="category_work">العمل</string>
+    <string name="category_personal">شخصي</string>
+    <string name="category_shopping">التسوق</string>
+    <string name="category_general">عام</string>
 
 
-//topBar quotes
+
+
+    //topBar quotes
     <string name="topbar_quote_1">نظّم يومك، وستمنحك الحياة أهدافك.</string>
     <string name="topbar_quote_2">البداية هي نصف العمل، ويومك هذا هو فرصتك.</string>
     <string name="topbar_quote_3">كل عثرة تبني القوة التي تحتاجها.</string>
@@ -220,5 +222,22 @@
         <string name="menu_mark_all_done">تحديد الكل كمكتمل</string>
 
     <string name="no_events_message">لا توجد أحداث اليوم</string>
+
+        <!-- ... باقي الـ strings الموجودة ... -->
+
+        <!-- Settings ViewModel Error Messages -->
+        <string name="error_user_not_found">المستخدم غير موجود</string>
+        <string name="error_loading_user">خطأ في تحميل بيانات المستخدم</string>
+        <string name="error_no_user_logged_in">لا يوجد مستخدم مسجل دخول حالياً.</string>
+        <string name="info_signed_in_with_google">أنت مسجل دخول باستخدام جوجل!</string>
+        <string name="success_password_reset_email_sent">تم إرسال رسالة إعادة تعيين كلمة المرور إلى %1$s.</string>
+        <string name="error_prefix">خطأ: %1$s</string>
+        <string name="error_unable_detect_login_method">لا يمكن تحديد طريقة تسجيل الدخول.</string>
+
+        <!-- MainActivity Permissions -->
+        <string name="permission_exact_alarms_request">من فضلك اسمح بالتنبيهات الدقيقة للتذكيرات.</string>
+
+        <!-- Settings Screen Toast Messages -->
+        <string name="toast_logged_out_successfully">تم تسجيل الخروج بنجاح</string>
 
 </resources>
