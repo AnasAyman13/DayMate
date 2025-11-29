@@ -53,8 +53,10 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 • Icons (App Icon + All In-App Icons)  
 • Testing  
 • Pomodoro settings  
-• Translation      
-• Managing & Organization  
+• Translation     
+• Dark & Light Mood          
+• Managing & Organization    
+   
 
 **Mohamed Yousry**  
 • UI/UX Details                
@@ -67,12 +69,12 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 **Menna Ayman**  
 • Pomodoro (UI & Logic)  
 • Timeline Screen (UI & Logic)  
-• NavigationBar 
-• Notification
+• NavigationBar   
+• Notification  
 
 **Islam Fawzy**  
 •  Login & SignUp  
-• Firestore (media)  
+• Firestore (media)   
 • Authentication (Login & SignUp) 
 
 
@@ -80,8 +82,8 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 • Authentication (Login & SignUp)  
 • Firebase  
 • Google Login & SignUp  
-• Firestore (Tasks)
-• Alarm
+• Firestore (Tasks)   
+• Alarm  
 
 **Basem Mohamed**   
 • Biometric Lock  
