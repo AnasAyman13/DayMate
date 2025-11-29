@@ -41,9 +41,9 @@ val developersList = listOf(
     Developer("Anas Ayman El-Gebaili", true, "https://github.com/AnasAyman13", "https://www.linkedin.com/in/anasayman13"),
     Developer("Mohamed Yousry", false, "https://github.com/MohamedYousry22", "https://www.linkedin.com/in/mohamed-yousry-a4a63627a"),
     Developer("Menna Ayman", false, "https://github.com/MennaAyman1697", "https://www.linkedin.com/in/mennaayman1697"),
-    Developer("Eslam Fawzy", false, "https://github.com/priyapatel", "https://linkedin.com/in/priyapatel"),
+    Developer("Eslam Fawzy", false, "https://github.com/eslamfawzy72", "https://www.linkedin.com/in/eslamfawzyy"),
     Developer("Youssef Barakat", false, "https://github.com/YoussefBarakat05", "https://www.linkedin.com/in/youssef-barakat05/"),
-    Developer("Basem Mohamed", false, "https://github.com/Basem-Mohamed-1", "https://linkedin.com/in/priyapatel")
+    Developer("Basem Mohamed", false, "https://github.com/Basem-Mohamed-1", "https://www.linkedin.com/in/basem-mohamed-341a65328/")
 )
 
 @Composable
