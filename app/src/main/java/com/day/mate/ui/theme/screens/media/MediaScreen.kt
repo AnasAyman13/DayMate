@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -31,6 +32,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.day.mate.data.local.VaultItem
 import com.day.mate.data.local.VaultType
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -39,15 +41,83 @@ fun VaultScreen(
     viewModel: VaultViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+
+    // الكشف عن اللغة الحالية
+    val isArabic = remember(configuration) {
+        configuration.locales[0].language == "ar"
+    }
 
     val allItems by viewModel.items.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
 
+    // النصوص حسب اللغة
+    val strings = if (isArabic) {
+        VaultStrings(
+            title = "مخزن الوسائط",
+            subtitle = "ملفاتك مشفرة وخاصة",
+            add = "إضافة",
+            delete = "حذف",
+            lock = "قفل",
+            playAudio = "تشغيل الصوت",
+            defaultFileName = "عنصر المخزن",
+            filterAll = "الكل",
+            filterPhotos = "الصور",
+            filterVideos = "الفيديوهات",
+            filterAudio = "الصوتيات",
+            filterDocuments = "المستندات"
+        )
+    } else {
+        VaultStrings(
+            title = "Media Storage",
+            subtitle = "Your files are encrypted and private",
+            add = "Add",
+            delete = "Delete",
+            lock = "Lock",
+            playAudio = "Play Audio",
+            defaultFileName = "Vault Item",
+            filterAll = "All",
+            filterPhotos = "Photos",
+            filterVideos = "Videos",
+            filterAudio = "Audio",
+            filterDocuments = "Documents"
+        )
+    }
+
+    // استخدام ألوان Material Theme
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
+
+    // ألوان الزر حسب الثيم
+    val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val buttonColor = if (isDarkTheme) Color(0xFFD4AF37) else MaterialTheme.colorScheme.primaryContainer
+    val buttonContentColor = if (isDarkTheme) Color.Black else MaterialTheme.colorScheme.onPrimaryContainer
+
+    // تحديث الفلتر بناءً على اللغة
+    LaunchedEffect(isArabic) {
+        val currentFilter = selectedFilter
+        val newFilter = when (currentFilter) {
+            "All", "الكل" -> strings.filterAll
+            "Photos", "الصور" -> strings.filterPhotos
+            "Videos", "الفيديوهات" -> strings.filterVideos
+            "Audio", "الصوتيات" -> strings.filterAudio
+            "Documents", "المستندات" -> strings.filterDocuments
+            else -> strings.filterAll
+        }
+        if (currentFilter != newFilter) {
+            viewModel.selectFilter(newFilter)
+        }
+    }
+
     val items = when (selectedFilter) {
-        "Photos" -> allItems.filter { it.type == VaultType.PHOTO }
-        "Videos" -> allItems.filter { it.type == VaultType.VIDEO }
-        "Audio" -> allItems.filter { it.type == VaultType.AUDIO }
-        "Documents" -> allItems.filter { it.type == VaultType.DOCUMENT }
+        strings.filterPhotos, "Photos", "الصور" -> allItems.filter { it.type == VaultType.PHOTO }
+        strings.filterVideos, "Videos", "الفيديوهات" -> allItems.filter { it.type == VaultType.VIDEO }
+        strings.filterAudio, "Audio", "الصوتيات" -> allItems.filter { it.type == VaultType.AUDIO }
+        strings.filterDocuments, "Documents", "المستندات" -> allItems.filter { it.type == VaultType.DOCUMENT }
         else -> allItems
     }
 
@@ -69,10 +139,8 @@ fun VaultScreen(
                     }
                 }
 
-                // ✅ استخراج اسم الملف
-                val name = getFileName(context, uri)
+                val name = getFileName(context, uri, strings.defaultFileName)
 
-                // منح الأذونات المستمرة
                 try {
                     context.contentResolver.takePersistableUriPermission(
                         uri,
@@ -84,7 +152,6 @@ fun VaultScreen(
                     e.printStackTrace()
                 }
 
-                // ✅ تمرير اسم الملف إلى VaultItem
                 VaultItem(id = uri.hashCode(), uri = uri.toString(), type = type, name = name)
             }
             viewModel.addItems(newItems)
@@ -92,153 +159,178 @@ fun VaultScreen(
     )
 
     Scaffold(
+        containerColor = backgroundColor,
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    // ✅ إضافة audio/* للأنواع المدعومة
                     picker.launch(arrayOf("image/*", "video/*", "audio/*", "application/pdf"))
                 },
-                containerColor = Color(0xFFFFD700),
+                containerColor = buttonColor,
+                contentColor = buttonContentColor,
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.Black)
+                Icon(Icons.Default.Add, contentDescription = strings.add)
             }
         }
     ) { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFF101F22))
+                .padding(horizontal = 16.dp, vertical = 16.dp)
         ) {
-            Column(
+            // العنوان
+            Text(
+                text = strings.title,
+                color = onSurfaceColor,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 16.dp)
-            ) {
-                // العنوان أعلى يسار
-                Text(
-                    text = "Media Storage",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.headlineSmall,
+            )
+
+            Spacer(Modifier.height(18.dp))
+
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Box(
                     modifier = Modifier
-                )
+                        .size(100.dp)
+                        .background(
+                            brush = Brush.linearGradient(
+                                listOf(Color(0xFF81D4FA), Color(0xFF4DB6AC))
+                            ),
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Lock,
+                        contentDescription = strings.lock,
+                        tint = Color.White,
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
+            }
 
-                Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(12.dp))
 
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Text(
+                text = strings.subtitle,
+                color = onSurfaceVariantColor,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            // الفلاتر
+            val filters = listOf(
+                strings.filterAll,
+                strings.filterPhotos,
+                strings.filterVideos,
+                strings.filterAudio,
+                strings.filterDocuments
+            )
+
+            Row(
+                modifier = Modifier
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                filters.forEach { filter ->
+                    val selected = selectedFilter == filter
                     Box(
                         modifier = Modifier
-                            .size(100.dp)
+                            .clip(RoundedCornerShape(20.dp))
                             .background(
-                                brush = Brush.linearGradient(
-                                    listOf(Color(0xFF81D4FA), Color(0xFF4DB6AC))
-                                ),
-                                shape = CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.Lock,
-                            contentDescription = "Lock",
-                            tint = Color.White,
-                            modifier = Modifier.size(48.dp)
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(12.dp))
-
-                Text(
-                    text = "Your files are encrypted and private.",
-                    color = Color.White.copy(alpha = 0.7f),
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(Modifier.height(16.dp))
-
-                // ✅ إضافة "Audio" للفلاتر
-                val filters = listOf("All", "Photos", "Videos", "Audio", "Documents")
-                Row(
-                    modifier = Modifier
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    filters.forEach { filter ->
-                        val selected = selectedFilter == filter
-                        Box(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(
-                                    if (selected) Color(0xFF4DB6AC)
-                                    else Color.White.copy(alpha = 0.1f)
-                                )
-                                .clickable { viewModel.selectFilter(filter) }
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                        ) {
-                            Text(
-                                text = filter,
-                                color = if (selected) Color.White else Color.White.copy(alpha = 0.7f),
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                                if (selected) primaryColor
+                                else MaterialTheme.colorScheme.surfaceVariant
                             )
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
-
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 150.dp),
-                    contentPadding = PaddingValues(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    items(items) { item ->
-                        VaultItemCard(
-                            item = item,
-                            onClick = {
-                                // ✅ للملفات الصوتية نفتحها خارج التطبيق مباشرة
-                                if (item.type == VaultType.AUDIO) {
-                                    openAudioExternally(context, Uri.parse(item.uri))
-                                } else {
-                                    navController.navigate("viewer/${Uri.encode(item.uri)}/${item.type.name}")
-                                }
-                            },
-                            overlayContent = {
-                                IconButton(
-                                    onClick = { viewModel.removeItem(item) },
-                                    modifier = Modifier.align(Alignment.TopEnd)
-                                ) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.White)
-                                }
-                            }
+                            .border(
+                                width = 1.dp,
+                                color = if (selected) primaryColor
+                                else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(20.dp)
+                            )
+                            .clickable { viewModel.selectFilter(filter) }
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = filter,
+                            color = if (selected) onPrimaryColor else onSurfaceColor,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
                         )
                     }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 150.dp),
+                contentPadding = PaddingValues(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                items(items) { item ->
+                    VaultItemCard(
+                        item = item,
+                        onClick = {
+                            if (item.type == VaultType.AUDIO) {
+                                openAudioExternally(context, Uri.parse(item.uri), strings.playAudio)
+                            } else {
+                                navController.navigate("viewer/${Uri.encode(item.uri)}/${item.type.name}")
+                            }
+                        },
+                        overlayContent = {
+                            IconButton(
+                                onClick = { viewModel.removeItem(item) },
+                                modifier = Modifier.align(Alignment.TopEnd)
+                            ) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = strings.delete,
+                                    tint = Color.White
+                                )
+                            }
+                        }
+                    )
                 }
             }
         }
     }
 }
 
-// ✅ دالة لفتح الملفات الصوتية خارج التطبيق
-fun openAudioExternally(context: Context, uri: Uri) {
+// Data class للنصوص
+data class VaultStrings(
+    val title: String,
+    val subtitle: String,
+    val add: String,
+    val delete: String,
+    val lock: String,
+    val playAudio: String,
+    val defaultFileName: String,
+    val filterAll: String,
+    val filterPhotos: String,
+    val filterVideos: String,
+    val filterAudio: String,
+    val filterDocuments: String
+)
+
+fun openAudioExternally(context: Context, uri: Uri, title: String) {
     try {
         val intent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(uri, "audio/*")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-        context.startActivity(Intent.createChooser(intent, "Play Audio"))
+        context.startActivity(Intent.createChooser(intent, title))
     } catch (e: Exception) {
         Log.e("VaultScreen", "Failed to open audio file", e)
     }
 }
 
-// دالة مساعدة للحصول على اسم الملف
-fun getFileName(context: Context, uri: Uri): String {
+fun getFileName(context: Context, uri: Uri, defaultName: String): String {
     var result: String? = null
     if (uri.scheme == "content") {
         val cursor = context.contentResolver.query(uri, null, null, null, null)
@@ -251,7 +343,7 @@ fun getFileName(context: Context, uri: Uri): String {
             }
         }
     }
-    return result ?: uri.lastPathSegment ?: "Vault Item"
+    return result ?: uri.lastPathSegment ?: defaultName
 }
 
 @Composable
@@ -260,12 +352,17 @@ fun VaultItemCard(
     onClick: () -> Unit,
     overlayContent: (@Composable BoxScope.() -> Unit)? = null
 ) {
+    val surfaceColor = MaterialTheme.colorScheme.surfaceVariant
+
     Card(
         modifier = Modifier
             .aspectRatio(1f)
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(8.dp)
+        elevation = CardDefaults.cardElevation(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = surfaceColor
+        )
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             when (item.type) {
@@ -282,10 +379,14 @@ fun VaultItemCard(
                         .background(Color.Black),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.PlayCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(48.dp))
+                    Icon(
+                        Icons.Default.PlayCircle,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(48.dp)
+                    )
                 }
 
-                // ✅ إضافة كارت للصوتيات
                 VaultType.AUDIO -> Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -307,14 +408,19 @@ fun VaultItemCard(
                 VaultType.DOCUMENT -> Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color(0xFFEEEEEE)),
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Description, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(64.dp))
+                    Icon(
+                        Icons.Default.Description,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(64.dp)
+                    )
                 }
             }
 
-            // ✅ إضافة الـOverlay في الأسفل لعرض اسم الملف
+            // عرض اسم الملف في الأسفل
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
