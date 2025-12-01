@@ -239,5 +239,25 @@
 
         <!-- Settings Screen Toast Messages -->
         <string name="toast_logged_out_successfully">تم تسجيل الخروج بنجاح</string>
+    <!-- res/values-ar/strings.xml -->
 
+    <!-- Biometric Lock Screen -->
+    <string name="biometric_unlock_title">فتح خزينة الوسائط</string>
+    <string name="biometric_unlock_description">استخدم البصمة للوصول إلى ملفاتك الخاصة</string>
+    <string name="media_vault_locked">الخزينة مقفلة</string>
+    <string name="media_vault_description">وسائطك الخاصة محمية. استخدم البصمة للفتح.</string>
+    <string name="unlock_with_biometrics">فتح باستخدام البصمة</string>
+    <string name="go_back">رجوع</string>
+    <string name="biometric_helper_text">بياناتك البيومترية لا تغادر جهازك أبداً ويتم تخزينها بشكل آمن بواسطة نظام التشغيل.</string>
+
+    <!-- Biometric Status Messages -->
+    <string name="biometric_auth_failed">فشلت المصادقة. حاول مرة أخرى.</string>
+    <string name="biometric_error_occurred">حدث خطأ</string>
+    <string name="biometric_setting_up">جاري الإعداد…</string>
+    <string name="biometric_success_redirecting">تم بنجاح! جاري التحويل…</string>
+    <string name="biometric_feature_unavailable">الميزة البيومترية غير متوفرة على هذا الجهاز</string>
+    <string name="biometric_hardware_unavailable">المعدات البيومترية غير متوفرة</string>
+
+    <!-- Content Descriptions -->
+    <string name="desc_lock_icon">أيقونة القفل</string>
 </resources>

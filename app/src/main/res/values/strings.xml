@@ -246,5 +246,25 @@
 
         <!-- Settings Screen Toast Messages (already exist but added for reference) -->
         <string name="toast_logged_out_successfully">Logged out successfully</string>
+    <!-- res/values/strings.xml -->
 
+    <!-- Biometric Lock Screen -->
+    <string name="biometric_unlock_title">Unlock Media Vault</string>
+    <string name="biometric_unlock_description">Authenticate to access your private media files</string>
+    <string name="media_vault_locked">Media Vault Locked</string>
+    <string name="media_vault_description">Your private media is protected. Use biometric authentication to unlock.</string>
+    <string name="unlock_with_biometrics">Unlock with Biometrics</string>
+    <string name="go_back">Go Back</string>
+    <string name="biometric_helper_text">Your biometric data never leaves your device and is securely stored by your operating system.</string>
+
+    <!-- Biometric Status Messages -->
+    <string name="biometric_auth_failed">Authentication failed. Please try again.</string>
+    <string name="biometric_error_occurred">An error occurred</string>
+    <string name="biometric_setting_up">Setting up biometric…</string>
+    <string name="biometric_success_redirecting">Success! Redirecting…</string>
+    <string name="biometric_feature_unavailable">Biometric feature unavailable on this device</string>
+    <string name="biometric_hardware_unavailable">Biometric hardware unavailable</string>
+
+    <!-- Content Descriptions -->
+    <string name="desc_lock_icon">Lock Icon</string>
 </resources>

@@ -5,13 +5,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -27,7 +27,6 @@ import com.day.mate.data.repository.TodoRepository
 import com.day.mate.ui.screens.PrayerScreen
 import com.day.mate.ui.screens.settings.SettingsScreenContainer
 import com.day.mate.ui.theme.AppGold
-import com.day.mate.ui.theme.DarkBg
 import com.day.mate.ui.theme.navigation.BottomNavigationBar
 import com.day.mate.ui.theme.navigation.BottomNavItem
 import com.day.mate.ui.theme.screens.settings.DeveloperScreen
@@ -42,11 +41,19 @@ import com.day.mate.ui.theme.screens.todo.TasksScreen
 import com.day.mate.ui.theme.screens.todo.TodoViewModel
 import com.day.mate.ui.theme.screens.todo.TodoViewModelFactory
 
+/**
+ * MainNavGraph
+ *
+ * Main navigation graph for the entire application.
+ * Handles all screen navigation and manages ViewModels.
+ * Uses MaterialTheme colors for proper dark/light mode support.
+ */
 @Composable
 fun MainNavGraph() {
     val navController = rememberNavController()
     val context = LocalContext.current.applicationContext
 
+    // Initialize database and repositories
     val database = remember { AppDatabase.getInstance(context) }
     val todoRepository = remember {
         TodoRepository(database.todoDao(), database.categoryDao())
@@ -54,12 +61,15 @@ fun MainNavGraph() {
     val prayerRepository = remember {
         PrayerRepository(RetrofitInstance.api)
     }
+
+    // Create ViewModels with factories
     val todoFactory = remember(todoRepository) { TodoViewModelFactory(todoRepository) }
     val timelineFactory = remember(todoRepository, prayerRepository) {
         TimelineViewModelFactory(todoRepository, prayerRepository)
     }
     val todoViewModel: TodoViewModel = viewModel(factory = todoFactory)
 
+    // Sync data from Firestore on app start
     LaunchedEffect(Unit) {
         todoViewModel.syncFromFirestore()
     }
@@ -67,10 +77,12 @@ fun MainNavGraph() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    // Show FAB only on Timeline and Todo screens
     val showFab = currentRoute == BottomNavItem.TimeLine.route ||
             currentRoute == BottomNavItem.Todo.route
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             if (showFab) {
                 FloatingActionButton(
@@ -79,20 +91,27 @@ fun MainNavGraph() {
                         navController.navigate("task_screen/new")
                     },
                     containerColor = AppGold,
-                    contentColor = DarkBg
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Task")
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "Add Task"
+                    )
                 }
             }
         },
-        bottomBar = { BottomNavigationBar(navController) }
+        bottomBar = {
+            BottomNavigationBar(navController = navController)
+        }
     ) { innerPadding ->
         NavHost(
             navController = navController,
             startDestination = BottomNavItem.TimeLine.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            // الشاشات الرئيسية
+            // ========== Main Screens ==========
+
+            // Timeline Screen
             composable(BottomNavItem.TimeLine.route) {
                 val timelineViewModel: TimelineViewModel = viewModel(
                     modelClass = TimelineViewModel::class.java,
@@ -100,6 +119,8 @@ fun MainNavGraph() {
                 )
                 TimelineScreen(viewModel = timelineViewModel)
             }
+
+            // Todo Screen
             composable(BottomNavItem.Todo.route) {
                 TasksScreen(
                     viewModel = todoViewModel,
@@ -108,15 +129,38 @@ fun MainNavGraph() {
                     }
                 )
             }
-            composable(BottomNavItem.Pomodoro.route) { PomodoroScreen() }
-            composable(BottomNavItem.Media.route) { BiometricLockScreen(navController = navController) }
-            composable(BottomNavItem.Prayer.route) { PrayerScreen() }
-            composable(BottomNavItem.Settings.route) {
-                // عدل SettingsScreenContainer ليأخذ navController
-                SettingsScreenContainer(navController = navController, onBackClick = { navController.popBackStack() })
+
+            // Pomodoro Screen
+            composable(BottomNavItem.Pomodoro.route) {
+                PomodoroScreen()
             }
 
-            // شاشة عرض الملفات
+            // Media Vault Screen (with Biometric Lock)
+            composable(BottomNavItem.Media.route) {
+                BiometricLockScreen(navController = navController)
+            }
+
+            // Prayer Times Screen
+            composable(BottomNavItem.Prayer.route) {
+                PrayerScreen()
+            }
+
+            // Settings Screen
+            composable(BottomNavItem.Settings.route) {
+                SettingsScreenContainer(
+                    navController = navController,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            // ========== Vault Screens ==========
+
+            // Media Vault Main Screen
+            composable("media_vault") {
+                VaultScreen(navController = navController)
+            }
+
+            // Vault Viewer Screen
             composable(
                 route = "viewer/{uri}/{type}",
                 arguments = listOf(
@@ -126,13 +170,21 @@ fun MainNavGraph() {
             ) { backStackEntry ->
                 val uri = backStackEntry.arguments?.getString("uri") ?: ""
                 val type = backStackEntry.arguments?.getString("type") ?: "PHOTO"
-                VaultViewerScreen(navController = navController, uri = uri, type = type)
+                VaultViewerScreen(
+                    navController = navController,
+                    uri = uri,
+                    type = type
+                )
             }
 
-            // إنشاء/تعديل مهمة
+            // ========== Task Management ==========
+
+            // Create/Edit Task Screen
             composable(
                 route = "task_screen/{taskId}",
-                arguments = listOf(navArgument("taskId") { type = NavType.StringType })
+                arguments = listOf(
+                    navArgument("taskId") { type = NavType.StringType }
+                )
             ) { backStackEntry ->
                 val taskIdString = backStackEntry.arguments?.getString("taskId")
                 CreateTaskScreen(
@@ -142,15 +194,28 @@ fun MainNavGraph() {
                 )
             }
 
-            // إعدادات: الشاشات الجديدة
-            composable("developers") { DeveloperScreen(onBack = { navController.popBackStack() }) }
-            composable("terms") { TermsScreen(onBack = { navController.popBackStack() }) }
-            composable("help_support") { HelpSupportScreen(onBack = { navController.popBackStack() }) }
-            composable("media_vault") {
-                VaultScreen(navController = navController)
+            // ========== Settings Sub-Screens ==========
+
+            // Developers Screen
+            composable("developers") {
+                DeveloperScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            // Terms of Service Screen
+            composable("terms") {
+                TermsScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            // Help & Support Screen
+            composable("help_support") {
+                HelpSupportScreen(
+                    onBack = { navController.popBackStack() }
+                )
             }
         }
     }
 }
-
-

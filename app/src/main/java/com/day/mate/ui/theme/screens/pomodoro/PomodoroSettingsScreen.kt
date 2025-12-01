@@ -25,6 +25,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 
+/**
+ * PomodoroSettingsScreen
+ *
+ * Settings screen for configuring Pomodoro timer durations.
+ * Uses MaterialTheme colors for proper dark/light mode support.
+ * Adapts layout for landscape orientation.
+ *
+ * @param onCancel Callback when user cancels
+ * @param onSave Callback when user saves with new durations
+ * @param initialFocus Initial focus duration in seconds
+ * @param initialShort Initial short break duration in seconds
+ * @param initialLong Initial long break duration in seconds
+ */
 @Composable
 fun PomodoroSettingsScreen(
     onCancel: () -> Unit,
@@ -33,6 +46,7 @@ fun PomodoroSettingsScreen(
     initialShort: Int,
     initialLong: Int
 ) {
+    // Helper function to parse seconds into hours, minutes, seconds
     fun parseTime(secs: Int): Triple<Int, Int, Int> =
         Triple(secs / 3600, (secs % 3600) / 60, secs % 60)
 
@@ -53,17 +67,13 @@ fun PomodoroSettingsScreen(
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
-
     val cardWidthFraction = if (isLandscape) 0.9f else 0.95f
-
     val horizontalPadding = if (isLandscape) 32.dp else 16.dp
-
 
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-
         Surface(
             shape = RoundedCornerShape(20.dp),
             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
@@ -72,7 +82,6 @@ fun PomodoroSettingsScreen(
                 .fillMaxWidth(cardWidthFraction)
                 .padding(vertical = 8.dp)
         ) {
-
             LazyColumn(
                 modifier = Modifier
                     .padding(horizontal = horizontalPadding, vertical = 24.dp)
@@ -81,14 +90,17 @@ fun PomodoroSettingsScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
+                // Title
                 item {
                     Text(
                         text = stringResource(R.string.settings_title),
                         fontSize = 28.sp,
-                        fontWeight = FontWeight.ExtraBold
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
+                // Focus time
                 item {
                     TimeRow(
                         label = stringResource(R.string.focus_label),
@@ -103,6 +115,7 @@ fun PomodoroSettingsScreen(
                     )
                 }
 
+                // Short break
                 item {
                     TimeRow(
                         label = stringResource(R.string.short_break_label),
@@ -117,6 +130,7 @@ fun PomodoroSettingsScreen(
                     )
                 }
 
+                // Long break
                 item {
                     TimeRow(
                         label = stringResource(R.string.long_break_label),
@@ -131,6 +145,7 @@ fun PomodoroSettingsScreen(
                     )
                 }
 
+                // Action buttons
                 item {
                     Spacer(Modifier.height(16.dp))
                     Row(
@@ -140,9 +155,17 @@ fun PomodoroSettingsScreen(
                         OutlinedButton(
                             onClick = onCancel,
                             shape = CircleShape,
-                            modifier = Modifier.weight(1f).height(50.dp)
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            )
                         ) {
-                            Text(stringResource(R.string.cancel_button), fontSize = 18.sp)
+                            Text(
+                                stringResource(R.string.cancel_button),
+                                fontSize = 18.sp
+                            )
                         }
                         Button(
                             onClick = {
@@ -152,9 +175,18 @@ fun PomodoroSettingsScreen(
                                 onSave(focusSecs, shortSecs, longSecs)
                             },
                             shape = CircleShape,
-                            modifier = Modifier.weight(1f).height(50.dp)
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
                         ) {
-                            Text(stringResource(R.string.save_button), fontSize = 18.sp)
+                            Text(
+                                stringResource(R.string.save_button),
+                                fontSize = 18.sp
+                            )
                         }
                     }
                 }
@@ -163,6 +195,21 @@ fun PomodoroSettingsScreen(
     }
 }
 
+/**
+ * TimeRow
+ *
+ * Row for configuring a time duration (hours, minutes, seconds).
+ *
+ * @param label Label for the time configuration
+ * @param icon Icon representing the time type
+ * @param iconTint Color for the icon
+ * @param hours Current hours value
+ * @param minutes Current minutes value
+ * @param seconds Current seconds value
+ * @param onHoursChange Callback when hours change
+ * @param onMinutesChange Callback when minutes change
+ * @param onSecondsChange Callback when seconds change
+ */
 @Composable
 fun TimeRow(
     label: String,
@@ -175,28 +222,40 @@ fun TimeRow(
     onMinutesChange: (Int) -> Unit,
     onSecondsChange: (Int) -> Unit
 ) {
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-
+        // Icon
         Box(
             modifier = Modifier
                 .size(54.dp)
                 .background(iconTint.copy(alpha = 0.15f), shape = CircleShape)
         ) {
-            Icon(icon, null, tint = iconTint, modifier = Modifier.align(Alignment.Center).size(30.dp))
+            Icon(
+                icon,
+                null,
+                tint = iconTint,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(30.dp)
+            )
         }
         Spacer(Modifier.width(16.dp))
 
-
-        Text(label, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.width(100.dp))
+        // Label
+        Text(
+            label,
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp,
+            modifier = Modifier.width(100.dp),
+            color = MaterialTheme.colorScheme.onSurface
+        )
         Spacer(Modifier.width(12.dp))
 
-
+        // Time pickers
         TimeComponentPicker(
             items = (0..12).map { it.toString() },
             selected = hours,
@@ -222,6 +281,19 @@ fun TimeRow(
         )
     }
 }
+
+/**
+ * TimeComponentPicker
+ *
+ * Scrollable picker for selecting a time component (hours/minutes/seconds).
+ *
+ * @param items List of items to display
+ * @param selected Currently selected index
+ * @param onSelected Callback when selection changes
+ * @param label Label for the picker
+ * @param modifier Modifier for the component
+ * @param boxHeight Height of the picker box
+ */
 @Composable
 fun TimeComponentPicker(
     items: List<String>,
@@ -257,7 +329,6 @@ fun TimeComponentPicker(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
-
                 itemsIndexed(items) { i, v ->
                     val isSel = i == selected
 
@@ -267,14 +338,12 @@ fun TimeComponentPicker(
                             .height(38.dp),
                         contentAlignment = Alignment.Center
                     ) {
-
                         Text(
                             text = v,
                             fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
                             fontSize = if (isSel) 20.sp else 15.sp,
-                            color =
-                                if (isSel) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            color = if (isSel) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             modifier = Modifier
                                 .background(
                                     if (isSel) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
@@ -293,7 +362,8 @@ fun TimeComponentPicker(
             label,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
-            modifier = Modifier.padding(top = 3.dp)
+            modifier = Modifier.padding(top = 3.dp),
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }
