@@ -132,7 +132,7 @@ fun MainNavGraph() {
 
             // Pomodoro Screen
             composable(BottomNavItem.Pomodoro.route) {
-                PomodoroScreen()
+                PomodoroScreen(isDarkTheme = true)
             }
 
             // Media Vault Screen (with Biometric Lock)

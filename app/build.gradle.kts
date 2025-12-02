@@ -144,4 +144,26 @@ dependencies {
     implementation("com.google.accompanist:accompanist-pager:0.32.0")
 // تأكد من استخدام أحدث إصدار
     implementation("com.google.accompanist:accompanist-pager-indicators:0.32.0")
+
+    // JUnit for basic testing
+    testImplementation("junit:junit:4.13.2")
+// For InstantTaskExecutorRule (testing LiveData/ViewModel in JVM)
+    testImplementation("androidx.arch.core:core-testing:2.2.0")
+
+// Kotlin Coroutines Testing (VERY IMPORTANT for ViewModel)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+// Turbine (Optional but highly recommended for testing Kotlin Flows)
+    testImplementation("app.cash.turbine:turbine:1.1.0")
+
+// Mocking library (نستخدم Mockito أو Mockk - هنا مثال لـ Mockito مع Kotlin Extensions)
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+    testImplementation("org.mockito:mockito-inline:5.8.0")
+
+
+// UI Testing (Instrumented Tests)
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+// Compose Testing
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.6.8")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.6.8")
 }

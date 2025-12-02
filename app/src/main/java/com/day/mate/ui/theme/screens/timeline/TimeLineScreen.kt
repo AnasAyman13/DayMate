@@ -57,18 +57,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.DpOffset
 
-/**
- * Data class representing a time block with grouped events
- */
+
 data class TimeBlock(
     val timeLabel: String,
     val events: List<TimelineEvent>,
     val isCurrentHour: Boolean
 )
 
-/**
- * Get translated title for prayer events
- */
+
 @Composable
 fun getTranslatedTitle(event: TimelineEvent): String {
     return when (event.title) {
@@ -81,9 +77,6 @@ fun getTranslatedTitle(event: TimelineEvent): String {
     }
 }
 
-/**
- * Get translated category name
- */
 @Composable
 fun getTranslatedCategory(category: String): String {
     return when (category) {
@@ -96,11 +89,7 @@ fun getTranslatedCategory(category: String): String {
     }
 }
 
-/**
- * TimelineMenu
- *
- * Dropdown menu for timeline actions (view tomorrow, hide completed, mark all done)
- */
+
 @Composable
 fun TimelineMenu(viewModel: TimelineViewModel) {
     val selectedDate by viewModel.selectedDate.collectAsState()

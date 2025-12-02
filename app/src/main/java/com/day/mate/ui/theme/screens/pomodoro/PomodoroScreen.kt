@@ -45,9 +45,11 @@ import com.day.mate.R
 import com.day.mate.data.local.TimerMode
 import kotlinx.coroutines.delay
 import java.util.Locale
+
 @Composable
-fun PomodoroScreen() {
+fun PomodoroScreen(isDarkTheme: Boolean) {
     val applicationContext = LocalContext.current.applicationContext
+    val isDark = isDarkTheme
 
     val viewModel: TimerViewModel = viewModel(factory = remember {
         object : ViewModelProvider.Factory {
@@ -96,7 +98,8 @@ fun PomodoroScreen() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF101F22))
+            .background(MaterialTheme.colorScheme.background)
+
     ) {
 
         PomodoroTitleBar(timerState.mode, isLandscape) { showSettings = true }
@@ -198,7 +201,8 @@ fun PomodoroTitleBar(mode: TimerMode, isLandscape: Boolean, onSettingsClick: () 
                 Icon(
                     imageVector = Icons.Default.Settings,
                     contentDescription = "Settings",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.onSurface
+
                 )
             }
         }
@@ -212,7 +216,8 @@ fun PomodoroTitleBar(mode: TimerMode, isLandscape: Boolean, onSettingsClick: () 
             modifier = Modifier.weight(1f),
             fontSize = if (isLandscape) 36.sp else 42.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White
+            color = MaterialTheme.colorScheme.onSurface
+
         )
         Box(modifier = Modifier.size(42.dp)) {}
     }
@@ -257,7 +262,8 @@ fun TimerCircleContent(viewModel: TimerViewModel, animatedProgress: Float, isLan
 
             fontSize = if (isLandscape) 60.sp else 60.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White
+            color = MaterialTheme.colorScheme.onSurface
+
         )
     }
 }
@@ -286,10 +292,11 @@ fun BottomButtonsContent(viewModel: TimerViewModel, isRunning: Boolean, isLandsc
                 Icon(
                     imageVector = Icons.Default.Refresh,
                     contentDescription = stringResource(id = R.string.reset),
-                    tint = Color.White
+                    tint = MaterialTheme.colorScheme.onPrimary
+
                 )
             }
-            Text(text = stringResource(id = R.string.reset), fontSize = buttonFontSize, color = Color.White)
+            Text(text = stringResource(id = R.string.reset), fontSize = buttonFontSize, color = MaterialTheme.colorScheme.onSurface)
         }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -307,10 +314,10 @@ fun BottomButtonsContent(viewModel: TimerViewModel, isRunning: Boolean, isLandsc
                 Icon(
                     imageVector = if (isRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
                     contentDescription = stringResource(id = R.string.pause_start),
-                    tint = Color.White
+                    tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
-            Text(text = stringResource(id = R.string.pause_start), fontSize = buttonFontSize, color = Color.White)
+            Text(text = stringResource(id = R.string.pause_start), fontSize = buttonFontSize, color = MaterialTheme.colorScheme.onSurface)
         }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -326,10 +333,10 @@ fun BottomButtonsContent(viewModel: TimerViewModel, isRunning: Boolean, isLandsc
                 Icon(
                     imageVector = Icons.Default.SkipNext,
                     contentDescription = stringResource(id = R.string.skip),
-                    tint = Color.White
+                    tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
-            Text(text = stringResource(id = R.string.skip), fontSize = buttonFontSize, color = Color.White)
+            Text(text = stringResource(id = R.string.skip), fontSize = buttonFontSize, color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
@@ -339,7 +346,7 @@ fun CompletedSessionsText(completedSessions: Int, isLandscape: Boolean) {
     Text(
         text = stringResource(id = R.string.completed_sessions, completedSessions),
         fontSize = if (isLandscape) 16.sp else 16.sp,
-        color = Color.White,
+        color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
     )
 }
