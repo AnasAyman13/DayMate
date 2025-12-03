@@ -32,6 +32,8 @@ import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import com.day.mate.R
 import com.day.mate.ui.theme.AppGold
 import com.plcoding.biometricauth.BiometricPromptManager
+import androidx.compose.foundation.rememberScrollState // Import جديد
+import androidx.compose.foundation.verticalScroll // Import جديد
 
 /**
  * BiometricLockScreen
@@ -58,7 +60,7 @@ fun BiometricLockScreen(navController: NavController) {
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Launcher for biometric enrollment settings
+
     val enrollLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult(),
         onResult = {
@@ -70,7 +72,7 @@ fun BiometricLockScreen(navController: NavController) {
         }
     )
 
-    // Infinite pulse animation for lock icon
+
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val scale by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -82,11 +84,11 @@ fun BiometricLockScreen(navController: NavController) {
         label = "lock_pulse"
     )
 
-    // Handle biometric results
+
     LaunchedEffect(biometricResult) {
         when (biometricResult) {
             is BiometricPromptManager.BiometricResult.AuthenticationNotSet -> {
-                // Redirect to biometric enrollment
+
                 if (Build.VERSION.SDK_INT >= 30) {
                     val enrollIntent = Intent(Settings.ACTION_BIOMETRIC_ENROLL).apply {
                         putExtra(
@@ -121,6 +123,9 @@ fun BiometricLockScreen(navController: NavController) {
         }
     }
 
+    // Scroll state for vertical scrolling
+    val scrollState = rememberScrollState()
+
     // Main UI
     Box(
         modifier = Modifier
@@ -130,9 +135,12 @@ fun BiometricLockScreen(navController: NavController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
+                .padding(24.dp)
+                // *** التعديل 1: تمكين التمرير العمودي ***
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            // *** التعديل 2: ترتيب العناصر يبدأ من الأعلى لمزيد من المرونة في الوضع الأفقي ***
+            verticalArrangement = Arrangement.Top
         ) {
             // Animated Lock Icon
             Box(
@@ -212,14 +220,18 @@ fun BiometricLockScreen(navController: NavController) {
                         stringResource(R.string.biometric_feature_unavailable) to MaterialTheme.colorScheme.error
                     BiometricPromptManager.BiometricResult.HardwareUnavailable ->
                         stringResource(R.string.biometric_hardware_unavailable) to MaterialTheme.colorScheme.error
+                    else ->
+                        "" to Color.Transparent
                 }
 
-                Text(
-                    text = statusText,
-                    color = statusColor,
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Center
-                )
+                if (statusText.isNotEmpty()) {
+                    Text(
+                        text = statusText,
+                        color = statusColor,
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
 
             Spacer(Modifier.height(48.dp))
@@ -276,7 +288,7 @@ fun BiometricLockScreen(navController: NavController) {
 
             Spacer(Modifier.height(24.dp))
 
-            // Helper text
+
             Text(
                 text = stringResource(R.string.biometric_helper_text),
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
