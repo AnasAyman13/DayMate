@@ -1,5 +1,6 @@
 package com.day.mate.ui.theme.screens.todo
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -42,7 +43,6 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.verticalScroll
 import kotlin.math.roundToInt
 
@@ -99,7 +99,7 @@ fun TasksScreen(
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
-    // ✅ Use MaterialTheme colors
+    // Theme colors based on MaterialTheme
     val backgroundColor = MaterialTheme.colorScheme.background
     val surfaceColor = MaterialTheme.colorScheme.surface
     val onBackgroundColor = MaterialTheme.colorScheme.onBackground
@@ -122,6 +122,7 @@ fun TasksScreen(
         allTodos.groupBy { it.date }.mapValues { it.value.size }
     }
 
+    // Filter todos by selected date and category
     val filteredTodos = allTodos.filter { todo ->
         val matchesDate = todo.date == selectedDate.toString()
         val matchesCategory = if (selectedFilter == allCategoriesText) true else todo.category == selectedFilter
@@ -559,7 +560,7 @@ fun ManageCategoriesDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // عرض اسم الكاتيجوري كما هو (لو عايز هنا كمان تقدر تستخدم CategoryLabel)
+                        // Display the category name (could use CategoryLabel if necessary)
                         Text(categoryName, color = MaterialTheme.colorScheme.onSurface)
                         IconButton(onClick = {
                             viewModel.deleteCategory(categoryName, onError)

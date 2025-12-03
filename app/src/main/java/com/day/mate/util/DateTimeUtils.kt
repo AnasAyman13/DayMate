@@ -1,8 +1,7 @@
-package com.day.mate
+package com.day.mate.util
 
 
 
-import com.day.mate.data.local.Timings
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime

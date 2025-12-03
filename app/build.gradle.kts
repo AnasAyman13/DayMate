@@ -9,7 +9,10 @@ plugins {
     id("com.google.gms.google-services")
     id("kotlin-kapt")
 }
+
+// Configuration for Kotlin Annotation Processing Tool (Kapt)
 kapt {
+    // Ensures that Kapt uses the correct type for error messages, improving compile-time checks.
     correctErrorTypes = true
 }
 
@@ -27,13 +30,14 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    // ✅ هنا المكان الصحيح للـ lint
+    // Global lint configuration block.
     lint {
-        disable += "NullSafeMutableLiveData"
+        disable += "NullSafeMutableLiveData" // Disables a specific lint check related to NullSafeMutableLiveData usage.
     }
+
     signingConfigs {
         create("shared") {
-            // ⚠️ لازم يكون ملف daymate.keystore موجود في:  app/
+            // IMPORTANT: Ensure the 'daymate.keystore' file is located in the 'app/' directory.
             storeFile = file("daymate.keystore")
             storePassword = "123456"
             keyAlias = "daymate_key"
@@ -43,15 +47,15 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("shared")
+            isMinifyEnabled = false // Set to true for production minification
+            signingConfig = signingConfigs.getByName("shared") // Applies the shared signing configuration for secure release builds.
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
         debug {
-            signingConfig = signingConfigs.getByName("shared")
+            signingConfig = signingConfigs.getByName("shared") // Uses the same shared signing configuration for debug builds.
         }
     }
 
@@ -65,13 +69,16 @@ android {
     }
 
     buildFeatures {
+        // Enables Jetpack Compose support
         compose = true
     }
 }
 
 
 dependencies {
-    // AndroidX
+    // ==========================================================
+    // Core AndroidX and Lifecycle Libraries
+    // ==========================================================
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.activity:activity-compose:1.9.0")
@@ -79,95 +86,113 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.0")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation(libs.androidx.appcompat)
+    implementation("androidx.core:core-ktx:1.13.1")
 
-    // Compose
+
+    // ==========================================================
+    // Jetpack Compose Dependencies
+    // ==========================================================
+    // Compose Bill of Materials (BOM) to manage consistent versioning
     implementation(platform("androidx.compose:compose-bom:2024.10.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.material3:material3:1.4.0")
     implementation("androidx.compose.material:material-icons-extended:1.7.0")
-    implementation("androidx.navigation:navigation-compose:2.8.2")
-    implementation(libs.androidx.appcompat)
+    implementation("androidx.navigation:navigation-compose:2.8.2") // Compose Navigation
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-    // Room
+
+    // ==========================================================
+    // Persistence (Room Database)
+    // ==========================================================
     implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    kapt("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1") // Kotlin extensions for Room (Coroutines support)
+    kapt("androidx.room:room-compiler:2.6.1") // Kapt processor for Room
 
+
+    // ==========================================================
     // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    // ==========================================================
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1") // Essential for asynchronous operations
 
-    // Firebase
+
+    // ==========================================================
+    // Firebase Platform (BOM, Core, Auth, Firestore)
+    // ==========================================================
     implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-firestore") // Cloud Firestore database
 
-    // Network
+
+    // ==========================================================
+    // Networking
+    // ==========================================================
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0") // GSON converter for JSON serialization
     implementation("com.google.code.gson:gson:2.10.1")
 
-    // Coil
-    implementation("io.coil-kt:coil-compose:2.7.0")
 
-    // DatePicker dialogs
-    implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
+    // ==========================================================
+    // Image Loading and UI Utilities
+    // ==========================================================
+    implementation("io.coil-kt:coil-compose:2.7.0") // Coil for efficient image loading in Compose
+    implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0") // DatePicker dialogs for Compose
+    implementation("com.google.accompanist:accompanist-pager:0.32.0") // Accompanist Pager library
+    implementation("com.google.accompanist:accompanist-pager-indicators:0.32.0") // Pager indicators
 
-    // Media
-    implementation("androidx.media3:media3-exoplayer:1.4.1")
+
+    // ==========================================================
+    // Media and Background Tasks
+    // ==========================================================
+    implementation("androidx.media3:media3-exoplayer:1.4.1") // Modern media playback solution
     implementation("androidx.media3:media3-ui:1.4.1")
-    implementation("androidx.work:work-runtime-ktx:2.9.0")
-    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.work:work-runtime-ktx:2.9.0") // WorkManager for robust background tasks
 
-    // Firebase Authentication
+
+    // ==========================================================
+    // Authentication & Security
+    // ==========================================================
     implementation("com.google.firebase:firebase-auth-ktx:23.2.1")
-
-    // Google Sign-In SDK
-    implementation("com.google.android.gms:play-services-auth:21.4.0")
-
-    implementation("androidx.biometric:biometric:1.1.0")
+    implementation("com.google.android.gms:play-services-auth:21.4.0") // Google Sign-In SDK
+    implementation("androidx.biometric:biometric:1.1.0") // Biometric authentication support
     implementation("androidx.appcompat:appcompat:1.6.1")
 
-    implementation("com.google.accompanist:accompanist-pager:0.32.0")
-    implementation("com.google.accompanist:accompanist-pager-indicators:0.32.0")
 
     // ==========================================================
     // 🧪 TESTING DEPENDENCIES (Unit Tests - src/test)
     // ==========================================================
 
-    // JUnit for basic testing
-    testImplementation("junit:junit:4.13.2")
+    testImplementation("junit:junit:4.13.2") // Standard JUnit 4
 
-    // For InstantTaskExecutorRule (testing LiveData/ViewModel in JVM)
+    // AndroidX Test Core: Provides InstantTaskExecutorRule for testing LiveData/ViewModel in JVM
     testImplementation("androidx.arch.core:core-testing:2.2.0")
 
-    // Kotlin Coroutines Testing (VERY IMPORTANT for ViewModel)
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1") // تم توحيد الإصدار إلى 1.8.1
+    // Kotlin Coroutines Testing: Crucial for testing Coroutine-based ViewModels and Flows
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
 
-    // MockK (We are using this in TodoViewModelTest)
+    // MockK: Modern mocking library for Kotlin
     testImplementation("io.mockk:mockk:1.13.11")
 
-    // Mockito + Mockito Inline (لإصلاح خطأ not found وضمان دعم Kapt/Inline classes)
-    // تم تحديث الإصدار إلى 5.11.0 (أحدث إصدار مستقر)
+    // Mockito: Core mocking framework with Kotlin extensions and inline support
     testImplementation("org.mockito:mockito-core:5.11.0")
-    testImplementation("org.mockito:mockito-inline:5.11.0") // حل مشكلة not found
-    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+    testImplementation("org.mockito:mockito-inline:5.2.0") // Enables mocking of final classes/methods
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1") // Kotlin language integration for Mockito
 
-    // Turbine (Optional but highly recommended for testing Kotlin Flows)
+    // Turbine: Highly recommended for testing Kotlin Flows (simplifies assertion on emissions)
     testImplementation("app.cash.turbine:turbine:1.1.0")
 
 
     // ==========================================================
-    // 📱 UI Testing (Instrumented Tests - src/androidTest)
+    // UI Testing (Instrumented Tests - src/androidTest)
     // ==========================================================
 
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    // Compose Testing
+    // Compose Testing (required for UI interaction tests)
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.6.8")
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.6.8")
 }

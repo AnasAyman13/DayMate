@@ -1,7 +1,7 @@
 package com.day.mate.data.model
 
-import com.day.mate.combineDateTimeToTimestamp
-import com.day.mate.formatTimestampToHourLabel
+import com.day.mate.util.combineDateTimeToTimestamp
+import com.day.mate.util.formatTimestampToHourLabel
 
 import com.day.mate.ui.theme.PrimaryColor // لاستخدام اللون الرئيسي
 import java.text.SimpleDateFormat

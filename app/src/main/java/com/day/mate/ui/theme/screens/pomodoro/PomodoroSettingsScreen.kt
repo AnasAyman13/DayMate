@@ -28,15 +28,15 @@ import androidx.compose.ui.unit.*
 /**
  * PomodoroSettingsScreen
  *
- * Settings screen for configuring Pomodoro timer durations.
- * Uses MaterialTheme colors for proper dark/light mode support.
- * Adapts layout for landscape orientation.
+ * Settings screen for configuring Pomodoro timer durations (Focus, Short Break, Long Break).
+ * Uses MaterialTheme colors for proper dark/light mode support and adapts layout for
+ * landscape orientation by reducing the card width.
  *
- * @param onCancel Callback when user cancels
- * @param onSave Callback when user saves with new durations
- * @param initialFocus Initial focus duration in seconds
- * @param initialShort Initial short break duration in seconds
- * @param initialLong Initial long break duration in seconds
+ * @param onCancel Callback when user cancels the settings change.
+ * @param onSave Callback when user saves with new durations (focusSeconds, shortSeconds, longSeconds).
+ * @param initialFocus Initial focus duration in seconds.
+ * @param initialShort Initial short break duration in seconds.
+ * @param initialLong Initial long break duration in seconds.
  */
 @Composable
 fun PomodoroSettingsScreen(
@@ -46,27 +46,30 @@ fun PomodoroSettingsScreen(
     initialShort: Int,
     initialLong: Int
 ) {
-    // Helper function to parse seconds into hours, minutes, seconds
+    // Helper function to parse total seconds into hours, minutes, seconds components
     fun parseTime(secs: Int): Triple<Int, Int, Int> =
         Triple(secs / 3600, (secs % 3600) / 60, secs % 60)
 
-    var (focusH, focusM, focusS) = parseTime(initialFocus)
-    var (shortH, shortM, shortS) = parseTime(initialShort)
-    var (longH, longM, longS) = parseTime(initialLong)
+    // Initial parsing of the durations
+    val (fH, fM, fS) = parseTime(initialFocus)
+    val (sH, sM, sS) = parseTime(initialShort)
+    val (lH, lM, lS) = parseTime(initialLong)
 
-    var focusHours by remember { mutableStateOf(focusH) }
-    var focusMinutes by remember { mutableStateOf(focusM) }
-    var focusSeconds by remember { mutableStateOf(focusS) }
-    var shortHours by remember { mutableStateOf(shortH) }
-    var shortMinutes by remember { mutableStateOf(shortM) }
-    var shortSeconds by remember { mutableStateOf(shortS) }
-    var longHours by remember { mutableStateOf(longH) }
-    var longMinutes by remember { mutableStateOf(longM) }
-    var longSeconds by remember { mutableStateOf(longS) }
+    // Mutable state for each time component
+    var focusHours by remember { mutableStateOf(fH) }
+    var focusMinutes by remember { mutableStateOf(fM) }
+    var focusSeconds by remember { mutableStateOf(fS) }
+    var shortHours by remember { mutableStateOf(sH) }
+    var shortMinutes by remember { mutableStateOf(sM) }
+    var shortSeconds by remember { mutableStateOf(sS) }
+    var longHours by remember { mutableStateOf(lH) }
+    var longMinutes by remember { mutableStateOf(lM) }
+    var longSeconds by remember { mutableStateOf(lS) }
 
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
+    // Adjust layout for landscape
     val cardWidthFraction = if (isLandscape) 0.9f else 0.95f
     val horizontalPadding = if (isLandscape) 32.dp else 16.dp
 
@@ -100,7 +103,7 @@ fun PomodoroSettingsScreen(
                     )
                 }
 
-                // Focus time
+                // Focus time row
                 item {
                     TimeRow(
                         label = stringResource(R.string.focus_label),
@@ -115,7 +118,7 @@ fun PomodoroSettingsScreen(
                     )
                 }
 
-                // Short break
+                // Short break row
                 item {
                     TimeRow(
                         label = stringResource(R.string.short_break_label),
@@ -130,7 +133,7 @@ fun PomodoroSettingsScreen(
                     )
                 }
 
-                // Long break
+                // Long break row
                 item {
                     TimeRow(
                         label = stringResource(R.string.long_break_label),
@@ -169,6 +172,7 @@ fun PomodoroSettingsScreen(
                         }
                         Button(
                             onClick = {
+                                // Calculate total seconds from components
                                 val focusSecs = focusHours * 3600 + focusMinutes * 60 + focusSeconds
                                 val shortSecs = shortHours * 3600 + shortMinutes * 60 + shortSeconds
                                 val longSecs = longHours * 3600 + longMinutes * 60 + longSeconds
@@ -200,15 +204,15 @@ fun PomodoroSettingsScreen(
  *
  * Row for configuring a time duration (hours, minutes, seconds).
  *
- * @param label Label for the time configuration
- * @param icon Icon representing the time type
- * @param iconTint Color for the icon
- * @param hours Current hours value
- * @param minutes Current minutes value
- * @param seconds Current seconds value
- * @param onHoursChange Callback when hours change
- * @param onMinutesChange Callback when minutes change
- * @param onSecondsChange Callback when seconds change
+ * @param label Label for the time configuration.
+ * @param icon Icon representing the time type.
+ * @param iconTint Color for the icon.
+ * @param hours Current hours value.
+ * @param minutes Current minutes value.
+ * @param seconds Current seconds value.
+ * @param onHoursChange Callback when hours change.
+ * @param onMinutesChange Callback when minutes change.
+ * @param onSecondsChange Callback when seconds change.
  */
 @Composable
 fun TimeRow(
@@ -228,7 +232,7 @@ fun TimeRow(
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Icon
+        // Icon Box
         Box(
             modifier = Modifier
                 .size(54.dp)
@@ -255,9 +259,9 @@ fun TimeRow(
         )
         Spacer(Modifier.width(12.dp))
 
-        // Time pickers
+        // Time pickers for Hours, Minutes, Seconds
         TimeComponentPicker(
-            items = (0..12).map { it.toString() },
+            items = (0..3).map { it.toString() }, // تم تعديل النطاق من (0..12) إلى (0..3)
             selected = hours,
             onSelected = onHoursChange,
             label = stringResource(R.string.unit_hours),
@@ -285,14 +289,14 @@ fun TimeRow(
 /**
  * TimeComponentPicker
  *
- * Scrollable picker for selecting a time component (hours/minutes/seconds).
+ * Scrollable picker using LazyColumn for selecting a time component (hours/minutes/seconds).
  *
- * @param items List of items to display
- * @param selected Currently selected index
- * @param onSelected Callback when selection changes
- * @param label Label for the picker
- * @param modifier Modifier for the component
- * @param boxHeight Height of the picker box
+ * @param items List of string items to display (e.g., "00", "01", ..., "59").
+ * @param selected The index (integer value) of the currently selected item.
+ * @param onSelected Callback when the selection changes, passing the new index (value).
+ * @param label Label text displayed beneath the picker.
+ * @param modifier Modifier for the component.
+ * @param boxHeight Height of the picker box.
  */
 @Composable
 fun TimeComponentPicker(
@@ -305,6 +309,7 @@ fun TimeComponentPicker(
 ) {
     val state = rememberLazyListState(selected)
 
+    // Scroll to the selected item when the 'selected' value changes externally
     LaunchedEffect(selected) {
         state.scrollToItem(selected)
     }
@@ -350,6 +355,7 @@ fun TimeComponentPicker(
                                     else Color.Transparent,
                                     shape = RoundedCornerShape(6.dp)
                                 )
+                                // The click listener updates the selected state via index
                                 .clickable { onSelected(i) }
                                 .padding(horizontal = 2.dp)
                         )

@@ -40,10 +40,12 @@ import java.time.format.DateTimeFormatter
  *
  * Screen for creating or editing tasks.
  * Supports both dark and light mode through MaterialTheme.
+ * It manages the UI state, user input for title, description, date, time, and category,
+ * and handles task creation or update logic via the [TodoViewModel].
  *
- * @param navController Navigation controller for back navigation
- * @param viewModel ViewModel managing task data
- * @param taskIdString Task ID for editing, or "new" for creating
+ * @param navController Navigation controller for handling screen transitions.
+ * @param viewModel ViewModel managing task data and business logic.
+ * @param taskIdString Optional task ID string. If it's not "new" and can be parsed, it's used for editing.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,7 +57,7 @@ fun CreateTaskScreen(
     val isEditMode = taskIdString != "new"
     val taskId = if (isEditMode) taskIdString?.toIntOrNull() else null
 
-    //  Use MaterialTheme colors (respects user's dark/light mode preference)
+    // Theme Colors based on MaterialTheme
     val backgroundColor = MaterialTheme.colorScheme.background
     val textColor = MaterialTheme.colorScheme.onBackground
     val fieldColor = MaterialTheme.colorScheme.surfaceVariant
@@ -63,12 +65,14 @@ fun CreateTaskScreen(
     val accentColor = AppGold
     val dialogBgColor = MaterialTheme.colorScheme.surface
 
+    // Load task data if in edit mode
     LaunchedEffect(key1 = taskId) {
         if (isEditMode && taskId != null) {
             viewModel.loadTaskById(taskId)
         }
     }
 
+    // Collect ViewModel state
     val title by viewModel.title.collectAsState()
     val date by viewModel.date.collectAsState()
     val time by viewModel.time.collectAsState()
@@ -80,7 +84,7 @@ fun CreateTaskScreen(
     val dateDialogState = rememberMaterialDialogState()
     val timeDialogState = rememberMaterialDialogState()
 
-    // Validate that date/time is not in the past
+    // Validation logic: date/time must not be in the past
     val isDateTimeValid by remember(date, time) {
         derivedStateOf {
             val selectedDateTime = LocalDateTime.of(date, time)
@@ -89,12 +93,14 @@ fun CreateTaskScreen(
         }
     }
 
+    // Enable button only if title is present and date/time is valid
     val isButtonEnabled by remember(title, isDateTimeValid) {
         derivedStateOf { title.isNotBlank() && isDateTimeValid }
     }
 
     var showAddCategoryDialog by remember { mutableStateOf(false) }
-    var showPastDateError by remember { mutableStateOf(false) }
+    // Although showPastDateError is defined, the UI logic handles the error via isDateTimeValid state.
+    // var showPastDateError by remember { mutableStateOf(false) } // Removed as it's not directly used for UI state in this implementation
 
     Column(
         modifier = Modifier
@@ -152,13 +158,14 @@ fun CreateTaskScreen(
                     onValueChange = {},
                     label = stringResource(R.string.form_date),
                     enabled = false,
-                    trailingIcon = { Icon(Icons.Default.CalendarToday, "") },
+                    trailingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null) },
                     isError = !isDateTimeValid,
                     fieldColor = fieldColor,
                     textColor = textColor,
                     hintColor = hintColor,
                     accentColor = accentColor
                 )
+                // Clickable overlay to trigger the date dialog
                 Spacer(modifier = Modifier
                     .matchParentSize()
                     .clickable { dateDialogState.show() })
@@ -172,13 +179,14 @@ fun CreateTaskScreen(
                     onValueChange = {},
                     label = stringResource(R.string.form_time),
                     enabled = false,
-                    trailingIcon = { Icon(Icons.Default.AccessTime, "") },
+                    trailingIcon = { Icon(Icons.Default.AccessTime, contentDescription = null) },
                     isError = !isDateTimeValid,
                     fieldColor = fieldColor,
                     textColor = textColor,
                     hintColor = hintColor,
                     accentColor = accentColor
                 )
+                // Clickable overlay to trigger the time dialog
                 Spacer(modifier = Modifier
                     .matchParentSize()
                     .clickable { timeDialogState.show() })
@@ -233,7 +241,7 @@ fun CreateTaskScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 categories.forEach { categoryKey ->
-                    // نستخدم CategoryLabel للعرض، ونبعت الـ key للـ ViewModel
+                    // Uses CategoryLabel for display, passes the key to ViewModel
                     CategoryButton(
                         text = CategoryLabel(categoryKey),
                         isSelected = selectedCategory == categoryKey,
@@ -249,7 +257,7 @@ fun CreateTaskScreen(
                     shape = RoundedCornerShape(18.dp),
                     modifier = Modifier.padding(end = 8.dp)
                 ) {
-                    Icon(Icons.Default.Add, "Add", modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.form_add_tag), modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(stringResource(R.string.form_add_tag), fontSize = 13.sp)
                 }
@@ -281,9 +289,8 @@ fun CreateTaskScreen(
                             viewModel.createTask()
                         }
                         navController.popBackStack()
-                    } else {
-                        showPastDateError = true
                     }
+                    // No need for else block since isButtonEnabled guards this and shows error message already
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -336,7 +343,8 @@ fun CreateTaskScreen(
                         viewModel.addCategory(newCategoryName)
                         viewModel.onCategoryChange(newCategoryName)
                         showAddCategoryDialog = false
-                    }
+                    },
+                    enabled = newCategoryName.isNotBlank()
                 ) { Text(stringResource(R.string.dialog_add), color = accentColor) }
             },
             dismissButton = {
@@ -359,6 +367,7 @@ fun CreateTaskScreen(
         datepicker(
             initialDate = date,
             title = stringResource(R.string.select_date),
+            // Allow only today or future dates
             allowedDateValidator = { selectedDate ->
                 !selectedDate.isBefore(LocalDate.now())
             },
@@ -385,8 +394,21 @@ fun CreateTaskScreen(
 /**
  * TaskTextField
  *
- * Reusable outlined text field for task input.
- * Supports custom colors for theming.
+ * Reusable outlined text field Composable for task input forms.
+ * Supports custom colors for flexible theming across different UI elements.
+ *
+ * @param value The current text value shown in the field.
+ * @param onValueChange Callback function to update the text value state.
+ * @param label The label text displayed when the field is not focused.
+ * @param modifier Optional [Modifier] for layout customization.
+ * @param enabled Whether the text field is enabled for user interaction.
+ * @param singleLine Whether the text field should restrict input to a single line.
+ * @param trailingIcon Optional composable to display at the end of the text field.
+ * @param isError Indicates whether the current value is in an error state.
+ * @param fieldColor The container color of the text field.
+ * @param textColor The color of the input text.
+ * @param hintColor The color for placeholder and unfocused labels/icons.
+ * @param accentColor The color for focused states, borders, and labels.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

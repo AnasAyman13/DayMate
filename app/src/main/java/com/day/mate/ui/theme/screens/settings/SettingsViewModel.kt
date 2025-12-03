@@ -27,9 +27,9 @@ private val Context.dataStore by preferencesDataStore(name = "settings")
  * Manages the settings screen state and user preferences including:
  * - User profile data from Firestore
  * - Dark mode toggle with persistent storage
- * - Cloud sync settings
- * - Notification settings
- * - Authentication (logout, password reset)
+ * - Cloud sync settings (local state only)
+ * - Notification settings (local state only; directs to system settings for changes)
+ * - Authentication operations (logout, password reset)
  *
  * @property context Application context needed for DataStore and Toast messages
  */
@@ -38,7 +38,7 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
     // DataStore key for dark mode preference
     private val DARK_MODE_KEY = booleanPreferencesKey("dark_mode")
 
-    // Internal mutable state
+    // Internal mutable state that is updated by logic functions
     private val _uiState = MutableStateFlow(SettingsState())
 
     /**
@@ -49,8 +49,8 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
 
     /**
      * Dark mode state flow.
-     * Reads from DataStore and provides real-time updates when dark mode changes.
-     * Default value is true (dark mode enabled).
+     * Reads the persistent dark mode setting from DataStore.
+     * The initial value is set to true (assuming dark mode by default unless preference says otherwise).
      */
     val isDarkMode: StateFlow<Boolean> = context.dataStore.data
         .map { preferences -> preferences[DARK_MODE_KEY] ?: true }
@@ -101,14 +101,22 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
             .get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
+                    // Attempt to map the document data to the User model
                     val userData = document.toObject(User::class.java)
                     if (userData != null) {
                         _uiState.value = _uiState.value.copy(
                             user = userData,
                             loading = false
                         )
+                    } else {
+                        // Document exists but mapping failed
+                        _uiState.value = _uiState.value.copy(
+                            loading = false,
+                            error = context.getString(R.string.error_loading_user)
+                        )
                     }
                 } else {
+                    // Document does not exist (e.g., first login, or incomplete setup)
                     _uiState.value = _uiState.value.copy(
                         loading = false,
                         error = context.getString(R.string.error_user_not_found)
@@ -116,6 +124,7 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
                 }
             }
             .addOnFailureListener { e ->
+                // Firestore fetch failed
                 _uiState.value = _uiState.value.copy(
                     loading = false,
                     error = e.message ?: context.getString(R.string.error_loading_user)
@@ -125,15 +134,17 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
 
     /**
      * Toggles dark mode setting and persists the preference to DataStore.
-     * This triggers a recomposition of the entire app theme.
+     * This preference is read by the main activity or theme provider to update the UI.
      *
      * @param enabled True to enable dark mode, false to disable
      */
     fun toggleDarkMode(enabled: Boolean) {
+        // Update local state immediately for fast UI response
         _uiState.update { it.copy(darkModeEnabled = enabled) }
 
         viewModelScope.launch {
             try {
+                // Persist the new value to DataStore
                 context.dataStore.edit { preferences ->
                     preferences[DARK_MODE_KEY] = enabled
                 }
@@ -145,8 +156,7 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
 
     /**
      * Toggles cloud sync setting.
-     * Note: This currently only updates local state.
-     * TODO: Implement actual cloud sync logic
+     * Note: This currently only updates local state. Actual sync logic needs implementation.
      *
      * @param enabled True to enable cloud sync, false to disable
      */
@@ -155,9 +165,8 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
     }
 
     /**
-     * Toggles notification setting.
-     * Note: This currently only updates local state.
-     * Actual notification permissions are handled by the system settings.
+     * Toggles notification setting's local state.
+     * Note: Actual notification permissions are managed by the system settings (via the Composable).
      *
      * @param enabled True to enable notifications, false to disable
      */
@@ -177,14 +186,13 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
     }
 
     /**
-     * Handles password change/reset request based on login method.
+     * Handles password change/reset request based on the user's login method.
      *
      * Behavior:
-     * - For Google sign-in users: Shows a toast message indicating they use Google
-     * - For email/password users: Sends a password reset email via Firebase Auth
-     * - For unknown methods: Shows an error toast
+     * - Google sign-in: Informs user that they must change the password via Google.
+     * - Email/password: Sends a password reset email to the user's registered email.
      *
-     * @param context Context needed for SharedPreferences and Toast messages
+     * @param context Context needed for SharedPreferences (to check login method) and Toast messages.
      */
     fun onChangePasswordClicked(context: Context) {
         val user = auth.currentUser
@@ -197,6 +205,7 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
             return
         }
 
+        // Get the stored login method (assuming it was saved during login)
         val prefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
         val method = prefs.getString("login_method", "unknown")
 

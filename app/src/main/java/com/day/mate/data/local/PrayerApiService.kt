@@ -1,9 +1,9 @@
 package com.day.mate.data.local
 
-import com.day.mate.convertPrayerTimeToTimestamp
+import com.day.mate.util.convertPrayerTimeToTimestamp
 import com.day.mate.data.model.EventType
 import com.day.mate.data.model.TimelineEvent
-import com.day.mate.formatTimestampToHourLabel
+import com.day.mate.util.formatTimestampToHourLabel
 import com.day.mate.ui.theme.EventColorSky
 import retrofit2.http.GET
 import retrofit2.http.Query
