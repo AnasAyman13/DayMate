@@ -22,7 +22,7 @@ android {
         minSdk = 29
         targetSdk = 36
         versionCode = 2
-        versionName = "1.1"
+        versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -70,7 +70,6 @@ android {
 }
 
 
-
 dependencies {
     // AndroidX
     implementation("androidx.core:core-ktx:1.13.1")
@@ -80,6 +79,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.0")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+
     // Compose
     implementation(platform("androidx.compose:compose-bom:2024.10.00"))
     implementation("androidx.compose.ui:ui")
@@ -117,20 +117,11 @@ dependencies {
     // DatePicker dialogs
     implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
 
-
-
     // Media
     implementation("androidx.media3:media3-exoplayer:1.4.1")
     implementation("androidx.media3:media3-ui:1.4.1")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation("androidx.core:core-ktx:1.13.1")
-
-    // Testing
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.10.00"))
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 
     // Firebase Authentication
     implementation("com.google.firebase:firebase-auth-ktx:23.2.1")
@@ -139,31 +130,44 @@ dependencies {
     implementation("com.google.android.gms:play-services-auth:21.4.0")
 
     implementation("androidx.biometric:biometric:1.1.0")
-    implementation("androidx.appcompat:appcompat:1.6.1") // Use the latest stable version
+    implementation("androidx.appcompat:appcompat:1.6.1")
 
     implementation("com.google.accompanist:accompanist-pager:0.32.0")
-// تأكد من استخدام أحدث إصدار
     implementation("com.google.accompanist:accompanist-pager-indicators:0.32.0")
+
+    // ==========================================================
+    // 🧪 TESTING DEPENDENCIES (Unit Tests - src/test)
+    // ==========================================================
 
     // JUnit for basic testing
     testImplementation("junit:junit:4.13.2")
-// For InstantTaskExecutorRule (testing LiveData/ViewModel in JVM)
+
+    // For InstantTaskExecutorRule (testing LiveData/ViewModel in JVM)
     testImplementation("androidx.arch.core:core-testing:2.2.0")
 
-// Kotlin Coroutines Testing (VERY IMPORTANT for ViewModel)
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
-// Turbine (Optional but highly recommended for testing Kotlin Flows)
+    // Kotlin Coroutines Testing (VERY IMPORTANT for ViewModel)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1") // تم توحيد الإصدار إلى 1.8.1
+
+    // MockK (We are using this in TodoViewModelTest)
+    testImplementation("io.mockk:mockk:1.13.11")
+
+    // Mockito + Mockito Inline (لإصلاح خطأ not found وضمان دعم Kapt/Inline classes)
+    // تم تحديث الإصدار إلى 5.11.0 (أحدث إصدار مستقر)
+    testImplementation("org.mockito:mockito-core:5.11.0")
+    testImplementation("org.mockito:mockito-inline:5.11.0") // حل مشكلة not found
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+
+    // Turbine (Optional but highly recommended for testing Kotlin Flows)
     testImplementation("app.cash.turbine:turbine:1.1.0")
 
-// Mocking library (نستخدم Mockito أو Mockk - هنا مثال لـ Mockito مع Kotlin Extensions)
-    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
-    testImplementation("org.mockito:mockito-inline:5.8.0")
 
+    // ==========================================================
+    // 📱 UI Testing (Instrumented Tests - src/androidTest)
+    // ==========================================================
 
-// UI Testing (Instrumented Tests)
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-// Compose Testing
+    // Compose Testing
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.6.8")
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.6.8")
 }

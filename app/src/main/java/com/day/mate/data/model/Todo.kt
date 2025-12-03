@@ -1,9 +1,6 @@
 package com.day.mate.data.model
 
-import androidx.room.Query
 import com.day.mate.combineDateTimeToTimestamp
-import com.day.mate.data.local.TodoEntity
-import com.day.mate.data.model.Todo
 import com.day.mate.formatTimestampToHourLabel
 
 import com.day.mate.ui.theme.PrimaryColor // لاستخدام اللون الرئيسي
@@ -13,7 +10,7 @@ import java.util.Locale
 data class Todo(
 
     val id: Int = 0,
-    val remoteId: String = "",  // For FireStore
+    val remoteId: String? = "",  // For FireStore
     val title: String,
     val description: String,
     val category: String,
