@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.scale
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
+import androidx.compose.foundation.layout.Arrangement
 import com.day.mate.R
 import com.day.mate.ui.theme.AppGold
 import com.plcoding.biometricauth.BiometricPromptManager
@@ -127,7 +128,7 @@ fun BiometricLockScreen(navController: NavController,
                 .verticalScroll(scrollState), // تمكين التمرير
             horizontalAlignment = Alignment.CenterHorizontally,
             // ترتيب العناصر من الأعلى ليتناسب مع التمرير
-            verticalArrangement = Arrangement.Top
+            verticalArrangement = Arrangement.Center
         ) {
             // Animated Lock Icon
             Box(

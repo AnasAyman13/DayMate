@@ -21,7 +21,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
  * but with proper MaterialTheme color support.
  */
 @Composable
-fun BottomNavigationBar(navController: NavController) {
+fun BottomNavigationBar(navController: NavController,activeRoute: String?) {
     val items = listOf(
         BottomNavItem.TimeLine,
         BottomNavItem.Todo,
@@ -65,7 +65,7 @@ fun BottomNavigationBar(navController: NavController) {
                         fontSize = 12.sp
                     )
                 },
-                selected = selected,
+                selected = activeRoute == item.route,
                 onClick = {
                     if (!selected) {
                         navController.navigate(item.route) {

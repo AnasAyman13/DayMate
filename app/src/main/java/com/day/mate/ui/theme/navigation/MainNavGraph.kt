@@ -57,6 +57,7 @@ fun MainNavGraph() {
     val navController = rememberNavController()
     val context = LocalContext.current.applicationContext
 
+
     // Initialize database and repositories
     val database = remember { AppDatabase.getInstance(context) }
     val todoRepository = remember {
@@ -73,10 +74,10 @@ fun MainNavGraph() {
     }
     val todoViewModel: TodoViewModel = viewModel(factory = todoFactory)
 
-    // *** 1. حالة تتبع إلغاء القفل الخاص بالوسائط ***
+
     var isMediaUnlocked by remember { mutableStateOf(false) }
 
-    // Sync data from Firestore on app start
+
     LaunchedEffect(Unit) {
         todoViewModel.syncFromFirestore()
     }
@@ -84,9 +85,21 @@ fun MainNavGraph() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // Show FAB only on Timeline and Todo screens
-    val showFab = currentRoute == BottomNavItem.TimeLine.route ||
-            currentRoute == BottomNavItem.Todo.route
+
+    val activeBottomNavRoute = remember(currentRoute) {
+        when {
+
+            currentRoute?.startsWith("task_screen") == true -> BottomNavItem.Todo.route
+
+            currentRoute == "media_vault" || currentRoute?.startsWith("viewer") == true -> BottomNavItem.Media.route
+
+            currentRoute == "developers" || currentRoute == "terms" || currentRoute == "help_support" -> BottomNavItem.Settings.route
+
+            else -> currentRoute
+        }
+    }
+    val showFab = activeBottomNavRoute == BottomNavItem.TimeLine.route ||
+            activeBottomNavRoute == BottomNavItem.Todo.route
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -108,7 +121,8 @@ fun MainNavGraph() {
             }
         },
         bottomBar = {
-            BottomNavigationBar(navController = navController)
+
+            BottomNavigationBar(navController = navController, activeRoute = activeBottomNavRoute)
         }
     ) { innerPadding ->
         NavHost(
@@ -116,9 +130,7 @@ fun MainNavGraph() {
             startDestination = BottomNavItem.TimeLine.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            // ========== Main Screens ==========
 
-            // Timeline Screen
             composable(BottomNavItem.TimeLine.route) {
                 val timelineViewModel: TimelineViewModel = viewModel(
                     modelClass = TimelineViewModel::class.java,
@@ -137,27 +149,23 @@ fun MainNavGraph() {
                 )
             }
 
-            // Pomodoro Screen
             composable(BottomNavItem.Pomodoro.route) {
                 PomodoroScreen(isDarkTheme = true)
             }
 
-            // *** التعديل: استخدام MediaScreenWrapper للتحكم في شاشة Media ***
             composable(BottomNavItem.Media.route) {
                 MediaScreenWrapper(
                     navController = navController,
                     isMediaUnlocked = isMediaUnlocked,
-                    // تمرير دالة لتحديث الحالة عند النجاح
+
                     onUnlockSuccess = { isMediaUnlocked = true }
                 )
             }
 
-            // Prayer Times Screen
             composable(BottomNavItem.Prayer.route) {
                 PrayerScreen()
             }
 
-            // Settings Screen
             composable(BottomNavItem.Settings.route) {
                 SettingsScreenContainer(
                     navController = navController,
@@ -165,14 +173,10 @@ fun MainNavGraph() {
                 )
             }
 
-            // ========== Vault Screens ==========
-
-            // Media Vault Main Screen
             composable("media_vault") {
                 VaultScreen(navController = navController)
             }
 
-            // Vault Viewer Screen
             composable(
                 route = "viewer/{uri}/{type}",
                 arguments = listOf(
@@ -188,10 +192,6 @@ fun MainNavGraph() {
                     type = type
                 )
             }
-
-            // ========== Task Management ==========
-
-            // Create/Edit Task Screen
             composable(
                 route = "task_screen/{taskId}",
                 arguments = listOf(
@@ -206,23 +206,18 @@ fun MainNavGraph() {
                 )
             }
 
-            // ========== Settings Sub-Screens ==========
 
-            // Developers Screen
             composable("developers") {
                 DeveloperScreen(
                     onBack = { navController.popBackStack() }
                 )
             }
 
-            // Terms of Service Screen
             composable("terms") {
                 TermsScreen(
                     onBack = { navController.popBackStack() }
                 )
             }
-
-            // Help & Support Screen
             composable("help_support") {
                 HelpSupportScreen(
                     onBack = { navController.popBackStack() }
@@ -232,7 +227,6 @@ fun MainNavGraph() {
     }
 }
 
-// *** 2. تعريف الـ Wrapper Composable ***
 @Composable
 fun MediaScreenWrapper(
     navController: NavController,
@@ -240,13 +234,12 @@ fun MediaScreenWrapper(
     onUnlockSuccess: () -> Unit
 ) {
     if (isMediaUnlocked) {
-        // إذا كان مفتوحاً، اعرض شاشة الخزنة مباشرة
         VaultScreen(navController = navController)
     } else {
-        // إذا كان مقفلاً، اعرض شاشة القفل
+
         BiometricLockScreen(
             navController = navController,
-            onUnlockSuccess = onUnlockSuccess // تمرير دالة تحديث الحالة
+            onUnlockSuccess = onUnlockSuccess
         )
     }
 }
