@@ -41,12 +41,16 @@ import com.day.mate.ui.theme.screens.todo.TasksScreen
 import com.day.mate.ui.theme.screens.todo.TodoViewModel
 import com.day.mate.ui.theme.screens.todo.TodoViewModelFactory
 
+// إضافة الـ Imports المطلوبة للحالة
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.navigation.NavController
+
 /**
  * MainNavGraph
  *
  * Main navigation graph for the entire application.
  * Handles all screen navigation and manages ViewModels.
- * Uses MaterialTheme colors for proper dark/light mode support.
  */
 @Composable
 fun MainNavGraph() {
@@ -68,6 +72,9 @@ fun MainNavGraph() {
         TimelineViewModelFactory(todoRepository, prayerRepository)
     }
     val todoViewModel: TodoViewModel = viewModel(factory = todoFactory)
+
+    // *** 1. حالة تتبع إلغاء القفل الخاص بالوسائط ***
+    var isMediaUnlocked by remember { mutableStateOf(false) }
 
     // Sync data from Firestore on app start
     LaunchedEffect(Unit) {
@@ -135,9 +142,14 @@ fun MainNavGraph() {
                 PomodoroScreen(isDarkTheme = true)
             }
 
-            // Media Vault Screen (with Biometric Lock)
+            // *** التعديل: استخدام MediaScreenWrapper للتحكم في شاشة Media ***
             composable(BottomNavItem.Media.route) {
-                BiometricLockScreen(navController = navController)
+                MediaScreenWrapper(
+                    navController = navController,
+                    isMediaUnlocked = isMediaUnlocked,
+                    // تمرير دالة لتحديث الحالة عند النجاح
+                    onUnlockSuccess = { isMediaUnlocked = true }
+                )
             }
 
             // Prayer Times Screen
@@ -217,5 +229,24 @@ fun MainNavGraph() {
                 )
             }
         }
+    }
+}
+
+// *** 2. تعريف الـ Wrapper Composable ***
+@Composable
+fun MediaScreenWrapper(
+    navController: NavController,
+    isMediaUnlocked: Boolean,
+    onUnlockSuccess: () -> Unit
+) {
+    if (isMediaUnlocked) {
+        // إذا كان مفتوحاً، اعرض شاشة الخزنة مباشرة
+        VaultScreen(navController = navController)
+    } else {
+        // إذا كان مقفلاً، اعرض شاشة القفل
+        BiometricLockScreen(
+            navController = navController,
+            onUnlockSuccess = onUnlockSuccess // تمرير دالة تحديث الحالة
+        )
     }
 }

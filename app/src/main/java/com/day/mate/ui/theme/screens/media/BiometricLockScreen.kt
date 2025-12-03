@@ -32,46 +32,36 @@ import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import com.day.mate.R
 import com.day.mate.ui.theme.AppGold
 import com.plcoding.biometricauth.BiometricPromptManager
-import androidx.compose.foundation.rememberScrollState // Import جديد
-import androidx.compose.foundation.verticalScroll // Import جديد
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 /**
  * BiometricLockScreen
  *
  * Secure biometric authentication screen for accessing the Media Vault.
  *
- * Features:
- * - Biometric authentication (fingerprint, face, etc.)
- * - Auto-redirect to biometric enrollment if not set up
- * - Dark/Light mode support
- * - Animated lock icon
- * - Clear error messages
- * - Smooth navigation on success
- *
  * @param navController Navigation controller for screen navigation
+ * @param onUnlockSuccess Lambda function called when authentication succeeds.
  */
 @Composable
-fun BiometricLockScreen(navController: NavController) {
+fun BiometricLockScreen(navController: NavController,
+                        onUnlockSuccess: () -> Unit) { // <<< (1) المعلمة للحفاظ على التحديد
     val context = LocalContext.current
 
-    // BiometricPromptManager instance
     val promptManager = remember { BiometricPromptManager(context as AppCompatActivity) }
     val biometricResult by promptManager.promptResults.collectAsState(initial = null)
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-
     val enrollLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult(),
         onResult = {
-            // After returning from settings, prompt biometric again
             promptManager.showBiometricPrompt(
                 title = context.getString(R.string.biometric_unlock_title),
                 description = context.getString(R.string.biometric_unlock_description)
             )
         }
     )
-
 
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val scale by infiniteTransition.animateFloat(
@@ -84,11 +74,10 @@ fun BiometricLockScreen(navController: NavController) {
         label = "lock_pulse"
     )
 
-
+    // *** (2) منطق النجاح الموحد (للتحديد) ***
     LaunchedEffect(biometricResult) {
         when (biometricResult) {
             is BiometricPromptManager.BiometricResult.AuthenticationNotSet -> {
-
                 if (Build.VERSION.SDK_INT >= 30) {
                     val enrollIntent = Intent(Settings.ACTION_BIOMETRIC_ENROLL).apply {
                         putExtra(
@@ -106,10 +95,8 @@ fun BiometricLockScreen(navController: NavController) {
                 errorMessage = context.getString(R.string.biometric_auth_failed)
             }
             BiometricPromptManager.BiometricResult.AuthenticationSuccess -> {
-                // Navigate to media vault on success
-                navController.navigate("media_vault") {
-                    popUpTo("media") { inclusive = true }
-                }
+                // استدعاء الدالة لتحديث الحالة بدلاً من التنقل
+                onUnlockSuccess()
             }
             BiometricPromptManager.BiometricResult.FeatureUnavailable -> {
                 errorMessage = context.getString(R.string.biometric_feature_unavailable)
@@ -132,14 +119,14 @@ fun BiometricLockScreen(navController: NavController) {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
+        // *** (3) إعادة Column مع verticalScroll لتمكين التمرير في الوضع الأفقي ***
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(24.dp)
-                // *** التعديل 1: تمكين التمرير العمودي ***
-                .verticalScroll(scrollState),
+                .verticalScroll(scrollState), // تمكين التمرير
             horizontalAlignment = Alignment.CenterHorizontally,
-            // *** التعديل 2: ترتيب العناصر يبدأ من الأعلى لمزيد من المرونة في الوضع الأفقي ***
+            // ترتيب العناصر من الأعلى ليتناسب مع التمرير
             verticalArrangement = Arrangement.Top
         ) {
             // Animated Lock Icon
