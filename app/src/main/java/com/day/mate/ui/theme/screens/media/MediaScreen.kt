@@ -43,15 +43,12 @@ fun VaultScreen(
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
 
-    // الكشف عن اللغة الحالية
     val isArabic = remember(configuration) {
         configuration.locales[0].language == "ar"
     }
 
     val allItems by viewModel.items.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
-
-    // النصوص حسب اللغة
     val strings = if (isArabic) {
         VaultStrings(
             title = "مخزن الوسائط",
@@ -83,8 +80,6 @@ fun VaultScreen(
             filterDocuments = "Documents"
         )
     }
-
-    // استخدام ألوان Material Theme
     val backgroundColor = MaterialTheme.colorScheme.background
     val surfaceColor = MaterialTheme.colorScheme.surface
     val primaryColor = MaterialTheme.colorScheme.primary
@@ -92,12 +87,9 @@ fun VaultScreen(
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
 
-    // ألوان الزر حسب الثيم
     val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val buttonColor = if (isDarkTheme) Color(0xFFD4AF37) else MaterialTheme.colorScheme.primaryContainer
     val buttonContentColor = if (isDarkTheme) Color.Black else MaterialTheme.colorScheme.onPrimaryContainer
-
-    // تحديث الفلتر بناءً على اللغة
     LaunchedEffect(isArabic) {
         val currentFilter = selectedFilter
         val newFilter = when (currentFilter) {
@@ -178,100 +170,108 @@ fun VaultScreen(
                 .fillMaxSize()
                 .padding(horizontal = 16.dp, vertical = 16.dp)
         ) {
-            // العنوان
-            Text(
-                text = strings.title,
-                color = onSurfaceColor,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier
-            )
-
-            Spacer(Modifier.height(18.dp))
-
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .background(
-                            brush = Brush.linearGradient(
-                                listOf(Color(0xFF81D4FA), Color(0xFF4DB6AC))
-                            ),
-                            shape = CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.Lock,
-                        contentDescription = strings.lock,
-                        tint = Color.White,
-                        modifier = Modifier.size(48.dp)
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            Text(
-                text = strings.subtitle,
-                color = onSurfaceVariantColor,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            // الفلاتر
-            val filters = listOf(
-                strings.filterAll,
-                strings.filterPhotos,
-                strings.filterVideos,
-                strings.filterAudio,
-                strings.filterDocuments
-            )
-
-            Row(
-                modifier = Modifier
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                filters.forEach { filter ->
-                    val selected = selectedFilter == filter
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(
-                                if (selected) primaryColor
-                                else MaterialTheme.colorScheme.surfaceVariant
-                            )
-                            .border(
-                                width = 1.dp,
-                                color = if (selected) primaryColor
-                                else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                                shape = RoundedCornerShape(20.dp)
-                            )
-                            .clickable { viewModel.selectFilter(filter) }
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            text = filter,
-                            color = if (selected) onPrimaryColor else onSurfaceColor,
-                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
-                        )
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 150.dp),
                 contentPadding = PaddingValues(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f) // تم استعادة weight(1f)
             ) {
+
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Text(
+                        text = strings.title,
+                        color = onSurfaceColor,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier
+                    )
+                }
+
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Spacer(Modifier.height(18.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(100.dp)
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        listOf(Color(0xFF81D4FA), Color(0xFF4DB6AC))
+                                    ),
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Lock,
+                                contentDescription = strings.lock,
+                                tint = Color.White,
+                                modifier = Modifier.size(48.dp)
+                            )
+                        }
+                    }
+                }
+
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            text = strings.subtitle,
+                            color = onSurfaceVariantColor,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(Modifier.height(16.dp))
+                    }
+                }
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    val filters = listOf(
+                        strings.filterAll,
+                        strings.filterPhotos,
+                        strings.filterVideos,
+                        strings.filterAudio,
+                        strings.filterDocuments
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        filters.forEach { filter ->
+                            val selected = selectedFilter == filter
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(
+                                        if (selected) primaryColor
+                                        else MaterialTheme.colorScheme.surfaceVariant
+                                    )
+                                    .border(
+                                        width = 1.dp,
+                                        color = if (selected) primaryColor
+                                        else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                        shape = RoundedCornerShape(20.dp)
+                                    )
+                                    .clickable { viewModel.selectFilter(filter) }
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                            ) {
+                                Text(
+                                    text = filter,
+                                    color = if (selected) onPrimaryColor else onSurfaceColor,
+                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                }
                 items(items) { item ->
                     VaultItemCard(
                         item = item,
@@ -300,8 +300,6 @@ fun VaultScreen(
         }
     }
 }
-
-// Data class للنصوص
 data class VaultStrings(
     val title: String,
     val subtitle: String,
