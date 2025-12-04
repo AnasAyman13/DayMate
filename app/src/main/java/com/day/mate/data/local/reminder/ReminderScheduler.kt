@@ -41,7 +41,7 @@ class ReminderScheduler(private val context: Context) {
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            todo.id,
+            todo.id.toInt(),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -53,12 +53,12 @@ class ReminderScheduler(private val context: Context) {
         )
     }
 
-    fun cancel(todoId: Int) {
+    fun cancel(todo: Int) {
         val intent = Intent(context, ReminderReceiver::class.java)
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            todoId,
+            todo,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )

@@ -452,6 +452,13 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
             val updated = todo.copy(isDone = !todo.isDone)
             repository.update(updated)
             updateDoneStateInFirestore(updated)
+            if (updated.isDone) {
+                reminderScheduler?.cancel(updated.id)
+            } else {
+                if (updated.remindMe) {
+                    reminderScheduler?.schedule(updated)
+                }
+            }
         }
     }
 
