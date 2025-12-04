@@ -42,7 +42,6 @@ fun VaultScreen(
 ) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
-
     val isArabic = remember(configuration) {
         configuration.locales[0].language == "ar"
     }

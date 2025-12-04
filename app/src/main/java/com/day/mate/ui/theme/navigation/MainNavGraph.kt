@@ -98,9 +98,9 @@ fun MainNavGraph() {
             else -> currentRoute
         }
     }
-    val showFab = activeBottomNavRoute == BottomNavItem.TimeLine.route ||
-            activeBottomNavRoute == BottomNavItem.Todo.route
-
+    val isTaskScreen = currentRoute?.startsWith("task_screen") == true
+    val showFab = (activeBottomNavRoute == BottomNavItem.TimeLine.route ||
+            activeBottomNavRoute == BottomNavItem.Todo.route) && !isTaskScreen
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
