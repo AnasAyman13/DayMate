@@ -30,17 +30,27 @@ import com.day.mate.ui.theme.SoftGold
 import com.day.mate.ui.theme.SkyBlue
 import com.day.mate.ui.theme.Teal
 
-// تم حذف OnboardingActivity2 بالكامل
-// تم حذف PageDot بالكامل
+// NOTE: Placeholder comment for removed component documentation
 
+/**
+ * OnboardingScreen2
+ *
+ * Displays the second screen of the onboarding flow, illustrating the Pomodoro/Focus feature
+ * using a graphical timer representation.
+ *
+ * @param progress The current progress value (0.0 to 1.0) of the timer illustration.
+ * @param onContinue Callback to navigate to the next page (Page 3) in the Pager.
+ * @param onSkip Callback to skip onboarding and navigate directly to the Auth screen.
+ */
 @Composable
-fun DayMateOnboardingScreen(
+fun OnboardingScreen2(
     @FloatRange(from = 0.0, to = 1.0) progress: Float,
-    onContinue: () -> Unit, // للانتقال إلى الصفحة 3 في الـ Pager
-    onSkip: () -> Unit       // لإنهاء الـ Onboarding
+    onContinue: () -> Unit, // Navigate to page 3
+    onSkip: () -> Unit       // Navigate to Auth screen
 ) {
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp
+    // Adjust central visual size based on screen width
     val centralSize = if (screenWidthDp >= 768) 320.dp else 256.dp
 
     Column(
@@ -58,6 +68,7 @@ fun DayMateOnboardingScreen(
                 .size(centralSize)
                 .clip(CircleShape)
                 .background(
+                    // Outer radial gradient for background glow
                     Brush.radialGradient(
                         colors = listOf(Teal.copy(alpha = 0.14f), SkyBlue.copy(alpha = 0.14f)),
                         center = Offset.Zero,
@@ -74,6 +85,7 @@ fun DayMateOnboardingScreen(
                     .background(MaterialTheme.colorScheme.background.copy(alpha = 0.4f)),
                 contentAlignment = Alignment.Center
             ) {
+                // Inner circle with gradient fill
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -94,11 +106,13 @@ fun DayMateOnboardingScreen(
                         modifier = Modifier.size(72.dp)
                     )
 
+                    // Timer Progress Arc drawing
                     Canvas(modifier = Modifier.matchParentSize()) {
                         val strokeWidth = 6.dp.toPx()
                         val inset = strokeWidth / 2f + 8.dp.toPx()
                         val arcRect = Rect(inset, inset, size.width - inset, size.height - inset)
 
+                        // Draw background track (full circle)
                         drawArc(
                             color = SoftGold.copy(alpha = 0.2f),
                             startAngle = -90f,
@@ -109,6 +123,7 @@ fun DayMateOnboardingScreen(
                             style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                         )
 
+                        // Draw progress arc
                         val sweep = 360f * progress.coerceIn(0f, 1f)
                         val shader = Brush.linearGradient(
                             colors = listOf(SoftGold, SoftGold.copy(alpha = 0.5f)),
@@ -131,29 +146,31 @@ fun DayMateOnboardingScreen(
 
         Spacer(Modifier.height(28.dp))
 
+        // Title
         Text(
             text = stringResource(id = R.string.onboarding2_title),
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 12.dp)
+            modifier = Modifier.padding(horizontal = 12.dp),
+            color = MaterialTheme.colorScheme.onBackground
         )
 
         Spacer(Modifier.height(8.dp))
 
+        // Description
         Text(
             text = stringResource(id = R.string.onboarding2_description),
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .padding(horizontal = 20.dp)
-                .fillMaxWidth(0.9f)
+                .fillMaxWidth(0.9f),
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
         )
 
         Spacer(Modifier.weight(1f))
 
-        // تم حذف Row الخاص بالنقاط هنا
-        // تم حذف Spacer(Modifier.height(18.dp))
-
+        // Action Buttons
         Button(
             onClick = onContinue,
             modifier = Modifier
@@ -183,6 +200,17 @@ fun DayMateOnboardingScreen(
     }
 }
 
-// دالة مساعدة لتحويل Dp إلى Px
+/**
+ * toPxSafe
+ *
+ * Extension function to safely convert Dp dimension to pixel float value
+ * within a Composable context using LocalDensity.
+ */
 @Composable
 private fun Dp.toPxSafe(): Float = this.value * LocalDensity.current.density
+
+@Preview(showBackground = true)
+@Composable
+private fun PreviewOnboardingScreen2() {
+    OnboardingScreen2(progress = 0.75f, onContinue = {}, onSkip = {})
+}

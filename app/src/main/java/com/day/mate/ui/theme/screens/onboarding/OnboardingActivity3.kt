@@ -3,7 +3,9 @@ package com.day.mate.ui.onboardingActivity3
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -21,15 +23,22 @@ import androidx.compose.ui.unit.sp
 import com.day.mate.R
 import com.day.mate.ui.theme.Teal
 
-// تم حذف OnboardingActivity3 بالكامل
-// تم حذف PageDot بالكامل
+// NOTE: Placeholder comment for removed component documentation
 
+/**
+ * OnboardingScreen3
+ *
+ * Displays the third and final screen of the onboarding flow, illustrating the Media Vault/Security
+ * feature using a lock icon and biometric security message.
+ *
+ * @param onStart Callback to finalize onboarding and navigate to the main Authentication screen.
+ */
 @Composable
 fun OnboardingScreen3(
-    onStart: () -> Unit // لإنهاء الـ Onboarding والانتقال إلى Auth
+    onStart: () -> Unit // Navigate to Auth screen
 ) {
     val backgroundDark = Color(0xFF101F22)
-    val accentTeal = Color(0xFF13C8EC)
+    val accentTeal = Color(0xFF13C8EC) // Used for the lock icon tint
     val cardBorder = Color.White.copy(alpha = 0.1f)
 
     Box(
@@ -40,10 +49,13 @@ fun OnboardingScreen3(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+            // Apply vertical scroll only to the content column to keep buttons fixed
             modifier = Modifier
                 .fillMaxWidth()
                 .offset(y = (30).dp)
+                .verticalScroll(rememberScrollState())
+                // FIX: تقليل الـ padding السفلي لترك مساحة كافية للـ Footer
+                .padding(bottom = 180.dp)
         ) {
 
             // Vault Icon Section (Illustration)
@@ -59,7 +71,7 @@ fun OnboardingScreen3(
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_lock),
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.desc_lock_icon),
                     tint = accentTeal,
                     modifier = Modifier.size(90.dp)
                 )
@@ -67,6 +79,7 @@ fun OnboardingScreen3(
 
             Spacer(modifier = Modifier.height(40.dp))
 
+            // Title
             Text(
                 text = stringResource(id = R.string.onboarding3_title),
                 color = Color.White,
@@ -79,6 +92,7 @@ fun OnboardingScreen3(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Description
             Text(
                 text = stringResource(id = R.string.onboarding3_description),
                 color = Color(0xFFB0BEC5),
@@ -87,26 +101,29 @@ fun OnboardingScreen3(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 32.dp)
             )
+
+            // Add extra space to ensure content is scrollable in landscape
+            Spacer(modifier = Modifier.height(30.dp))
         }
 
-        // ===== Footer =====
+        // ===== Footer (Action Buttons) =====
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .background(backgroundDark) // Ensure footer overlaps content during scroll
+                .padding(horizontal = 24.dp)
+                // FIX: إعادة الزر للأسفل مع ترك padding مناسب (48dp هو القيمة القياسية للفوتر)
                 .padding(bottom = 48.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // تم حذف Row الخاص بالنقاط هنا
-
-            Spacer(modifier = Modifier.height(24.dp))
 
             // Let’s Start Button
             Button(
                 onClick = onStart,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp)
-                    .padding(horizontal = 6.dp),
+                    .height(52.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Teal)
             ) {
@@ -118,4 +135,10 @@ fun OnboardingScreen3(
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PreviewOnboardingScreen3() {
+    OnboardingScreen3(onStart = {})
 }

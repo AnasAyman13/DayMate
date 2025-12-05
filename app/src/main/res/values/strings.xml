@@ -121,34 +121,50 @@
     <!-- Prayer Screen -->
     <string name="location_city_hijri">Cairo, Egypt – %1$s</string>
     <string name="next_prayer">Next Prayer</string>
-    <string name="loading">Loading...</string>
-    <string name="enable_adhan">Enable Athan</string>
-    <string name="qibla_direction">Qibla Direction</string>
-    <string name="getting_location">Getting location...</string>
-    <string name="facing_qibla">You are facing Qibla</string>
-    <string name="turn_right">Turn Right</string>
-    <string name="turn_left">Turn Left</string>
-    <string name="loading_prayer_times">Loading prayer times...</string>
-    <string name="fajr">Fajr</string>
-    <string name="dhuhr">Dhuhr</string>
-    <string name="asr">Asr</string>
-    <string name="maghrib">Maghrib</string>
-    <string name="isha">Isha</string>
+        <!-- Prayer Names -->
+        <string name="fajr">Fajr</string>
+        <string name="dhuhr">Dhuhr</string>
+        <string name="asr">Asr</string>
+        <string name="maghrib">Maghrib</string>
+        <string name="isha">Isha</string>
+        <string name="loading">Loading...</string>
 
-    <!-- Hijri months -->
-    <string name="location_hijri">%1$s</string>
-    <string name="muharram">Muharram</string>
-    <string name="safar">Safar</string>
-    <string name="rabi_al_awwal">Rabi al-awwal</string>
-    <string name="rabi_al_thani">Rabi al-thani</string>
-    <string name="jumada_al_awwal">Jumada al-awwal</string>
-    <string name="jumada_al_thani">Jumada al-thani</string>
-    <string name="rajab">Rajab</string>
-    <string name="shaaban">Shaban</string>
-    <string name="ramadan">Ramadan</string>
-    <string name="shawwal">Shawwal</string>
-    <string name="dhu_al_qidah">Dhu al-Qidah</string>
-    <string name="dhu_al_hijjah">Dhu al-Hijjah</string>
+        <!-- Qibla & Compass -->
+        <string name="qibla_direction">Qibla Direction</string>
+        <string name="getting_location">Getting location…</string>
+        <string name="facing_qibla">You are facing the Qibla</string>
+        <string name="turn_right">Turn slightly right</string>
+        <string name="turn_left">Turn slightly left</string>
+        <string name="desc_remaining_time">Remaining time for next prayer</string>
+        <string name="loading_prayer_times">Loading prayer times and location...</string>
+        <string name="enable_adhan">Enable Adhan</string>
+
+        <!-- Adhan Scheduling Messages -->
+        <string name="exact_alarm_permission_needed">Please enable exact alarm permission to run Adhan in the background.</string>
+        <string name="adhan_enabled">Adhan enabled for %s</string>
+        <string name="adhan_disabled">Adhan disabled for %s</string>
+
+        <!-- Islamic Quotes -->
+
+        <!-- Hijri Months -->
+        <string name="muharram">Muharram</string>
+        <string name="safar">Safar</string>
+        <string name="rabi_al_awwal">Rabi al-Awwal</string>
+        <string name="rabi_al_thani">Rabi al-Thani</string>
+        <string name="jumada_al_awwal">Jumada al-Awwal</string>
+        <string name="jumada_al_thani">Jumada al-Thani</string>
+        <string name="rajab">Rajab</string>
+        <string name="shaaban">Shaaban</string>
+        <string name="ramadan">Ramadan</string>
+        <string name="shawwal">Shawwal</string>
+        <string name="dhu_al_qidah">Dhu al-Qidah</string>
+        <string name="dhu_al_hijjah">Dhu al-Hijjah</string>
+        <string name="location_hijri">%1$s</string>
+
+        <!-- General -->
+        <string name="title_prayer_screen">Prayer</string>
+        <string name="qibla_aligned">Qibla Aligned</string>
+
 
     <!-- ========= TODO / TASKS ========= -->
     <string name="todo_title">To Do List</string>

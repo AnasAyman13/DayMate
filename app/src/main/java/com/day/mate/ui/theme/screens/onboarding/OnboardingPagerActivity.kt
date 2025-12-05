@@ -23,19 +23,27 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.day.mate.AuthActivity
 import com.day.mate.ui.onboardingActivity1.OnboardingScreen1
-import com.day.mate.ui.onboardingActivity2.DayMateOnboardingScreen
+import com.day.mate.ui.onboardingActivity2.OnboardingScreen2
 import com.day.mate.ui.onboardingActivity3.OnboardingScreen3
 import com.day.mate.ui.theme.Primary
 import com.day.mate.ui.theme.DayMateTheme
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 
+/**
+ * OnboardingPagerActivity
+ *
+ * The activity responsible for hosting the horizontal Pager view of all onboarding screens.
+ * It handles the logic for determining if the user is launching the app for the first time
+ * and manages the transition to the main [AuthActivity] upon completion.
+ */
 class OnboardingPagerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val sharedPref = getSharedPreferences("DayMatePrefs", MODE_PRIVATE)
         val isFirstTime = sharedPref.getBoolean("isFirstTime", true)
 
+        // If the user is not a first-time user, skip onboarding and proceed to AuthActivity
         if (!isFirstTime) {
             startActivity(Intent(this, AuthActivity::class.java))
             finish()
@@ -50,6 +58,7 @@ class OnboardingPagerActivity : ComponentActivity() {
                 ) {
                     OnboardingPager(
                         onFinishOnboarding = {
+                            // Mark onboarding as complete and navigate
                             sharedPref.edit().putBoolean("isFirstTime", false).apply()
                             startActivity(Intent(this, AuthActivity::class.java))
                             finish()
@@ -72,13 +81,13 @@ fun OnboardingPager(onFinishOnboarding: () -> Unit) {
     val coroutineScope = rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // HorizontalPager مع أنيميشن سلسة
+        // HorizontalPager with smooth custom animation
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize(),
             pageSpacing = 0.dp
         ) { page ->
-            // حساب offset للأنيميشن
+            // Calculate offset for the parallax animation effect
             val pageOffset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
             val alpha = 1f - pageOffset.absoluteValue.coerceIn(0f, 1f)
             val scale = 0.85f + (0.15f * alpha)
@@ -90,6 +99,7 @@ fun OnboardingPager(onFinishOnboarding: () -> Unit) {
                         this.alpha = alpha
                         this.scaleX = scale
                         this.scaleY = scale
+                        // Apply a gentle parallax translation effect
                         translationX = pageOffset * size.width * 0.3f
                     }
             ) {
@@ -112,7 +122,7 @@ fun OnboardingPager(onFinishOnboarding: () -> Unit) {
                         onContinue = goToNextPage,
                         onSkip = onFinishOnboarding
                     )
-                    1 -> DayMateOnboardingScreen(
+                    1 -> OnboardingScreen2(
                         progress = 0.6f,
                         onContinue = goToNextPage,
                         onSkip = onFinishOnboarding
@@ -124,17 +134,25 @@ fun OnboardingPager(onFinishOnboarding: () -> Unit) {
             }
         }
 
-        // مؤشرات الصفحات مع أنيميشن
+        // Animated page indicator dots
         AnimatedPageIndicator(
             pagerState = pagerState,
             pageCount = pageCount,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 180.dp)
+                .padding(bottom = 180.dp) // Aligns with the space provided in screen layouts
         )
     }
 }
 
+/**
+ * AnimatedPageIndicator
+ *
+ * Displays a row of dots representing the current page in the Pager, with visual
+ * feedback (scaling and color) for the active page.
+ *
+ * Note: This component is defined here to ensure the Pager Activity is self-contained.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AnimatedPageIndicator(
@@ -150,7 +168,7 @@ private fun AnimatedPageIndicator(
         repeat(pageCount) { index ->
             val isSelected = pagerState.currentPage == index
 
-            // أنيميشن للحجم
+            // Animation for size/scale (bouncy)
             val scale by animateFloatAsState(
                 targetValue = if (isSelected) 1.1f else 1f,
                 animationSpec = spring(
@@ -160,14 +178,14 @@ private fun AnimatedPageIndicator(
                 label = "scale"
             )
 
-            // أنيميشن للون
+            // Animation for color opacity
             val alpha by animateFloatAsState(
                 targetValue = if (isSelected) 1f else 0.3f,
                 animationSpec = tween(durationMillis = 300),
                 label = "alpha"
             )
 
-            // أنيميشن للعرض (النقطة النشطة تكون أطول)
+            // Animation for width (active dot is longer)
             val width by animateDpAsState(
                 targetValue = if (isSelected) 20.dp else 6.dp,
                 animationSpec = spring(

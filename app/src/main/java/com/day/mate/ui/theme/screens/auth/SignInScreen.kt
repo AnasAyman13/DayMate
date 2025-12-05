@@ -5,7 +5,9 @@ import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,7 +46,7 @@ fun LoginScreen(
         when (uiState) {
             is AuthUiState.Success -> {
                 Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
-                 onLoggedIn()
+                onLoggedIn()
             }
             is AuthUiState.Error -> {
                 Toast.makeText(context, (uiState as AuthUiState.Error).message, Toast.LENGTH_SHORT).show()
@@ -52,10 +54,6 @@ fun LoginScreen(
             else -> Unit
         }
     }
-
-
-
-
 
     Box(
         modifier = Modifier
@@ -66,7 +64,8 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .align(Alignment.Center),
+                .align(Alignment.Center)
+                .verticalScroll(rememberScrollState()), // FIX: إضافة التمرير الرأسي
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
@@ -225,9 +224,6 @@ fun LoginScreen(
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.google_button))
             }
-
-
-
 
             Spacer(Modifier.height(1.dp))
             TextButton(onClick = onNavigateToSignUp) {

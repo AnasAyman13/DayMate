@@ -21,7 +21,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -36,10 +35,8 @@ import com.day.mate.data.model.User
 import com.day.mate.util.LocaleUtils
 
 /**
- * Opens the system notification settings screen for this app, allowing the user to manage
- * notification permissions and channels directly within Android Settings.
- *
- * @param activity The current Activity context, required to start the new Intent.
+ * Opens the system notification settings screen for this app.
+ * User can enable/disable notifications and channels from Android Settings.
  */
 fun openAppNotificationSettings(activity: Activity) {
     val intent = Intent().apply {
@@ -51,11 +48,8 @@ fun openAppNotificationSettings(activity: Activity) {
             }
             // Android 5.0 - 7.1: legacy action for app notification settings
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP -> {
-                @Suppress("DEPRECATION")
                 action = "android.settings.APP_NOTIFICATION_SETTINGS"
-                @Suppress("DEPRECATION")
                 putExtra("app_package", activity.packageName)
-                @Suppress("DEPRECATION")
                 putExtra("app_uid", activity.applicationInfo.uid)
             }
             // Older versions: open app details page as a fallback
@@ -72,11 +66,11 @@ fun openAppNotificationSettings(activity: Activity) {
 /**
  * SettingsScreenContainer
  *
- * Main container for the settings screen that manages the ViewModel and state logic.
- * Initializes the [SettingsViewModel] using the [SettingsViewModelFactory].
+ * Main container for the settings screen that manages the ViewModel.
+ * Creates ViewModel with proper factory to inject Context dependency.
  *
- * @param navController Navigation controller for navigating between screens.
- * @param onBackClick Callback executed when the back button is pressed.
+ * @param navController Navigation controller for navigating between screens
+ * @param onBackClick Callback when back button is pressed
  */
 @Composable
 fun SettingsScreenContainer(
@@ -86,7 +80,7 @@ fun SettingsScreenContainer(
     val context = LocalContext.current
     val activity = context as? Activity
 
-    // Create ViewModel with Factory that provides Context dependency
+    // ✅ Create ViewModel with Factory that provides Context
     val viewModel: SettingsViewModel = viewModel(
         factory = SettingsViewModelFactory(context.applicationContext)
     )
@@ -106,7 +100,6 @@ fun SettingsScreenContainer(
                 context.getString(R.string.toast_logged_out_successfully),
                 Toast.LENGTH_SHORT
             ).show()
-            // Clear back stack and start AuthActivity
             val intent = Intent(context, AuthActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             context.startActivity(intent)
@@ -138,15 +131,15 @@ fun SettingsScreenContainer(
  * Stateless UI composable for the settings screen.
  * Displays user profile, appearance settings, account settings, and support options.
  *
- * @param state Current UI state containing user data and settings.
- * @param onBackClick Callback when the back button is pressed.
- * @param onToggleDarkMode Callback when dark mode is toggled.
- * @param onToggleCloudSync Callback when cloud sync is toggled.
- * @param onToggleNotifications Callback when the notifications row is clicked (to open system settings).
- * @param onToggleLanguage Callback when the language is changed.
- * @param onLogout Callback when logout is clicked.
- * @param onNavigate Callback for navigation to other screens.
- * @param onChangePassword Callback when change password is clicked.
+ * @param state Current UI state containing user data and settings
+ * @param onBackClick Callback when back button is pressed
+ * @param onToggleDarkMode Callback when dark mode is toggled
+ * @param onToggleCloudSync Callback when cloud sync is toggled
+ * @param onToggleNotifications Callback when notifications row is clicked
+ * @param onToggleLanguage Callback when language is changed
+ * @param onLogout Callback when logout is clicked
+ * @param onNavigate Callback for navigation to other screens
+ * @param onChangePassword Callback when change password is clicked
  */
 @Composable
 fun SettingsScreen(
@@ -271,7 +264,7 @@ fun SettingsScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0x1AFF0000), shape = RoundedCornerShape(12.dp)), // Semi-transparent red background
+                    .background(Color(0x1AFF0000), shape = RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -291,7 +284,7 @@ fun SettingsScreen(
  *
  * Displays user profile information (name and email).
  *
- * @param user User data to display.
+ * @param user User data to display
  */
 @Composable
 private fun ProfileHeader(user: User) {
@@ -313,8 +306,8 @@ private fun ProfileHeader(user: User) {
  *
  * Reusable card container for a settings group/section.
  *
- * @param title Section title.
- * @param content Card content composable.
+ * @param title Section title
+ * @param content Card content composable
  */
 @Composable
 private fun SettingsCard(title: String, content: @Composable ColumnScope.() -> Unit) {
@@ -341,14 +334,14 @@ private fun SettingsCard(title: String, content: @Composable ColumnScope.() -> U
  *
  * Reusable row with icon, label, and Switch for boolean settings.
  *
- * @param icon Icon to display.
- * @param title Setting title/label.
- * @param checked Current toggle state.
- * @param onCheckedChange Callback when the toggle state is changed.
+ * @param icon Icon to display
+ * @param title Setting title/label
+ * @param checked Current toggle state
+ * @param onCheckedChange Callback when toggle is changed
  */
 @Composable
 private fun SettingsToggleRow(
-    icon: ImageVector,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
@@ -379,13 +372,13 @@ private fun SettingsToggleRow(
  *
  * Reusable clickable row with icon, label, and chevron arrow.
  *
- * @param icon Icon to display.
- * @param title Setting title/label.
- * @param onClick Callback when the row is clicked.
+ * @param icon Icon to display
+ * @param title Setting title/label
+ * @param onClick Callback when row is clicked
  */
 @Composable
 private fun SettingsClickableRow(
-    icon: ImageVector,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     onClick: () -> Unit
 ) {
@@ -426,20 +419,7 @@ private fun SettingsScreenPreview() {
         name = "John Doe",
         email = "john.doe@example.com"
     )
-    // NOTE: SettingsState is assumed to be defined elsewhere in the project
-    // Using a placeholder data class for Preview purposes only.
-    data class MockSettingsState(
-        val user: User,
-        val darkModeEnabled: Boolean,
-        val cloudSyncEnabled: Boolean,
-        val notificationsEnabled: Boolean,
-        val isLoggedOut: Boolean = false,
-        val isLoading: Boolean = false
-    )
-
-    // Using MockSettingsState structure to call the actual Composable.
-    // Assuming SettingsState is structurally similar to MockSettingsState.
-    val state = MockSettingsState(
+    val state = SettingsState(
         user = mockUser,
         darkModeEnabled = false,
         cloudSyncEnabled = true,
@@ -447,7 +427,7 @@ private fun SettingsScreenPreview() {
     )
     MaterialTheme {
         SettingsScreen(
-            state = state as SettingsState, // Casting for compilation in context
+            state = state,
             onBackClick = {},
             onToggleDarkMode = {},
             onToggleCloudSync = {},

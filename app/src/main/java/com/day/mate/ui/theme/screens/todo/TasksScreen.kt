@@ -1,6 +1,5 @@
 package com.day.mate.ui.theme.screens.todo
 
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -11,7 +10,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -37,12 +35,15 @@ import com.day.mate.R
 import com.day.mate.data.model.Todo
 import com.day.mate.ui.theme.AppCyan
 import com.day.mate.ui.theme.AppGold
-import java.time.Instant
+import com.vanpra.composematerialdialogs.MaterialDialog
+import com.vanpra.composematerialdialogs.datetime.date.datepicker
+import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.verticalScroll
 import kotlin.math.roundToInt
 
 /**
@@ -64,6 +65,9 @@ private data class CategoryStyle(val color: Color, val icon: ImageVector)
 
 /**
  * CategoryLabel
+ *
+ * Returns localized label for a category key (study, work, etc.).
+ * Uses string resources so it supports Arabic/English.
  */
 @Composable
 fun CategoryLabel(category: String): String {
@@ -79,8 +83,14 @@ fun CategoryLabel(category: String): String {
 
 /**
  * TasksScreen
+ *
+ * Main screen displaying tasks organized by date and category.
+ * Supports landscape and portrait orientations with different layouts.
+ * Uses MaterialTheme colors for proper dark/light mode support.
+ *
+ * @param viewModel ViewModel managing todos and categories
+ * @param onEditTask Callback when editing a task
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TasksScreen(
     viewModel: TodoViewModel,
@@ -89,7 +99,7 @@ fun TasksScreen(
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
-    // Theme colors based on MaterialTheme
+    // ✅ Use MaterialTheme colors
     val backgroundColor = MaterialTheme.colorScheme.background
     val surfaceColor = MaterialTheme.colorScheme.surface
     val onBackgroundColor = MaterialTheme.colorScheme.onBackground
@@ -98,15 +108,7 @@ fun TasksScreen(
     val today = LocalDate.now()
     val weekDays = (-3L..3L).map { today.plusDays(it) }
     var selectedDate by remember { mutableStateOf(today) }
-
-    // State for Native Material 3 Date Picker
-    var showDatePicker by remember { mutableStateOf(false) }
-    val initialDateMillis = remember(selectedDate) {
-        selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-    }
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initialDateMillis
-    )
+    val dateDialogState = rememberMaterialDialogState()
 
     val categories by viewModel.categories.collectAsState()
     val allCategoriesText = stringResource(id = R.string.form_category_all)
@@ -120,7 +122,6 @@ fun TasksScreen(
         allTodos.groupBy { it.date }.mapValues { it.value.size }
     }
 
-    // Filter todos by selected date and category
     val filteredTodos = allTodos.filter { todo ->
         val matchesDate = todo.date == selectedDate.toString()
         val matchesCategory = if (selectedFilter == allCategoriesText) true else todo.category == selectedFilter
@@ -184,7 +185,7 @@ fun TasksScreen(
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(18.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .clickable { showDatePicker = true } // Trigger Native Picker
+                                .clickable { dateDialogState.show() }
                                 .padding(horizontal = 16.dp, vertical = 12.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -347,7 +348,7 @@ fun TasksScreen(
                     )
                 }
                 IconButton(
-                    onClick = { showDatePicker = true }, // Trigger Native Picker
+                    onClick = { dateDialogState.show() },
                     modifier = Modifier
                         .padding(start = 8.dp)
                         .clip(RoundedCornerShape(18.dp))
@@ -445,52 +446,48 @@ fun TasksScreen(
         }
     }
 
-    // ==========================================
-    // 🗓️ Native Material 3 Date Picker Dialog
-    // ==========================================
-    if (showDatePicker) {
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        datePickerState.selectedDateMillis?.let { millis ->
-                            // Convert Millis to LocalDate
-                            val selected = Instant.ofEpochMilli(millis)
-                                .atZone(ZoneId.systemDefault())
-                                .toLocalDate()
-                            selectedDate = selected
-                        }
-                        showDatePicker = false
-                    }
-                ) {
-                    Text(stringResource(R.string.dialog_ok), color = AppGold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text(stringResource(R.string.dialog_cancel), color = onSurfaceVariant)
-                }
-            },
-            colors = DatePickerDefaults.colors(
-                containerColor = surfaceColor,
-            )
-        ) {
-            // FIX: إزالة BoxWithConstraints واستخدام verticalScroll مباشرة على DatePicker
-            // لضمان ظهور جميع الصفوف في الوضع الأفقي
-            DatePicker(
-                state = datePickerState,
-                showModeToggle = true, // يسمح بالتبديل بين التقويم والإدخال النصي
+    // Date picker dialog
+    MaterialDialog(
+        dialogState = dateDialogState,
+        backgroundColor = surfaceColor,
+        buttons = {
+            positiveButton(stringResource(R.string.dialog_ok))
+            negativeButton(stringResource(R.string.dialog_cancel))
+        }
+    ) {
+        if (isLandscape) {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()), // إضافة السكرول الرأسي
-                colors = DatePickerDefaults.colors(
-                    todayContentColor = AppGold,
-                    todayDateBorderColor = AppGold,
-                    selectedDayContainerColor = AppGold,
-                    selectedDayContentColor = MaterialTheme.colorScheme.onPrimary,
-                    weekdayContentColor = onSurfaceVariant,
-                    navigationContentColor = AppGold
+                    .heightIn(max = 300.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                datepicker(
+                    initialDate = selectedDate,
+                    title = stringResource(R.string.select_date),
+                    onDateChange = { selectedDate = it },
+                    colors = com.vanpra.composematerialdialogs.datetime.date.DatePickerDefaults.colors(
+                        headerBackgroundColor = MaterialTheme.colorScheme.primary,
+                        headerTextColor = MaterialTheme.colorScheme.onPrimary,
+                        calendarHeaderTextColor = onBackgroundColor,
+                        dateActiveBackgroundColor = AppGold,
+                        dateActiveTextColor = MaterialTheme.colorScheme.onPrimary,
+                        dateInactiveTextColor = onBackgroundColor
+                    )
+                )
+            }
+        } else {
+            datepicker(
+                initialDate = selectedDate,
+                title = stringResource(R.string.select_date),
+                onDateChange = { selectedDate = it },
+                colors = com.vanpra.composematerialdialogs.datetime.date.DatePickerDefaults.colors(
+                    headerBackgroundColor = MaterialTheme.colorScheme.primary,
+                    headerTextColor = MaterialTheme.colorScheme.onPrimary,
+                    calendarHeaderTextColor = onBackgroundColor,
+                    dateActiveBackgroundColor = AppGold,
+                    dateActiveTextColor = MaterialTheme.colorScheme.onPrimary,
+                    dateInactiveTextColor = onBackgroundColor
                 )
             )
         }
@@ -533,6 +530,7 @@ fun TasksScreen(
 
 /**
  * ManageCategoriesDialog
+ *
  * Dialog for managing (deleting) categories.
  */
 @Composable
@@ -561,6 +559,7 @@ fun ManageCategoriesDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
+                        // عرض اسم الكاتيجوري كما هو (لو عايز هنا كمان تقدر تستخدم CategoryLabel)
                         Text(categoryName, color = MaterialTheme.colorScheme.onSurface)
                         IconButton(onClick = {
                             viewModel.deleteCategory(categoryName, onError)
@@ -572,7 +571,7 @@ fun ManageCategoriesDialog(
                             )
                         }
                     }
-                    HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+                    Divider(color = MaterialTheme.colorScheme.surfaceVariant)
                 }
             }
         },
@@ -587,6 +586,8 @@ fun ManageCategoriesDialog(
 
 /**
  * ListHeader
+ *
+ * Section header for task lists.
  */
 @Composable
 fun ListHeader(text: String) {
@@ -601,6 +602,8 @@ fun ListHeader(text: String) {
 
 /**
  * SwipeToDeleteTaskItem
+ *
+ * Task item with swipe-to-delete gesture.
  */
 @Composable
 fun SwipeToDeleteTaskItem(
@@ -726,6 +729,8 @@ fun SwipeToDeleteTaskItem(
 
 /**
  * TaskItem
+ *
+ * Individual task card with checkbox, category icon, and menu.
  */
 @Composable
 fun TaskItem(

@@ -4,7 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,15 +22,24 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.day.mate.R
-import com.day.mate.ui.theme.Teal // افتراض أنك تستخدم Teal هنا
+import com.day.mate.ui.theme.Teal
 
 // تم حذف OnboardingActivity1 بالكامل
 // تم حذف PageDot بالكامل
 
+/**
+ * OnboardingScreen1
+ *
+ * Displays the first screen of the application's onboarding flow, featuring the core
+ * Todo list/task management illustration and primary navigation actions.
+ *
+ * @param onContinue Callback to navigate to the next page (Page 2) in the Pager.
+ * @param onSkip Callback to skip onboarding and navigate directly to the Auth screen.
+ */
 @Composable
 fun OnboardingScreen1(
-    onContinue: () -> Unit, // للانتقال إلى الصفحة 2 في الـ Pager
-    onSkip: () -> Unit       // لإنهاء الـ Onboarding والانتقال إلى Auth
+    onContinue: () -> Unit, // Navigate to page 2
+    onSkip: () -> Unit       // Navigate to Auth screen
 ) {
     val backgroundDark = Color(0xFF101F22)
     val accentTeal = Color(0xFF008080)
@@ -47,9 +58,10 @@ fun OnboardingScreen1(
             modifier = Modifier
                 .fillMaxWidth()
                 .offset(y = 80.dp)
+                .verticalScroll(rememberScrollState()) // FIX: Added vertical scroll for landscape support
         ) {
 
-            // froast card (Illustration)
+            // Illustration Card (Todo Mockup)
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
@@ -61,7 +73,7 @@ fun OnboardingScreen1(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
-                    // ✅ Task 1 done
+                    // Task 1 (Done)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
@@ -85,7 +97,7 @@ fun OnboardingScreen1(
                         )
                     }
 
-                    // ☐ Task 2 (active)
+                    // Task 2 (Active/Gold Star)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
@@ -108,7 +120,7 @@ fun OnboardingScreen1(
                         )
                     }
 
-                    // ✅ Task 3 done
+                    // Task 3 (Done)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
@@ -136,6 +148,7 @@ fun OnboardingScreen1(
 
             Spacer(modifier = Modifier.height(40.dp))
 
+            // Main Title
             Text(
                 text = stringResource(id = R.string.onboarding_title),
                 color = Color.White,
@@ -148,6 +161,7 @@ fun OnboardingScreen1(
 
             Spacer(modifier = Modifier.height(10.dp))
 
+            // Description
             Text(
                 text = stringResource(id = R.string.onboarding_description),
                 color = Color(0xFFB0BEC5),
@@ -156,10 +170,11 @@ fun OnboardingScreen1(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 32.dp)
             )
+            // Add spacing here so the scroll works properly, pushing the content up
+            Spacer(modifier = Modifier.height(180.dp))
         }
 
-        // تم حذف Row الخاص بالنقاط هنا
-
+        // Action Buttons (Fixed at the bottom of the Box)
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -194,4 +209,18 @@ fun OnboardingScreen1(
 
         }
     }
+}
+
+/**
+ * TaskTextField (Placeholder component, assumed to be used by other onboarding screens)
+ */
+@Composable
+private fun TaskTextField() {
+    // This is a placeholder for external dependency
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PreviewOnboardingScreen1() {
+    OnboardingScreen1(onContinue = {}, onSkip = {})
 }

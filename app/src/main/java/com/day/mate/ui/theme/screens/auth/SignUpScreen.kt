@@ -7,7 +7,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +30,16 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.common.api.ApiException
 
+/**
+ * SignUpScreen
+ *
+ * Screen for user registration (sign-up). Allows users to register using email/password
+ * or Google Sign-In. Handles input validation, state management, and navigation.
+ *
+ * @param viewModel The AuthViewModel managing authentication logic.
+ * @param onSignedUp Callback executed upon successful registration.
+ * @param onNavigateToSignIn Callback to navigate back to the Login screen.
+ */
 @Composable
 fun SignUpScreen(
     viewModel: AuthViewModel,
@@ -62,7 +74,7 @@ fun SignUpScreen(
     }
 
 
-
+    // Handle authentication state changes
     LaunchedEffect(uiState) {
         when (uiState) {
             is AuthUiState.Success -> onSignedUp()
@@ -70,6 +82,7 @@ fun SignUpScreen(
             else -> Unit
         }
     }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -79,7 +92,8 @@ fun SignUpScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .align(Alignment.Center),
+                .align(Alignment.Center)
+                .verticalScroll(rememberScrollState()), // Enable scrolling for responsiveness
             verticalArrangement = Arrangement.spacedBy(30.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -154,6 +168,11 @@ fun SignUpScreen(
     }
 }
 
+/**
+ * OutlinedTextFieldComposable
+ *
+ * Reusable composable for input fields used across Auth screens.
+ */
 @Composable
 fun OutlinedTextFieldComposable(
     value: String,
@@ -203,6 +222,11 @@ fun OutlinedTextFieldComposable(
 
 }
 
+/**
+ * SocialSignUpButtons
+ *
+ * Displays the social sign-up/sign-in options (Google).
+ */
 @Composable
 fun SocialSignUpButtons(
     googleSignInLauncher: androidx.activity.result.ActivityResultLauncher<android.content.Intent>,
@@ -228,7 +252,7 @@ fun SocialSignUpButtons(
         ) {
             Image(
                 painter = painterResource(id = R.drawable.googlelogo),
-                contentDescription = null,
+                contentDescription = "Google",
                 modifier = Modifier.size(20.dp)
             )
             Spacer(Modifier.width(8.dp))
@@ -238,4 +262,3 @@ fun SocialSignUpButtons(
 
     }
 }
-

@@ -32,6 +32,7 @@
     <application
         android:name="com.day.mate.util.MyApplication"
         android:allowBackup="true"
+        android:configChanges="orientation|screenSize|locale|layoutDirection"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"

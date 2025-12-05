@@ -1,7 +1,10 @@
 package com.day.mate.ui.theme.screens.settings
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material3.*
@@ -17,21 +20,25 @@ fun TermsScreen(onBack: () -> Unit = {}) {
         topBar = {
             @OptIn(ExperimentalMaterial3Api::class)
             TopAppBar(
-                title = { Text("Terms of Service") },
+                title = { Text(stringResource(R.string.settings_terms_service)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Outlined.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Outlined.ArrowBack, contentDescription = stringResource(R.string.desc_back_button))
                     }
                 }
             )
         }
     ) { padding ->
         Column(
-            Modifier.padding(padding).padding(18.dp)
+            Modifier
+                .padding(padding)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 18.dp, vertical = 10.dp)
         ) {
             Text(
                 text = """
-                    Terms of Service
+                    ${stringResource(R.string.settings_terms_service)}
 
                     1. By using DayMate, you agree to use the app for personal, non-commercial purposes only.
                     2. The app does not collect or share any personal data with third parties.
