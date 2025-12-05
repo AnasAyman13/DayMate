@@ -226,7 +226,6 @@ fun MainNavGraph() {
         }
     }
 }
-
 @Composable
 fun MediaScreenWrapper(
     navController: NavController,

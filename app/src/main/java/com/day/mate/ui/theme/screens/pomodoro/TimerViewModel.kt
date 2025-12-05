@@ -10,13 +10,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import android.content.Context
-import com.day.mate.R
+import com.day.mate.data.local.SettingsDataStore
 import com.day.mate.data.local.reminder.ReminderScheduler
-import java.time.LocalDateTime // 🚨 تم إضافة هذا الـ Import
+import java.time.LocalDateTime
 
 class TimerViewModel(context: Context) : ViewModel() {
 
     private val scheduler = ReminderScheduler(context)
+
+
+    private val settingsDataStore = SettingsDataStore(context)
 
     private val _timerState = MutableStateFlow(TimerState())
     val timerState = _timerState.asStateFlow()
@@ -26,7 +29,63 @@ class TimerViewModel(context: Context) : ViewModel() {
     var focusTime = 25 * 60
     var shortBreakTime = 5 * 60
     var longBreakTime = 15 * 60
-    private val totalFocusSessions = 4
+    init {
+        loadSettings()
+    }
+
+    private fun loadSettings() {
+        viewModelScope.launch {
+            settingsDataStore.focusTimeFlow.collect { time ->
+                focusTime = time
+                val state = _timerState.value
+                if (state.mode == TimerMode.FOCUS && !state.isRunning && !state.isFinished) {
+                    _timerState.value = state.copy(
+                        secondsLeft = focusTime,
+                        totalSeconds = focusTime
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
+            settingsDataStore.shortBreakTimeFlow.collect { time ->
+                shortBreakTime = time
+                val state = _timerState.value
+                if (state.mode == TimerMode.SHORT_BREAK && !state.isRunning && !state.isFinished) {
+                    _timerState.value = state.copy(
+                        secondsLeft = shortBreakTime,
+                        totalSeconds = shortBreakTime
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
+            settingsDataStore.longBreakTimeFlow.collect { time ->
+                longBreakTime = time
+                val state = _timerState.value
+                if (state.mode == TimerMode.LONG_BREAK && !state.isRunning && !state.isFinished) {
+                    _timerState.value = state.copy(
+                        secondsLeft = longBreakTime,
+                        totalSeconds = longBreakTime
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
+            settingsDataStore.completedSessionsFlow.collect { count ->
+                _timerState.value = _timerState.value.copy(
+                    completedSessions = count
+                )
+            }
+        }
+        viewModelScope.launch {
+            settingsDataStore.totalFocusSessionsFlow.collect { count ->
+                _timerState.value = _timerState.value.copy(
+                    totalFocusSessions = count
+                )
+            }
+        }
+    }
+
 
     fun skipTimer() {
         timerJob?.cancel()
@@ -35,14 +94,28 @@ class TimerViewModel(context: Context) : ViewModel() {
     }
 
     fun updateTimesRaw(focusSeconds: Int, shortBreakSeconds: Int, longBreakSeconds: Int) {
+        viewModelScope.launch {
+            settingsDataStore.saveFocusTime(focusSeconds)
+            settingsDataStore.saveShortBreakTime(shortBreakSeconds)
+            settingsDataStore.saveLongBreakTime(longBreakSeconds)
+        }
         focusTime = focusSeconds
         shortBreakTime = shortBreakSeconds
         longBreakTime = longBreakSeconds
 
-        _timerState.value = _timerState.value.copy(
-            secondsLeft = focusTime,
-            totalSeconds = focusTime
-        )
+        val state = _timerState.value
+        val newSeconds = when (state.mode) {
+            TimerMode.FOCUS -> focusSeconds
+            TimerMode.SHORT_BREAK -> shortBreakSeconds
+            TimerMode.LONG_BREAK -> longBreakSeconds
+        }
+        if (!state.isRunning) {
+            _timerState.value = state.copy(
+                secondsLeft = newSeconds,
+                totalSeconds = newSeconds,
+                isFinished = false
+            )
+        }
     }
 
     fun startTimer() {
@@ -67,13 +140,13 @@ class TimerViewModel(context: Context) : ViewModel() {
         }
     }
 
-    fun handleSessionEnd() {
+    fun handleSessionEnd(shouldSaveSession: Boolean = true) {
         val state = _timerState.value
         when (state.mode) {
             TimerMode.FOCUS -> {
-                val newCompleted = state.completedSessions + 1
+                val newCompleted = if (shouldSaveSession) state.completedSessions + 1 else state.completedSessions
                 val nextMode =
-                    if (newCompleted % totalFocusSessions == 0) TimerMode.LONG_BREAK
+                    if (newCompleted % state.totalFocusSessions == 0 && newCompleted > 0) TimerMode.LONG_BREAK
                     else TimerMode.SHORT_BREAK
 
                 _timerState.value = state.copy(
@@ -83,13 +156,24 @@ class TimerViewModel(context: Context) : ViewModel() {
                     totalSeconds = if (nextMode == TimerMode.LONG_BREAK) longBreakTime else shortBreakTime,
                     isFinished = false
                 )
+                if (shouldSaveSession) {
+                    viewModelScope.launch {
+                        settingsDataStore.saveCompletedSessions(newCompleted)
+                        if (nextMode == TimerMode.LONG_BREAK) {
+                            settingsDataStore.saveCompletedSessions(0)
+                            _timerState.value = _timerState.value.copy(completedSessions = 0)
+                        }
+                    }
+                }
+
 
                 val breakDurationSeconds = if (nextMode == TimerMode.LONG_BREAK) longBreakTime else shortBreakTime
                 val breakType = if (nextMode == TimerMode.LONG_BREAK) "Long Break" else "Short Break"
 
                 val triggerDateTime = LocalDateTime.now().plusSeconds(breakDurationSeconds.toLong())
-
-                scheduler.schedulePomodoroBreak(triggerDateTime, breakType)
+                if (shouldSaveSession) {
+                    scheduler.schedulePomodoroBreak(triggerDateTime, breakType)
+                }
             }
             else -> {
                 _timerState.value = state.copy(

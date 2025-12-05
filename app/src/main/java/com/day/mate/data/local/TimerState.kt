@@ -9,5 +9,6 @@ data class TimerState(
     val completedSessions: Int = 0,
     val focusTime: Int = 25 * 60,
     val shortBreakTime: Int = 5 * 60,
-    val longBreakTime: Int = 15 * 60
+    val longBreakTime: Int = 15 * 60,
+    val totalFocusSessions: Int = 4
 )
