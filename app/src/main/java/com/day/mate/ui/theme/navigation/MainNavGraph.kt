@@ -20,8 +20,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.day.mate.data.local.AppDatabase
-import com.day.mate.data.local.RetrofitInstance
+import com.day.mate.data.local.prayer.AppDatabase
+import com.day.mate.data.local.prayer.RetrofitInstance
 import com.day.mate.data.repository.PrayerRepository
 import com.day.mate.data.repository.TodoRepository
 import com.day.mate.ui.screens.PrayerScreen

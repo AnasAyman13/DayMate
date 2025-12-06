@@ -3,8 +3,8 @@ package com.day.mate.ui.theme.screens.prayer
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.day.mate.data.local.RetrofitInstance
-import com.day.mate.data.local.Timings
+import com.day.mate.data.local.prayer.RetrofitInstance
+import com.day.mate.data.local.prayer.Timings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

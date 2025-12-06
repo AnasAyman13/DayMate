@@ -11,7 +11,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.day.mate.MainActivity
 import com.day.mate.R
-import com.day.mate.data.local.TimerMode
+import com.day.mate.data.local.pomodoro.TimerMode
 
 object NotificationHelper {
 

@@ -2,15 +2,15 @@ package com.day.mate.ui.theme.screens.pomodoro
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.day.mate.data.local.TimerMode
-import com.day.mate.data.local.TimerState
+import com.day.mate.data.local.pomodoro.TimerMode
+import com.day.mate.data.local.pomodoro.TimerState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import android.content.Context
-import com.day.mate.data.local.SettingsDataStore
+import com.day.mate.data.local.pomodoro.SettingsDataStore
 import com.day.mate.data.local.reminder.NotificationHelper
 import com.day.mate.data.local.reminder.ReminderScheduler
 import java.time.LocalDateTime

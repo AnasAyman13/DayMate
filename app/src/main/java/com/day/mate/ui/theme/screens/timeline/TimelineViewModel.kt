@@ -2,7 +2,7 @@ package com.day.mate.ui.theme.screens.timeline
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.day.mate.data.local.toTimelineEvents
+import com.day.mate.data.local.prayer.toTimelineEvents
 import com.day.mate.data.model.TimelineEvent
 import com.day.mate.data.model.toTimelineEvent
 import com.day.mate.data.repository.TodoRepository

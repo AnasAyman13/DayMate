@@ -2,6 +2,8 @@ package com.day.mate.data.local
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
+import com.day.mate.data.local.media.VaultType
+import com.day.mate.data.local.media.VaultTypeConverter
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith

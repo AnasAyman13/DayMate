@@ -30,9 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.day.mate.data.local.VaultItem
-import com.day.mate.data.local.VaultType
-import java.util.Locale
+import com.day.mate.data.local.media.VaultItem
+import com.day.mate.data.local.media.VaultType
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable

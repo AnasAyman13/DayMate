@@ -1,9 +1,9 @@
 package com.day.mate.data.repository
 
-import com.day.mate.data.local.CategoryDao
-import com.day.mate.data.local.CategoryEntity
-import com.day.mate.data.local.TodoDao
-import com.day.mate.data.local.TodoEntity
+import com.day.mate.data.local.todo.CategoryDao
+import com.day.mate.data.local.todo.CategoryEntity
+import com.day.mate.data.local.todo.TodoDao
+import com.day.mate.data.local.todo.TodoEntity
 import com.day.mate.data.model.Todo
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map

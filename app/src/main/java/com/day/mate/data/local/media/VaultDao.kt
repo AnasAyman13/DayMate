@@ -1,4 +1,4 @@
-package com.day.mate.data.local
+package com.day.mate.data.local.media
 
 import androidx.room.Dao
 import androidx.room.Delete

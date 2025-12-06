@@ -1,4 +1,4 @@
-package com.day.mate.data.local
+package com.day.mate.data.local.pomodoro
 
 enum class TimerMode {
     FOCUS,

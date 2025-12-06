@@ -1,4 +1,4 @@
-package com.day.mate.data.local
+package com.day.mate.data.local.prayer
 
 import com.day.mate.util.convertPrayerTimeToTimestamp
 import com.day.mate.data.model.EventType

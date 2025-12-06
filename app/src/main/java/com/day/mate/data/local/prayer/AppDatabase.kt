@@ -1,9 +1,13 @@
-package com.day.mate.data.local
+package com.day.mate.data.local.prayer
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.day.mate.data.local.todo.CategoryDao
+import com.day.mate.data.local.todo.CategoryEntity
+import com.day.mate.data.local.todo.TodoDao
+import com.day.mate.data.local.todo.TodoEntity
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 

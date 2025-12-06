@@ -1,7 +1,7 @@
 package com.day.mate.data.repository
 
-import com.day.mate.data.local.VaultItem
-import com.day.mate.data.local.VaultDao
+import com.day.mate.data.local.media.VaultItem
+import com.day.mate.data.local.media.VaultDao
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

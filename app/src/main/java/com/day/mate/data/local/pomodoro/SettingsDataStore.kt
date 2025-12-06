@@ -1,4 +1,4 @@
-package com.day.mate.data.local
+package com.day.mate.data.local.pomodoro
 
 import android.content.Context
 import androidx.datastore.core.DataStore

@@ -1,7 +1,7 @@
 package com.day.mate.data.repository
 
-import com.day.mate.data.local.CategoryDao
-import com.day.mate.data.local.TodoDao
+import com.day.mate.data.local.todo.CategoryDao
+import com.day.mate.data.local.todo.TodoDao
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

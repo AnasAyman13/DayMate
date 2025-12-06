@@ -17,7 +17,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.day.mate.data.local.AppDatabase
+import com.day.mate.data.local.prayer.AppDatabase
 import com.day.mate.data.local.reminder.ReminderScheduler
 import com.day.mate.data.repository.TodoRepository
 import com.day.mate.ui.screens.settings.SettingsViewModel

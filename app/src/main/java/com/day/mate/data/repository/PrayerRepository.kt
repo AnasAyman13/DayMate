@@ -2,8 +2,8 @@ package com.day.mate.data.repository
 
 
 
-import com.day.mate.data.local.PrayerApiService
-import com.day.mate.data.local.Timings
+import com.day.mate.data.local.prayer.PrayerApiService
+import com.day.mate.data.local.prayer.Timings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 

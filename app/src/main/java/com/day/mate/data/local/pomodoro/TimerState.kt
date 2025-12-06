@@ -1,4 +1,4 @@
-package com.day.mate.data.local
+package com.day.mate.data.local.pomodoro
 
 data class TimerState(
     val mode: TimerMode = TimerMode.FOCUS,

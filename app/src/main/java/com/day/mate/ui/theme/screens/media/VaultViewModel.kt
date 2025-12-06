@@ -3,10 +3,10 @@ package com.day.mate.ui.theme.screens.media
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.day.mate.data.local.VaultDatabase
-import com.day.mate.data.local.VaultItem
+import com.day.mate.data.local.media.VaultDatabase
+import com.day.mate.data.local.media.VaultItem
 import com.day.mate.data.repository.VaultRepository
-import com.day.mate.data.local.VaultType
+import com.day.mate.data.local.media.VaultType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
