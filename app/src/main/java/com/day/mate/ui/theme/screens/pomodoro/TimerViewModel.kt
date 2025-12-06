@@ -178,10 +178,10 @@ class TimerViewModel(private val context: Context) : ViewModel() {
                     viewModelScope.launch {
                         settingsDataStore.saveCompletedSessions(newCompleted)
                         // لو هنلغي اعادة تعيين عدد الجليات الي 0 بعد 4 جلسات
-                        if (nextMode == TimerMode.LONG_BREAK) {
+                        /*if (nextMode == TimerMode.LONG_BREAK) {
                             settingsDataStore.saveCompletedSessions(0)
                             _timerState.value = _timerState.value.copy(completedSessions = 0)
-                        }
+                        }*/
                     }
                 }
 
@@ -223,6 +223,23 @@ class TimerViewModel(private val context: Context) : ViewModel() {
             isRunning = false,
             isFinished = false
         )
+    }
+    fun resetCompletedSessions() {
+        timerJob?.cancel()
+        scheduler.cancelPomodoroBreak()
+        NotificationHelper.cancelPersistentPomodoroNotification(context)
+
+        viewModelScope.launch {
+            settingsDataStore.saveCompletedSessions(0)
+            _timerState.value = _timerState.value.copy(
+                completedSessions = 0,
+                mode = TimerMode.FOCUS,
+                secondsLeft = focusTime,
+                totalSeconds = focusTime,
+                isRunning = false,
+                isFinished = false
+            )
+        }
     }
 
     fun progress(): Float {

@@ -284,4 +284,5 @@
     <!-- Content Descriptions -->
     <string name="desc_lock_icon">Lock Icon</string>
     <string name="pomodoro_timer_running">pomodoro Timer is Running</string>
+    <string name="reset_sessions">Reset Sessions\n</string>
 </resources>

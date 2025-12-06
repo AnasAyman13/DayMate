@@ -278,4 +278,5 @@
     <!-- Content Descriptions -->
     <string name="desc_lock_icon">أيقونة القفل</string>
     <string name="pomodoro_timer_running">مؤقت البومودورو قيد التشغيل</string>
+    <string name="reset_sessions">إعادة تعيين الجلسات</string>
 </resources>

@@ -15,6 +15,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -128,7 +129,7 @@ fun PomodoroScreen(isDarkTheme: Boolean) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = 80.dp, bottom = 16.dp),
+                    .padding(top = 40.dp, bottom = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
@@ -154,13 +155,15 @@ fun PomodoroScreen(isDarkTheme: Boolean) {
                 ) {
                     BottomButtonsContent(viewModel, timerState.isRunning, isLandscape)
                     CompletedSessionsText(timerState.completedSessions, isLandscape)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    ResetSessionsButton(viewModel = viewModel)
                 }
             }
         } else {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = 16.dp),
+                    .padding(top = 120.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -175,6 +178,11 @@ fun PomodoroScreen(isDarkTheme: Boolean) {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 CompletedSessionsText(timerState.completedSessions, isLandscape)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                ResetSessionsButton(viewModel = viewModel)
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -338,6 +346,7 @@ fun BottomButtonsContent(viewModel: TimerViewModel, isRunning: Boolean, isLandsc
             }
             Text(text = stringResource(id = R.string.skip), fontSize = buttonFontSize, color = MaterialTheme.colorScheme.onSurface)
         }
+
     }
 }
 
@@ -349,4 +358,39 @@ fun CompletedSessionsText(completedSessions: Int, isLandscape: Boolean) {
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
     )
+
+}
+@Composable
+fun ResetSessionsButton(viewModel: TimerViewModel) {
+    val buttonSize = 50.dp
+    val buttonFontSize = 14.sp
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier
+                .size(buttonSize)
+                .shadow(4.dp, CircleShape)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+
+                .clickable { viewModel.resetCompletedSessions() },
+            contentAlignment = Alignment.Center
+        ) {
+
+            Icon(
+
+                imageVector = Icons.Default.Delete,
+                contentDescription = "إعادة تعيين الجلسات",
+
+                tint = MaterialTheme.colorScheme.error
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = stringResource(R.string.reset_sessions),
+            fontSize = buttonFontSize,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
 }
