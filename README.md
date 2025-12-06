@@ -73,8 +73,7 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 • Notification  
 
 **Islam Fawzy**  
-•  Login & SignUp  
-• Firestore (media)   
+•  Login & SignUp   
 • Authentication (Login & SignUp) 
 
 
