@@ -11,6 +11,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.day.mate.MainActivity
 import com.day.mate.R
+import com.day.mate.data.local.TimerMode
 
 object NotificationHelper {
 
@@ -93,11 +94,7 @@ object NotificationHelper {
         content: String,
         notificationId: Int,
     ) {
-
-        createNotificationChannelIfNeeded(context)
-
-
-        val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+        createGeneralNotificationChannel(context)
 
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -108,21 +105,15 @@ object NotificationHelper {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-
-
-        val notification = NotificationCompat.Builder(context, ReminderConstants.CHANNEL_ID)
+        val notification = NotificationCompat.Builder(context, ReminderConstants.GENERAL_CHANNEL_ID)
             .setSmallIcon(R.drawable.forgrnd)
             .setContentTitle(title)
             .setContentText(content)
             .setStyle(NotificationCompat.BigTextStyle().bigText(content))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setSound(soundUri)
-            .setVibrate(longArrayOf(0, 500, 200, 500))
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .build()
-
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(notificationId, notification)
@@ -149,5 +140,94 @@ object NotificationHelper {
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         notificationManager.notify(notificationId, notification)
+    }
+    private fun createGeneralNotificationChannel(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+            val audioAttributes = AudioAttributes.Builder()
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .build()
+            val channel = NotificationChannel(
+                ReminderConstants.GENERAL_CHANNEL_ID,
+                ReminderConstants.GENERAL_CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = ReminderConstants.GENERAL_CHANNEL_DESCRIPTION
+                setSound(soundUri, audioAttributes)
+                enableVibration(true)
+            }
+            val notificationManager: NotificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+    private fun createPersistentPomodoroChannel(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                ReminderConstants.POMODORO_PERSISTENT_CHANNEL_ID,
+                ReminderConstants.POMODORO_PERSISTENT_CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Shows the current Pomodoro timer status."
+                setSound(null, null)
+                enableVibration(false)
+                setShowBadge(false)
+            }
+
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+        }
+    }
+
+    fun showPersistentPomodoroNotification(
+        context: Context,
+        timerMode: TimerMode,
+        secondsLeft: Int
+    ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            createPersistentPomodoroChannel(context)
+        }
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val modeString = when (timerMode) {
+
+            TimerMode.FOCUS -> context.getString(R.string.focus)
+            TimerMode.SHORT_BREAK -> context.getString(R.string.short_break)
+            TimerMode.LONG_BREAK -> context.getString(R.string.long_break)
+        }
+
+        val minutes = secondsLeft / 60
+        val seconds = secondsLeft % 60
+        val timeString = String.format("%02d:%02d", minutes, seconds)
+
+        val title = context.getString(R.string.pomodoro_timer_running)
+        val content = "$modeString: $timeString"
+
+        val notification = NotificationCompat.Builder(context, ReminderConstants.POMODORO_PERSISTENT_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_pomodoro_filled)
+            .setContentTitle(title)
+            .setContentText(content)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setShowWhen(false)
+            .setContentIntent(pendingIntent)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .build()
+
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(ReminderConstants.NOTIFICATION_ID_PERSISTENT_POMODORO, notification)
+    }
+
+    fun cancelPersistentPomodoroNotification(context: Context) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(ReminderConstants.NOTIFICATION_ID_PERSISTENT_POMODORO)
     }
 }

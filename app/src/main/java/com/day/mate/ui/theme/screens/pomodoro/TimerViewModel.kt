@@ -11,10 +11,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import android.content.Context
 import com.day.mate.data.local.SettingsDataStore
+import com.day.mate.data.local.reminder.NotificationHelper
 import com.day.mate.data.local.reminder.ReminderScheduler
 import java.time.LocalDateTime
 
-class TimerViewModel(context: Context) : ViewModel() {
+class TimerViewModel(private val context: Context) : ViewModel() {
 
     private val scheduler = ReminderScheduler(context)
 
@@ -123,23 +124,40 @@ class TimerViewModel(context: Context) : ViewModel() {
         if (state.isRunning) return
 
         _timerState.value = state.copy(isRunning = true, isFinished = false)
-
+        if (state.mode == TimerMode.SHORT_BREAK || state.mode == TimerMode.LONG_BREAK) {
+            val breakDurationSeconds = state.secondsLeft
+            val isLongBreak = state.mode == TimerMode.LONG_BREAK
+            val breakType = if (isLongBreak) "Long Break" else "Short Break"
+            val triggerDateTime = LocalDateTime.now().plusSeconds(breakDurationSeconds.toLong())
+            scheduler.schedulePomodoroBreak(triggerDateTime, breakType)
+        }
         timerJob = viewModelScope.launch {
             while (_timerState.value.secondsLeft > 0 && _timerState.value.isRunning) {
                 delay(1000)
+
+                val newSecondsLeft = _timerState.value.secondsLeft - 1
                 _timerState.value = _timerState.value.copy(
-                    secondsLeft = _timerState.value.secondsLeft - 1
+                    secondsLeft = newSecondsLeft
+                )
+
+
+                NotificationHelper.showPersistentPomodoroNotification(
+                    context = context,
+                    timerMode = _timerState.value.mode,
+                    secondsLeft = newSecondsLeft
                 )
             }
+
             if (_timerState.value.secondsLeft <= 0) {
                 _timerState.value = _timerState.value.copy(
                     isRunning = false,
                     isFinished = true
                 )
+                handleSessionEnd(shouldSaveSession = true)
+                NotificationHelper.cancelPersistentPomodoroNotification(context)
             }
         }
     }
-
     fun handleSessionEnd(shouldSaveSession: Boolean = true) {
         val state = _timerState.value
         when (state.mode) {
@@ -159,6 +177,7 @@ class TimerViewModel(context: Context) : ViewModel() {
                 if (shouldSaveSession) {
                     viewModelScope.launch {
                         settingsDataStore.saveCompletedSessions(newCompleted)
+                        // لو هنلغي اعادة تعيين عدد الجليات الي 0 بعد 4 جلسات
                         if (nextMode == TimerMode.LONG_BREAK) {
                             settingsDataStore.saveCompletedSessions(0)
                             _timerState.value = _timerState.value.copy(completedSessions = 0)
@@ -167,13 +186,6 @@ class TimerViewModel(context: Context) : ViewModel() {
                 }
 
 
-                val breakDurationSeconds = if (nextMode == TimerMode.LONG_BREAK) longBreakTime else shortBreakTime
-                val breakType = if (nextMode == TimerMode.LONG_BREAK) "Long Break" else "Short Break"
-
-                val triggerDateTime = LocalDateTime.now().plusSeconds(breakDurationSeconds.toLong())
-                if (shouldSaveSession) {
-                    scheduler.schedulePomodoroBreak(triggerDateTime, breakType)
-                }
             }
             else -> {
                 _timerState.value = state.copy(
@@ -191,12 +203,14 @@ class TimerViewModel(context: Context) : ViewModel() {
         val state = _timerState.value
         _timerState.value = state.copy(isRunning = false)
         timerJob?.cancel()
+        NotificationHelper.cancelPersistentPomodoroNotification(context)
     }
 
 
     fun resetTimer() {
         timerJob?.cancel()
         scheduler.cancelPomodoroBreak()
+        NotificationHelper.cancelPersistentPomodoroNotification(context)
         val state = _timerState.value
         val newSeconds = when (state.mode) {
             TimerMode.FOCUS -> focusTime

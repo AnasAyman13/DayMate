@@ -78,12 +78,8 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Initialize daily reminder scheduler
         val scheduler = ReminderScheduler(applicationContext)
         scheduler.scheduleDailyReminder(hour = 10, minute = 0)
-
-        // Initialize database and repository
         val db = AppDatabase.getInstance(this)
         todoRepository = TodoRepository(
             todoDao = db.todoDao(),
@@ -91,30 +87,21 @@ class MainActivity : AppCompatActivity() {
         )
         todoViewModel.initReminderScheduler(this)
 
-
-
-        // 🔔 Request notification permission (Android 13+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val permission = Manifest.permission.POST_NOTIFICATIONS
-            // Check if permission is already granted
             if (ContextCompat.checkSelfPermission(
                     this,
                     permission
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-                // Check if we should show rationale
                 if (!shouldShowRequestPermissionRationale(permission)) {
-                    // First time requesting permission
                     ActivityCompat.requestPermissions(this, arrayOf(permission), 101)
                 }
             }
         }
-
-        // ⏰ Check exact alarm permission (Android 12+) - one time only
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val alarmManager = getSystemService(AlarmManager::class.java)
             if (!alarmManager.canScheduleExactAlarms()) {
-                // Check if we've already asked via SharedPreferences
                 val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
                 val hasAskedBefore = prefs.getBoolean("exact_alarm_asked", false)
 
@@ -125,18 +112,12 @@ class MainActivity : AppCompatActivity() {
                         Toast.LENGTH_LONG
                     ).show()
                     openExactAlarmSettings()
-                    // Save that we've asked
                     prefs.edit().putBoolean("exact_alarm_asked", true).apply()
                 }
             }
         }
-
-        // 🎨 Set up Compose UI with dynamic theme
         setContent {
-            // Collect dark mode state from SettingsViewModel
             val isDarkMode by settingsViewModel.isDarkMode.collectAsState()
-
-            // Apply theme based on user preference
             DayMateTheme(darkTheme = isDarkMode) {
                 MainNavGraph()
             }

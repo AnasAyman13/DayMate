@@ -66,9 +66,8 @@ class ReminderScheduler(private val context: Context) {
         alarmManager.cancel(pendingIntent)
     }
     @SuppressLint("ScheduleExactAlarm")
-    fun scheduleDailyReminder(hour: Int = 18, minute: Int = 30) {
+    fun scheduleDailyReminder(hour: Int = 10, minute: Int = 0) {
 
-        // 1. تحديد الوقت المستهدف (مثل 8:00 صباحاً)
         val calendar: Calendar = Calendar.getInstance().apply {
             timeInMillis = System.currentTimeMillis()
             set(Calendar.HOUR_OF_DAY, hour)

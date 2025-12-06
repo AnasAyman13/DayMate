@@ -4,12 +4,17 @@ object ReminderConstants {
     const val CHANNEL_ID = "todo_reminder_channel"
     const val CHANNEL_NAME = "Todo Reminders"
     const val CHANNEL_DESCRIPTION = "Reminders for your tasks"
-
+    const val GENERAL_CHANNEL_ID = "general_alerts_channel"
+    const val GENERAL_CHANNEL_NAME = "General Alerts"
+    const val GENERAL_CHANNEL_DESCRIPTION = "General application alerts and daily reminders"
     const val EXTRA_TODO_ID = "extra_todo_id"
     const val EXTRA_TODO_TITLE = "extra_todo_title"
     const val EXTRA_TODO_DESCRIPTION = "extra_todo_description"
 
+    const val NOTIFICATION_ID_PERSISTENT_POMODORO = 2001
 
+    const val POMODORO_PERSISTENT_CHANNEL_ID = "pomodoro_timer_status_channel"
+    const val POMODORO_PERSISTENT_CHANNEL_NAME = "Pomodoro Timer Status"
     const val NOTIFICATION_ID_BASE = 1000
 
     const val TYPE_POMODORO_BREAK = 101
