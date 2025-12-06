@@ -8,6 +8,8 @@
     <string name="timeline_topbar_title">Make today amazing.</string>
     <string name="more">More</string>
     <string name="timeline_now">Now</string>
+    <!-- res/values/strings.xml -->
+    <string name="add_task_to_get_started">Add your first task to get started</string>
     <string name="timeline_empty_or_loading">Loading timeline or no events for today...</string>
 
     <!-- Navigation -->

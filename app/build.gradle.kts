@@ -88,6 +88,7 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.0.0")
     implementation(libs.androidx.appcompat)
     implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.compose.material3:material3:1.3.0")
 
 
     // ==========================================================

@@ -6,6 +6,7 @@
     <string name="timeline_topbar_title">اجعل يومك مميزًا</string>
     <string name="more">المزيد</string>
     <string name="timeline_now">الآن</string>
+    <string name="add_task_to_get_started">أضف أول مهمة لك للبدء</string>
     <string name="timeline_empty_or_loading">جارٍ تحميل الجدول أو لا توجد أحداث لليوم…</string>
 
     <!-- Navigation -->

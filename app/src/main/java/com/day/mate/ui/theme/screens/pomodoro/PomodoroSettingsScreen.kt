@@ -1,5 +1,6 @@
 package com.day.mate.ui.theme.screens.pomodoro
 
+import android.widget.Toast
 import com.day.mate.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,23 +22,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 
-/**
- * PomodoroSettingsScreen
- *
- * Settings screen for configuring Pomodoro timer durations (Focus, Short Break, Long Break).
- * Uses MaterialTheme colors for proper dark/light mode support and adapts layout for
- * landscape orientation by reducing the card width.
- *
- * @param onCancel Callback when user cancels the settings change.
- * @param onSave Callback when user saves with new durations (focusSeconds, shortSeconds, longSeconds).
- * @param initialFocus Initial focus duration in seconds.
- * @param initialShort Initial short break duration in seconds.
- * @param initialLong Initial long break duration in seconds.
- */
 @Composable
 fun PomodoroSettingsScreen(
     onCancel: () -> Unit,
@@ -46,6 +35,8 @@ fun PomodoroSettingsScreen(
     initialShort: Int,
     initialLong: Int
 ) {
+    val context = LocalContext.current
+
     // Helper function to parse total seconds into hours, minutes, seconds components
     fun parseTime(secs: Int): Triple<Int, Int, Int> =
         Triple(secs / 3600, (secs % 3600) / 60, secs % 60)
@@ -56,15 +47,26 @@ fun PomodoroSettingsScreen(
     val (lH, lM, lS) = parseTime(initialLong)
 
     // Mutable state for each time component
-    var focusHours by remember { mutableStateOf(fH) }
-    var focusMinutes by remember { mutableStateOf(fM) }
-    var focusSeconds by remember { mutableStateOf(fS) }
-    var shortHours by remember { mutableStateOf(sH) }
-    var shortMinutes by remember { mutableStateOf(sM) }
-    var shortSeconds by remember { mutableStateOf(sS) }
-    var longHours by remember { mutableStateOf(lH) }
-    var longMinutes by remember { mutableStateOf(lM) }
-    var longSeconds by remember { mutableStateOf(lS) }
+    var focusHours by remember { mutableStateOf(fH.coerceAtLeast(0)) }
+    var focusMinutes by remember { mutableStateOf(fM.coerceAtLeast(0)) }
+    var focusSeconds by remember { mutableStateOf(fS.coerceAtLeast(0)) }
+    var shortHours by remember { mutableStateOf(sH.coerceAtLeast(0)) }
+    var shortMinutes by remember { mutableStateOf(sM.coerceAtLeast(0)) }
+    var shortSeconds by remember { mutableStateOf(sS.coerceAtLeast(0)) }
+    var longHours by remember { mutableStateOf(lH.coerceAtLeast(0)) }
+    var longMinutes by remember { mutableStateOf(lM.coerceAtLeast(0)) }
+    var longSeconds by remember { mutableStateOf(lS.coerceAtLeast(0)) }
+
+    // Validation function
+    fun isValidTime(hours: Int, minutes: Int, seconds: Int): Boolean {
+        val totalSeconds = hours * 3600 + minutes * 60 + seconds
+        return totalSeconds > 0
+    }
+
+    // Show toast function
+    fun showToast(message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
 
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
@@ -85,113 +87,121 @@ fun PomodoroSettingsScreen(
                 .fillMaxWidth(cardWidthFraction)
                 .padding(vertical = 8.dp)
         ) {
-            LazyColumn(
+            Column(
                 modifier = Modifier
                     .padding(horizontal = horizontalPadding, vertical = 24.dp)
-                    .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(28.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                contentPadding = PaddingValues(bottom = 16.dp)
+                    .fillMaxWidth()
             ) {
                 // Title
-                item {
-                    Text(
-                        text = stringResource(R.string.settings_title),
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
+                Text(
+                    text = stringResource(R.string.settings_title),
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+
+                Spacer(modifier = Modifier.height(28.dp))
 
                 // Focus time row
-                item {
-                    TimeRow(
-                        label = stringResource(R.string.focus_label),
-                        icon = Icons.Outlined.PsychologyAlt,
-                        iconTint = MaterialTheme.colorScheme.primary,
-                        hours = focusHours,
-                        minutes = focusMinutes,
-                        seconds = focusSeconds,
-                        onHoursChange = { focusHours = it },
-                        onMinutesChange = { focusMinutes = it },
-                        onSecondsChange = { focusSeconds = it }
-                    )
-                }
+                TimeRow(
+                    label = stringResource(R.string.focus_label),
+                    icon = Icons.Outlined.PsychologyAlt,
+                    iconTint = MaterialTheme.colorScheme.primary,
+                    hours = focusHours,
+                    minutes = focusMinutes,
+                    seconds = focusSeconds,
+                    onHoursChange = { focusHours = it },
+                    onMinutesChange = { focusMinutes = it },
+                    onSecondsChange = { focusSeconds = it }
+                )
+
+                Spacer(modifier = Modifier.height(28.dp))
 
                 // Short break row
-                item {
-                    TimeRow(
-                        label = stringResource(R.string.short_break_label),
-                        icon = Icons.Outlined.LocalCafe,
-                        iconTint = MaterialTheme.colorScheme.secondary,
-                        hours = shortHours,
-                        minutes = shortMinutes,
-                        seconds = shortSeconds,
-                        onHoursChange = { shortHours = it },
-                        onMinutesChange = { shortMinutes = it },
-                        onSecondsChange = { shortSeconds = it }
-                    )
-                }
+                TimeRow(
+                    label = stringResource(R.string.short_break_label),
+                    icon = Icons.Outlined.LocalCafe,
+                    iconTint = MaterialTheme.colorScheme.secondary,
+                    hours = shortHours,
+                    minutes = shortMinutes,
+                    seconds = shortSeconds,
+                    onHoursChange = { shortHours = it },
+                    onMinutesChange = { shortMinutes = it },
+                    onSecondsChange = { shortSeconds = it }
+                )
+
+                Spacer(modifier = Modifier.height(28.dp))
 
                 // Long break row
-                item {
-                    TimeRow(
-                        label = stringResource(R.string.long_break_label),
-                        icon = Icons.Outlined.Bedtime,
-                        iconTint = MaterialTheme.colorScheme.tertiary,
-                        hours = longHours,
-                        minutes = longMinutes,
-                        seconds = longSeconds,
-                        onHoursChange = { longHours = it },
-                        onMinutesChange = { longMinutes = it },
-                        onSecondsChange = { longSeconds = it }
-                    )
-                }
+                TimeRow(
+                    label = stringResource(R.string.long_break_label),
+                    icon = Icons.Outlined.Bedtime,
+                    iconTint = MaterialTheme.colorScheme.tertiary,
+                    hours = longHours,
+                    minutes = longMinutes,
+                    seconds = longSeconds,
+                    onHoursChange = { longHours = it },
+                    onMinutesChange = { longMinutes = it },
+                    onSecondsChange = { longSeconds = it }
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
 
                 // Action buttons
-                item {
-                    Spacer(Modifier.height(16.dp))
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onCancel,
+                        shape = CircleShape,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(50.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        )
                     ) {
-                        OutlinedButton(
-                            onClick = onCancel,
-                            shape = CircleShape,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(50.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.onSurface
-                            )
-                        ) {
-                            Text(
-                                stringResource(R.string.cancel_button),
-                                fontSize = 18.sp
-                            )
-                        }
-                        Button(
-                            onClick = {
-                                // Calculate total seconds from components
-                                val focusSecs = focusHours * 3600 + focusMinutes * 60 + focusSeconds
-                                val shortSecs = shortHours * 3600 + shortMinutes * 60 + shortSeconds
-                                val longSecs = longHours * 3600 + longMinutes * 60 + longSeconds
-                                onSave(focusSecs, shortSecs, longSecs)
-                            },
-                            shape = CircleShape,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(50.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            )
-                        ) {
-                            Text(
-                                stringResource(R.string.save_button),
-                                fontSize = 18.sp
-                            )
-                        }
+                        Text(
+                            stringResource(R.string.cancel_button),
+                            fontSize = 18.sp
+                        )
+                    }
+                    Button(
+                        onClick = {
+                            val focusSecs = focusHours * 3600 + focusMinutes * 60 + focusSeconds
+                            val shortSecs = shortHours * 3600 + shortMinutes * 60 + shortSeconds
+                            val longSecs = longHours * 3600 + longMinutes * 60 + longSeconds
+
+                            when {
+                                !isValidTime(focusHours, focusMinutes, focusSeconds) -> {
+                                    showToast("Focus time must be more than 0 seconds")
+                                }
+                                !isValidTime(shortHours, shortMinutes, shortSeconds) -> {
+                                    showToast("Short break must be more than 0 seconds")
+                                }
+                                !isValidTime(longHours, longMinutes, longSeconds) -> {
+                                    showToast("Long break must be more than 0 seconds")
+                                }
+                                else -> {
+                                    onSave(focusSecs, shortSecs, longSecs)
+                                }
+                            }
+                        },
+                        shape = CircleShape,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(50.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Text(
+                            stringResource(R.string.save_button),
+                            fontSize = 18.sp
+                        )
                     }
                 }
             }
@@ -199,21 +209,6 @@ fun PomodoroSettingsScreen(
     }
 }
 
-/**
- * TimeRow
- *
- * Row for configuring a time duration (hours, minutes, seconds).
- *
- * @param label Label for the time configuration.
- * @param icon Icon representing the time type.
- * @param iconTint Color for the icon.
- * @param hours Current hours value.
- * @param minutes Current minutes value.
- * @param seconds Current seconds value.
- * @param onHoursChange Callback when hours change.
- * @param onMinutesChange Callback when minutes change.
- * @param onSecondsChange Callback when seconds change.
- */
 @Composable
 fun TimeRow(
     label: String,
@@ -259,9 +254,9 @@ fun TimeRow(
         )
         Spacer(Modifier.width(12.dp))
 
-        // Time pickers for Hours, Minutes, Seconds
+        // Time pickers
         TimeComponentPicker(
-            items = (0..3).map { it.toString() }, // تم تعديل النطاق من (0..12) إلى (0..3)
+            items = (0..3).map { it.toString() },
             selected = hours,
             onSelected = onHoursChange,
             label = stringResource(R.string.unit_hours),
@@ -286,18 +281,6 @@ fun TimeRow(
     }
 }
 
-/**
- * TimeComponentPicker
- *
- * Scrollable picker using LazyColumn for selecting a time component (hours/minutes/seconds).
- *
- * @param items List of string items to display (e.g., "00", "01", ..., "59").
- * @param selected The index (integer value) of the currently selected item.
- * @param onSelected Callback when the selection changes, passing the new index (value).
- * @param label Label text displayed beneath the picker.
- * @param modifier Modifier for the component.
- * @param boxHeight Height of the picker box.
- */
 @Composable
 fun TimeComponentPicker(
     items: List<String>,
@@ -309,7 +292,6 @@ fun TimeComponentPicker(
 ) {
     val state = rememberLazyListState(selected)
 
-    // Scroll to the selected item when the 'selected' value changes externally
     LaunchedEffect(selected) {
         state.scrollToItem(selected)
     }
@@ -355,7 +337,6 @@ fun TimeComponentPicker(
                                     else Color.Transparent,
                                     shape = RoundedCornerShape(6.dp)
                                 )
-                                // The click listener updates the selected state via index
                                 .clickable { onSelected(i) }
                                 .padding(horizontal = 2.dp)
                         )
