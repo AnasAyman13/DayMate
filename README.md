@@ -62,8 +62,10 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 • UI/UX Details                
 • Media Screen (UI + Logic + RoomDB)  
 • Login & SignUp (UI)  
-• Onboardings with Modern Animations     
+• Onboarding with Modern Animations     
 • Prayer Screen (UI + Logic) & "Qibla-direction" & "Athan" System  
+• Presentation file & demo video
+• Docs
 
 **Menna Ayman**  
 • Pomodoro (UI & Logic)  
@@ -72,13 +74,11 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 • Notification  
 
 **Islam Fawzy**  
-•  Login & SignUp   
 • Authentication (Login & SignUp) 
 
 
 **Youssef Barakat**  
 • Authentication (Login & SignUp)  
-• Firebase  
 • Google Login & SignUp  
 • Firestore (Tasks)   
 • Alarm  
