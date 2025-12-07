@@ -111,10 +111,7 @@ class AuthViewModel : ViewModel() {
                     saveLoginMethod(context, "password")
                     Toast.makeText(context, "Welcome back!", Toast.LENGTH_SHORT).show()
                     _state.value = AuthUiState.Success
-
-                    val intent = Intent(context, MainActivity::class.java)
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                    context.startActivity(intent)
+                    // تم إزالة الانتقال من هنا - سيتم التعامل معه في LoginScreen
                 } else {
                     Toast.makeText(context, "Please verify your email before signing in.", Toast.LENGTH_LONG).show()
                     auth.signOut()
