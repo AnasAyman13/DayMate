@@ -25,4 +25,7 @@ object ReminderConstants {
     const val EXTRA_NOTIFICATION_TYPE = "extra_notification_type"
     const val EXTRA_NOTIFICATION_TITLE = "extra_notification_title"
     const val EXTRA_NOTIFICATION_CONTENT = "extra_notification_content"
+    const val EXTRA_NAVIGATION_DESTINATION = "extra_navigation_destination"
+    const val DESTINATION_POMODORO = "pomodoro"
+
 }

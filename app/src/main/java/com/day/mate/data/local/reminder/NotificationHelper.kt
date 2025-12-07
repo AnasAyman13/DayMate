@@ -190,26 +190,31 @@ object NotificationHelper {
         }
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra(ReminderConstants.EXTRA_NAVIGATION_DESTINATION, ReminderConstants.DESTINATION_POMODORO)
         }
         val pendingIntent = PendingIntent.getActivity(
             context,
-            0,
+            1,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val modeString = when (timerMode) {
 
+        val modeString = when (timerMode) {
             TimerMode.FOCUS -> context.getString(R.string.focus)
             TimerMode.SHORT_BREAK -> context.getString(R.string.short_break)
             TimerMode.LONG_BREAK -> context.getString(R.string.long_break)
         }
 
-        val minutes = secondsLeft / 60
-        val seconds = secondsLeft % 60
-        val timeString = String.format("%02d:%02d", minutes, seconds)
-
         val title = context.getString(R.string.pomodoro_timer_running)
-        val content = "$modeString: $timeString"
+
+        val content = if (secondsLeft >= 0) {
+            val minutes = secondsLeft / 60
+            val seconds = secondsLeft % 60
+            val timeString = String.format("%02d:%02d", minutes, seconds)
+            "$modeString: $timeString"
+        } else {
+            "$modeString "
+        }
 
         val notification = NotificationCompat.Builder(context, ReminderConstants.POMODORO_PERSISTENT_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_pomodoro_filled)

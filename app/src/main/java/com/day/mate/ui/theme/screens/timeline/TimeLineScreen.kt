@@ -351,8 +351,8 @@ fun DayMateTopBar(viewModel: TimelineViewModel) {
     val randomQuote = quotes[Random.nextInt(quotes.size)]
 
     Surface(
-        tonalElevation = 0.dp,          // مفيش ظل عشان يبان نفس الخلفية
-        color = background              // نفس لون التايم لاين في اللايت/الدارك
+        tonalElevation = 0.dp,
+        color = background
     ) {
         CompositionLocalProvider(LocalContentColor provides onBackground) {
             Row(
@@ -543,7 +543,8 @@ fun TimelineItem(event: TimelineEvent) {
 fun TimelineRow(
     timeLabel: String,
     content: @Composable () -> Unit,
-    isCurrentHour: Boolean = false
+    isCurrentHour: Boolean = false,
+    isViewingToday: Boolean = true
 ) {
     val currentLanguage = LocalConfiguration.current.locale.language
     val rawTimeText = formatTimeForDisplay(timeLabel.take(5))
@@ -581,7 +582,7 @@ fun TimelineRow(
             )
 
             // Current hour indicator
-            if (isCurrentHour) {
+            if (isCurrentHour&& isViewingToday) {
                 Box(
                     modifier = Modifier
                         .padding(top = 40.dp)
@@ -624,10 +625,12 @@ fun TimelineRow(
  * Row showing all events in a time block
  */
 @Composable
-fun TimelineGroupedRow(block: TimeBlock) {
+fun TimelineGroupedRow(block: TimeBlock,
+                       isViewingToday: Boolean) {
     TimelineRow(
         timeLabel = block.timeLabel,
         isCurrentHour = block.isCurrentHour,
+        isViewingToday = isViewingToday,
         content = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 block.events.forEach { event ->
@@ -651,6 +654,7 @@ fun TimelineScreen(
     val events by viewModel.timelineEvents.collectAsState()
     val selectedDate by viewModel.selectedDate.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState(initial = false)
+    val isViewingToday by viewModel.isViewingToday.collectAsState()
 
     val timeBlocks = remember(events) {
         groupEventsIntoTimeBlocks(events)
@@ -758,7 +762,8 @@ fun TimelineScreen(
                     ) {
                         items(timeBlocks.size) { index ->
                             val block = timeBlocks[index]
-                            TimelineGroupedRow(block = block)
+                            TimelineGroupedRow(block = block,
+                                isViewingToday = isViewingToday)
                         }
                     }
                 }

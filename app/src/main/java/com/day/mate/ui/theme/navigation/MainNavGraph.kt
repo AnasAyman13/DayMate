@@ -53,7 +53,7 @@ import androidx.navigation.NavController
  * Handles all screen navigation and manages ViewModels.
  */
 @Composable
-fun MainNavGraph() {
+fun MainNavGraph(startRouteFromIntent: String? = null) {
     val navController = rememberNavController()
     val context = LocalContext.current.applicationContext
 
@@ -84,7 +84,14 @@ fun MainNavGraph() {
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-
+    val pomodoroRoute = BottomNavItem.Pomodoro.route
+    val actualStartRoute = remember(startRouteFromIntent) {
+        if (startRouteFromIntent == pomodoroRoute) {
+            pomodoroRoute // إذا كان الإشعار قد أرسل مسار البومودورو، ابدأ به
+        } else {
+            BottomNavItem.TimeLine.route // وإلا، ابدأ بالصفحة الافتراضية
+        }
+    }
 
     val activeBottomNavRoute = remember(currentRoute) {
         when {
@@ -127,7 +134,7 @@ fun MainNavGraph() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = BottomNavItem.TimeLine.route,
+            startDestination = actualStartRoute,
             modifier = Modifier.padding(innerPadding)
         ) {
 

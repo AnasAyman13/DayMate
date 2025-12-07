@@ -45,6 +45,8 @@ class TimelineViewModel(
     /** Flag to determine whether completed tasks should be hidden from the timeline. */
     private val _hideCompleted = MutableStateFlow(false)
     val hideCompleted: StateFlow<Boolean> = _hideCompleted.asStateFlow()
+    private val _isViewingToday = MutableStateFlow(true)
+    val isViewingToday: StateFlow<Boolean> = _isViewingToday.asStateFlow()
 
     init {
         // Start loading sequence upon initialization.
@@ -134,7 +136,7 @@ class TimelineViewModel(
             // Days difference between today and the selected date (0 for today, 1 for tomorrow, etc.)
             val daysOffset = ChronoUnit.DAYS.between(today, selectedDate)
             val offsetMillis = daysOffset * oneDayInMillis
-
+            _isViewingToday.value = daysOffset == 0L
             val currentTime = System.currentTimeMillis()
 
             // Calculate bounds for filtering events specific to the selected day
