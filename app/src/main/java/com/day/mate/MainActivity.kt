@@ -17,7 +17,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.day.mate.data.local.AppDatabase
+import com.day.mate.data.local.prayer.AppDatabase
+import com.day.mate.data.local.reminder.ReminderConstants
 import com.day.mate.data.local.reminder.ReminderScheduler
 import com.day.mate.data.repository.TodoRepository
 import com.day.mate.ui.screens.settings.SettingsViewModel
@@ -65,6 +66,11 @@ class MainActivity : AppCompatActivity() {
      *
      * @param newBase The new base context
      */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+
+        setIntent(intent)
+    }
     override fun attachBaseContext(newBase: Context?) {
         val localeUpdated = newBase?.let { LocaleUtils.applySavedLocale(it) }
         super.attachBaseContext(localeUpdated)
@@ -78,6 +84,8 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val startDestination = intent.getStringExtra(ReminderConstants.EXTRA_NAVIGATION_DESTINATION)
         val scheduler = ReminderScheduler(applicationContext)
         scheduler.scheduleDailyReminder(hour = 10, minute = 0)
         val db = AppDatabase.getInstance(this)
@@ -119,7 +127,7 @@ class MainActivity : AppCompatActivity() {
         setContent {
             val isDarkMode by settingsViewModel.isDarkMode.collectAsState()
             DayMateTheme(darkTheme = isDarkMode) {
-                MainNavGraph()
+                MainNavGraph(startRouteFromIntent = startDestination)
             }
         }
     }
@@ -135,4 +143,5 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
     }
+
 }

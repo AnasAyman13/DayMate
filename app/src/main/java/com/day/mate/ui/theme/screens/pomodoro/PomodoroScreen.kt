@@ -41,6 +41,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.createSavedStateHandle
+import androidx.lifecycle.viewmodel.CreationExtras
 import com.day.mate.R
 import com.day.mate.data.local.pomodoro.TimerMode
 import kotlinx.coroutines.delay
@@ -54,12 +56,15 @@ fun PomodoroScreen(isDarkTheme: Boolean) {
     val viewModel: TimerViewModel = viewModel(factory = remember {
         object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return TimerViewModel(applicationContext) as T
+            override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
+                if (modelClass.isAssignableFrom(TimerViewModel::class.java)) {
+                    val savedStateHandle = extras.createSavedStateHandle()
+                    return TimerViewModel(applicationContext, savedStateHandle) as T
+                }
+                throw IllegalArgumentException("Unknown ViewModel class")
             }
         }
     })
-
     val context = LocalContext.current
     val timerState by viewModel.timerState.collectAsState()
     val progress = remember(timerState) { viewModel.progress() }

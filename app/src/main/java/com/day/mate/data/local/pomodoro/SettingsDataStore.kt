@@ -3,8 +3,10 @@ package com.day.mate.data.local.pomodoro
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -18,6 +20,14 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
  * يوفر واجهة لحفظ واسترجاع إعدادات مؤقت البومودورو باستخدام Jetpack DataStore.
  * يتم تخزين الأوقات بالثواني.
  */
+
+data class TimerDynamicState(
+    val secondsLeft: Int,
+    val isRunning: Boolean,
+    val mode: TimerMode,
+    val completedSessions: Int, // يتم تضمينها في DynamicState لتحديث ViewModel
+    val totalFocusSessions: Int // يتم تضمينها لتحديث ViewModel
+)
 class SettingsDataStore(context: Context) {
 
     private val dataStore = context.dataStore
@@ -29,6 +39,9 @@ class SettingsDataStore(context: Context) {
         val LONG_BREAK_TIME_SECONDS = intPreferencesKey("long_break_time_seconds")
         val COMPLETED_SESSIONS = intPreferencesKey("completed_sessions_count")
         val TOTAL_FOCUS_SESSIONS = intPreferencesKey("total_focus_sessions_count")
+        val DYNAMIC_SECONDS_LEFT = intPreferencesKey("dynamic_seconds_left")
+        val DYNAMIC_IS_RUNNING = booleanPreferencesKey("dynamic_is_running")
+        val DYNAMIC_MODE = stringPreferencesKey("dynamic_mode")
     }
 
     // القيم الافتراضية (25 دقيقة، 5 دقائق، 15 دقيقة) بالثواني
@@ -50,6 +63,17 @@ class SettingsDataStore(context: Context) {
     suspend fun saveFocusTime(seconds: Int) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.FOCUS_TIME_SECONDS] = seconds
+        }
+    }
+    suspend fun saveDynamicState(
+        secondsLeft: Int,
+        isRunning: Boolean,
+        mode: TimerMode
+    ) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.DYNAMIC_SECONDS_LEFT] = secondsLeft
+            preferences[PreferencesKeys.DYNAMIC_IS_RUNNING] = isRunning
+            preferences[PreferencesKeys.DYNAMIC_MODE] = mode.name // حفظ كـ String
         }
     }
 
@@ -107,4 +131,23 @@ class SettingsDataStore(context: Context) {
             preferences[PreferencesKeys.TOTAL_FOCUS_SESSIONS] = count
         }
     }
+    val dynamicStateFlow: Flow<TimerDynamicState> = dataStore.data
+        .map { preferences ->
+            val secondsLeft = preferences[PreferencesKeys.DYNAMIC_SECONDS_LEFT] ?: 0
+            val isRunning = preferences[PreferencesKeys.DYNAMIC_IS_RUNNING] ?: false
+            val modeString = preferences[PreferencesKeys.DYNAMIC_MODE] ?: TimerMode.FOCUS.name
+
+            // قراءة الجلسات المكتملة ومجموع الجلسات لضمها في DynamicState (ضروري للـ ViewModel)
+            val completedSessions = preferences[PreferencesKeys.COMPLETED_SESSIONS] ?: DEFAULT_COMPLETED_SESSIONS
+            val totalFocusSessions = preferences[PreferencesKeys.TOTAL_FOCUS_SESSIONS] ?: 4
+
+            TimerDynamicState(
+                secondsLeft = secondsLeft,
+                isRunning = isRunning,
+                // تحويل السلسلة النصية إلى enum
+                mode = try { TimerMode.valueOf(modeString) } catch (e: IllegalArgumentException) { TimerMode.FOCUS },
+                completedSessions = completedSessions,
+                totalFocusSessions = totalFocusSessions
+            )
+        }
 }
