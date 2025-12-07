@@ -1,5 +1,4 @@
 package com.day.mate.ui.theme.screens.pomodoro
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
@@ -13,6 +12,7 @@ import com.day.mate.data.local.reminder.NotificationHelper
 import com.day.mate.data.local.reminder.ReminderScheduler
 import java.time.LocalDateTime
 import androidx.lifecycle.SavedStateHandle
+import com.day.mate.R
 import com.day.mate.data.local.pomodoro.SettingsDataStore
 import com.day.mate.data.local.pomodoro.TimerMode
 import com.day.mate.data.local.pomodoro.TimerState
@@ -40,16 +40,13 @@ class TimerViewModel(private val context: Context,
     var shortBreakTime = 5 * 60
     var longBreakTime = 15 * 60
 
-    // 🌟 متغير لتنسيق التحميل بين SavedStateHandle و DataStore
     private var isDataStoreStateLoaded = false
 
     init {
         loadSettings()
-        restoreState() // ⬅️ يجب أن يعمل أولاً لمعالجة دوران الشاشة
-        loadDynamicState() // ⬅️ يجب أن يعمل ثانياً لمعالجة قتل العملية
+        restoreState()
+        loadDynamicState()
     }
-
-    // 1. استعادة حالة دوران الشاشة (SavedStateHandle)
     private fun restoreState() {
         if (!wasStateRestored) return
 
@@ -69,23 +66,18 @@ class TimerViewModel(private val context: Context,
                 isRunning = restoredIsRunning,
                 isFinished = restoredIsFinished
             )
-
-            // 🌟 FIX: تم استعادة الحالة، نمنع loadDynamicState من الكتابة فوقها مباشرة
             isDataStoreStateLoaded = true
 
             if (restoredIsRunning && !restoredIsFinished) {
-                // FIX: نمرر isResuming، لكن الأهم هو استدعاء startTimer لإنشاء الـ Job
                 startTimer(isResuming = true)
             }
         }
     }
 
-    // 2. استعادة حالة قتل العملية (DataStore)
     private fun loadDynamicState() {
         viewModelScope.launch {
             settingsDataStore.dynamicStateFlow
                 .collectLatest { savedState ->
-                    // إذا تم تحميل الحالة بالفعل (عن طريق restoreState)، نتوقف
                     if (isDataStoreStateLoaded) return@collectLatest
 
                     if (savedState.secondsLeft > 0 || savedState.isRunning) {
@@ -105,7 +97,6 @@ class TimerViewModel(private val context: Context,
                             totalFocusSessions = savedState.totalFocusSessions
                         )
 
-                        // 🌟 نحدد أن DataStore قد حمل الحالة الآن
                         isDataStoreStateLoaded = true
 
                         if (savedState.isRunning) {
@@ -118,7 +109,6 @@ class TimerViewModel(private val context: Context,
 
     override fun onCleared() {
         super.onCleared()
-        // ⬅️ حفظ الحالة النهائية عند تدمير ViewModel
         saveCurrentState()
         timerJob?.cancel()
     }
@@ -142,11 +132,17 @@ class TimerViewModel(private val context: Context,
             settingsDataStore.focusTimeFlow.collect { time ->
                 focusTime = time
                 val state = _timerState.value
-                if (state.mode == TimerMode.FOCUS && !state.isRunning && !state.isFinished) {
-                    _timerState.value = state.copy(
-                        secondsLeft = focusTime,
-                        totalSeconds = focusTime
+                var newState = state
+                val isIdleOrFinished = (state.secondsLeft == state.totalSeconds || state.secondsLeft == 0)
+
+                if (state.mode == TimerMode.FOCUS && !state.isRunning && isIdleOrFinished) {
+                    newState = state.copy(
+                        secondsLeft = time,
+                        totalSeconds = time
                     )
+                }
+                if (newState != state) {
+                    _timerState.value = newState
                 }
             }
         }
@@ -154,11 +150,18 @@ class TimerViewModel(private val context: Context,
             settingsDataStore.shortBreakTimeFlow.collect { time ->
                 shortBreakTime = time
                 val state = _timerState.value
-                if (state.mode == TimerMode.SHORT_BREAK && !state.isRunning && !state.isFinished) {
-                    _timerState.value = state.copy(
-                        secondsLeft = shortBreakTime,
-                        totalSeconds = shortBreakTime
+                var newState = state
+
+                val isIdleOrFinished = (state.secondsLeft == state.totalSeconds || state.secondsLeft == 0)
+
+                if (state.mode == TimerMode.SHORT_BREAK && !state.isRunning && isIdleOrFinished) {
+                    newState = state.copy(
+                        secondsLeft = time,
+                        totalSeconds = time
                     )
+                }
+                if (newState != state) {
+                    _timerState.value = newState
                 }
             }
         }
@@ -166,11 +169,18 @@ class TimerViewModel(private val context: Context,
             settingsDataStore.longBreakTimeFlow.collect { time ->
                 longBreakTime = time
                 val state = _timerState.value
-                if (state.mode == TimerMode.LONG_BREAK && !state.isRunning && !state.isFinished) {
-                    _timerState.value = state.copy(
-                        secondsLeft = longBreakTime,
-                        totalSeconds = longBreakTime
+                var newState = state
+
+                val isIdleOrFinished = (state.secondsLeft == state.totalSeconds || state.secondsLeft == 0)
+
+                if (state.mode == TimerMode.LONG_BREAK && !state.isRunning && isIdleOrFinished) {
+                    newState = state.copy(
+                        secondsLeft = time,
+                        totalSeconds = time
                     )
+                }
+                if (newState != state) {
+                    _timerState.value = newState
                 }
             }
         }
@@ -189,18 +199,11 @@ class TimerViewModel(private val context: Context,
             }
         }
     }
-
-
     fun skipTimer() {
         timerJob?.cancel()
         scheduler.cancelPomodoroBreak()
-
-        // 🌟 FIX: إلغاء الإشعار المستمر عند التخطي
         NotificationHelper.cancelPersistentPomodoroNotification(context)
-
-        handleSessionEnd() // ستقوم هذه الدالة بضبط isRunning = false وحفظ الحالة
-
-        // 🌟 FIX: تحديث SavedStateHandle ليعكس حالة الإيقاف/التخطي
+        handleSessionEnd()
         val state = _timerState.value
         savedStateHandle[IS_RUNNING_KEY] = false
         savedStateHandle[IS_FINISHED_KEY] = false
@@ -235,19 +238,14 @@ class TimerViewModel(private val context: Context,
     }
 
     fun startTimer(isResuming: Boolean = false) {
-        val state = _timerState.value
-
-        // 1. FIX: إذا كان يعمل بالفعل و الـ Job نشط (أي العد مستمر)، نتوقف.
-        // هذا يسمح بالاستمرار إذا كانت state.isRunning = true لكن Job غير نشط (حالة الاستئناف).
+        var state = _timerState.value
         if (state.isRunning && timerJob?.isActive == true) return
-
-        // 🌟 الخطوة الحاسمة: إلغاء أي مهمة (Job) سابقة للتأكد من نظافة الاستئناف
+        if (state.secondsLeft <= 0) {
+            handleSessionEnd(shouldSaveSession = false)
+            state = _timerState.value
+        }
         timerJob?.cancel()
-
-        // 2. تحديث الحالة
         _timerState.value = state.copy(isRunning = true, isFinished = false)
-
-        // 3. منطق الجدولة
         if (state.mode == TimerMode.SHORT_BREAK || state.mode == TimerMode.LONG_BREAK) {
             val breakDurationSeconds = state.secondsLeft
             val isLongBreak = state.mode == TimerMode.LONG_BREAK
@@ -255,21 +253,15 @@ class TimerViewModel(private val context: Context,
             val triggerDateTime = LocalDateTime.now().plusSeconds(breakDurationSeconds.toLong())
             scheduler.schedulePomodoroBreak(triggerDateTime, breakType)
         }
-
-        // 🌟 FIX: تحديث الإشعار المستمر
         NotificationHelper.showPersistentPomodoroNotification(
             context = context,
             timerMode = _timerState.value.mode,
             secondsLeft = -1
         )
-
-        // 4. حفظ الحالة في SavedStateHandle
         savedStateHandle[IS_RUNNING_KEY] = true
         savedStateHandle[TIMER_MODE_KEY] = state.mode.name
         savedStateHandle[TOTAL_SECONDS_KEY] = state.totalSeconds
         savedStateHandle[IS_FINISHED_KEY] = false
-
-        // 5. البدء في العد التنازلي
         timerJob = viewModelScope.launch {
             while (_timerState.value.secondsLeft > 0 && _timerState.value.isRunning) {
                 delay(1000)
@@ -279,21 +271,17 @@ class TimerViewModel(private val context: Context,
                     secondsLeft = newSecondsLeft
                 )
                 savedStateHandle[SECONDS_LEFT_KEY] = newSecondsLeft
-
-                // الحفظ الدوري في DataStore
                 if (newSecondsLeft % 10 == 0) {
                     saveCurrentState()
                 }
             }
-
-            // 6. منطق الانتهاء
             if (_timerState.value.secondsLeft <= 0) {
-                // نضمن تحديث isRunning إلى false قبل handleSessionEnd
                 _timerState.value = _timerState.value.copy(
                     isRunning = false,
                     isFinished = true
                 )
                 handleSessionEnd(shouldSaveSession = true)
+                NotificationHelper.playNotificationSound(context)
                 NotificationHelper.cancelPersistentPomodoroNotification(context)
                 savedStateHandle[IS_RUNNING_KEY] = false
                 savedStateHandle[IS_FINISHED_KEY] = true
@@ -301,7 +289,6 @@ class TimerViewModel(private val context: Context,
             }
         }
     }
-
     fun handleSessionEnd(shouldSaveSession: Boolean = true) {
         val state = _timerState.value
         when (state.mode) {
@@ -317,7 +304,7 @@ class TimerViewModel(private val context: Context,
                     secondsLeft = if (nextMode == TimerMode.LONG_BREAK) longBreakTime else shortBreakTime,
                     totalSeconds = if (nextMode == TimerMode.LONG_BREAK) longBreakTime else shortBreakTime,
                     isFinished = false,
-                    isRunning = false // ⬅️ FIX: إيقاف التشغيل صراحةً لظهور زر Start
+                    isRunning = false
                 )
                 if (shouldSaveSession) {
                     viewModelScope.launch {
@@ -336,24 +323,23 @@ class TimerViewModel(private val context: Context,
                     secondsLeft = focusTime,
                     totalSeconds = focusTime,
                     isFinished = false,
-                    isRunning = false // ⬅️ FIX: إيقاف التشغيل صراحةً لظهور زر Start
+                    isRunning = false
                 )
                 scheduler.cancelPomodoroBreak()
             }
         }
-        // 🌟 FIX: حفظ الحالة بعد انتهاء الجلسة أو تخطيها
         saveCurrentState()
     }
 
     fun pauseTimer() {
         val state = _timerState.value
 
-        timerJob?.cancel() // ⬅️ الإلغاء أولاً (مهم)
+        timerJob?.cancel()
 
         _timerState.value = state.copy(isRunning = false)
         NotificationHelper.cancelPersistentPomodoroNotification(context)
 
-        saveCurrentState() // حفظ حالة الإيقاف المؤقت في DataStore
+        saveCurrentState()
 
         savedStateHandle[IS_RUNNING_KEY] = false
         savedStateHandle[SECONDS_LEFT_KEY] = state.secondsLeft

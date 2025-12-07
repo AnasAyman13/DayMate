@@ -121,7 +121,7 @@ fun TimelineMenu(viewModel: TimelineViewModel) {
                 RoundedCornerShape(12.dp)
             )
     ) {
-        // View Today/Tomorrow
+
         DropdownMenuItem(
             text = {
                 Text(
@@ -152,8 +152,6 @@ fun TimelineMenu(viewModel: TimelineViewModel) {
                 textColor = MaterialTheme.colorScheme.onSurface
             )
         )
-
-        // Show/Hide Completed
         DropdownMenuItem(
             text = {
                 Text(
@@ -185,8 +183,6 @@ fun TimelineMenu(viewModel: TimelineViewModel) {
             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
             thickness = 0.5.dp
         )
-
-        // Mark All as Done
         DropdownMenuItem(
             text = {
                 Text(
@@ -212,10 +208,6 @@ fun TimelineMenu(viewModel: TimelineViewModel) {
         )
     }
 }
-
-/**
- * Format date for display based on current locale
- */
 @Composable
 fun formatDateForDisplay(dateToFormat: LocalDate): String {
     val currentLocale = LocalConfiguration.current.locale
@@ -223,9 +215,6 @@ fun formatDateForDisplay(dateToFormat: LocalDate): String {
     return dateToFormat.format(formatter)
 }
 
-/**
- * Translate numerals to Arabic if needed
- */
 fun translateNumerals(text: String): String {
     return text
         .replace('0', '٠')
@@ -240,10 +229,6 @@ fun translateNumerals(text: String): String {
         .replace('9', '٩')
 }
 
-/**
- * Format time for display based on current locale
- */
-
 @Composable
 fun formatTimeForDisplay(time24h: String): String {
     val currentLanguage = LocalConfiguration.current.locale.language
@@ -251,8 +236,6 @@ fun formatTimeForDisplay(time24h: String): String {
 
     return try {
         val cleaned = time24h.trim()
-
-        // جرّب فورمات HH:mm الأول
         val parsed = when {
             cleaned.matches(Regex("\\d{1,2}:\\d{2}")) -> {
                 SimpleDateFormat("HH:mm", Locale.US).parse(cleaned)
@@ -266,17 +249,12 @@ fun formatTimeForDisplay(time24h: String): String {
         if (parsed != null) {
             SimpleDateFormat("h:mm a", outputLocale).format(parsed)
         } else {
-            time24h // سيبه زي ما هو لو مش عارف يفسّره
+            time24h
         }
     } catch (e: Exception) {
         time24h
     }
 }
-
-
-/**
- * Extract hour from timestamp
- */
 fun getHourFromTimestamp(timestamp: Long): Int {
     return try {
         val instant = Instant.ofEpochMilli(timestamp)
@@ -286,20 +264,10 @@ fun getHourFromTimestamp(timestamp: Long): Int {
         -1
     }
 }
-/**
- * Group events into time blocks by hour
- * This function is now pure Kotlin and does NOT call any @Composable functions
- */
 fun groupEventsIntoTimeBlocks(events: List<TimelineEvent>): List<TimeBlock> {
     if (events.isEmpty()) return emptyList()
-
-    // Sort events by timestamp
     val sortedEvents = events.sortedBy { it.timestamp }
-
-    // Group events by the hour they occur
     val groupedByHour = sortedEvents.groupBy { getHourFromTimestamp(it.timestamp) }
-
-    // Get current hour for highlighting
     val currentHour = getHourFromTimestamp(System.currentTimeMillis())
 
     return groupedByHour.keys
@@ -308,7 +276,6 @@ fun groupEventsIntoTimeBlocks(events: List<TimelineEvent>): List<TimeBlock> {
             val hourEvents = groupedByHour[hour]?.sortedBy { it.timestamp }
             if (hourEvents.isNullOrEmpty()) return@mapNotNull null
 
-            // Use the first event's timeLabel as the primary label
             val primaryTimeLabel = hourEvents.first().timeLabel
 
             TimeBlock(
@@ -389,16 +356,6 @@ fun DayMateTopBar(viewModel: TimelineViewModel) {
         }
         }
     }
-
-
-
-
-
-/**
- * TimelineItem
- *
- * Individual event card in the timeline
- */
 @Composable
 fun TimelineItem(event: TimelineEvent) {
     val iconImageVector: Int = when (event.type) {

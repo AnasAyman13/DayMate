@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
 import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.day.mate.MainActivity
@@ -117,6 +118,23 @@ object NotificationHelper {
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(notificationId, notification)
+    }
+    fun playNotificationSound(context: Context) {
+        try {
+            val soundResourceUri = Uri.parse(
+                "android.resource://" +
+                        context.packageName +
+                        "/" +
+                        R.raw.timer_end
+            )
+            val ringtone = RingtoneManager.getRingtone(context, soundResourceUri)
+
+            if (ringtone != null) {
+                ringtone.play()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
     fun showPomodoroNotification(
         context: Context,

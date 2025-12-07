@@ -32,7 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import kotlinx.coroutines.launch
 import kotlin.math.abs
-import kotlin.math.roundToInt
+
 
 @Composable
 fun PomodoroSettingsScreen(
