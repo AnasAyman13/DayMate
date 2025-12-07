@@ -4,7 +4,7 @@ import android.widget.Toast
 import com.day.mate.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -19,13 +19,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
+import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 @Composable
 fun PomodoroSettingsScreen(
@@ -37,16 +44,13 @@ fun PomodoroSettingsScreen(
 ) {
     val context = LocalContext.current
 
-    // Helper function to parse total seconds into hours, minutes, seconds components
     fun parseTime(secs: Int): Triple<Int, Int, Int> =
         Triple(secs / 3600, (secs % 3600) / 60, secs % 60)
 
-    // Initial parsing of the durations
     val (fH, fM, fS) = parseTime(initialFocus)
     val (sH, sM, sS) = parseTime(initialShort)
     val (lH, lM, lS) = parseTime(initialLong)
 
-    // Mutable state for each time component
     var focusHours by remember { mutableStateOf(fH.coerceAtLeast(0)) }
     var focusMinutes by remember { mutableStateOf(fM.coerceAtLeast(0)) }
     var focusSeconds by remember { mutableStateOf(fS.coerceAtLeast(0)) }
@@ -57,13 +61,11 @@ fun PomodoroSettingsScreen(
     var longMinutes by remember { mutableStateOf(lM.coerceAtLeast(0)) }
     var longSeconds by remember { mutableStateOf(lS.coerceAtLeast(0)) }
 
-    // Validation function
     fun isValidTime(hours: Int, minutes: Int, seconds: Int): Boolean {
         val totalSeconds = hours * 3600 + minutes * 60 + seconds
         return totalSeconds > 0
     }
 
-    // Show toast function
     fun showToast(message: String) {
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
@@ -71,7 +73,6 @@ fun PomodoroSettingsScreen(
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
-    // Adjust layout for landscape
     val cardWidthFraction = if (isLandscape) 0.9f else 0.95f
     val horizontalPadding = if (isLandscape) 32.dp else 16.dp
 
@@ -92,7 +93,6 @@ fun PomodoroSettingsScreen(
                     .padding(horizontal = horizontalPadding, vertical = 24.dp)
                     .fillMaxWidth()
             ) {
-                // Title
                 Text(
                     text = stringResource(R.string.settings_title),
                     fontSize = 28.sp,
@@ -103,7 +103,6 @@ fun PomodoroSettingsScreen(
 
                 Spacer(modifier = Modifier.height(28.dp))
 
-                // Focus time row
                 TimeRow(
                     label = stringResource(R.string.focus_label),
                     icon = Icons.Outlined.PsychologyAlt,
@@ -118,7 +117,6 @@ fun PomodoroSettingsScreen(
 
                 Spacer(modifier = Modifier.height(28.dp))
 
-                // Short break row
                 TimeRow(
                     label = stringResource(R.string.short_break_label),
                     icon = Icons.Outlined.LocalCafe,
@@ -133,7 +131,6 @@ fun PomodoroSettingsScreen(
 
                 Spacer(modifier = Modifier.height(28.dp))
 
-                // Long break row
                 TimeRow(
                     label = stringResource(R.string.long_break_label),
                     icon = Icons.Outlined.Bedtime,
@@ -148,7 +145,6 @@ fun PomodoroSettingsScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Action buttons
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -227,7 +223,6 @@ fun TimeRow(
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Icon Box
         Box(
             modifier = Modifier
                 .size(54.dp)
@@ -244,7 +239,6 @@ fun TimeRow(
         }
         Spacer(Modifier.width(16.dp))
 
-        // Label
         Text(
             label,
             fontWeight = FontWeight.Bold,
@@ -254,27 +248,26 @@ fun TimeRow(
         )
         Spacer(Modifier.width(12.dp))
 
-        // Time pickers
         TimeComponentPicker(
             items = (0..3).map { it.toString() },
-            selected = hours,
-            onSelected = onHoursChange,
+            selectedIndex = hours,
+            onSelectedChange = onHoursChange,
             label = stringResource(R.string.unit_hours),
             modifier = Modifier.weight(1f)
         )
         Spacer(Modifier.width(8.dp))
         TimeComponentPicker(
             items = (0..59).map { it.toString().padStart(2, '0') },
-            selected = minutes,
-            onSelected = onMinutesChange,
+            selectedIndex = minutes,
+            onSelectedChange = onMinutesChange,
             label = stringResource(R.string.unit_minutes),
             modifier = Modifier.weight(1f)
         )
         Spacer(Modifier.width(8.dp))
         TimeComponentPicker(
             items = (0..59).map { it.toString().padStart(2, '0') },
-            selected = seconds,
-            onSelected = onSecondsChange,
+            selectedIndex = seconds,
+            onSelectedChange = onSecondsChange,
             label = stringResource(R.string.unit_seconds),
             modifier = Modifier.weight(1f)
         )
@@ -284,16 +277,68 @@ fun TimeRow(
 @Composable
 fun TimeComponentPicker(
     items: List<String>,
-    selected: Int,
-    onSelected: (Int) -> Unit,
+    selectedIndex: Int,
+    onSelectedChange: (Int) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
-    boxHeight: Dp = 64.dp
+    itemHeight: Dp = 38.dp,
+    visibleItems: Int = 3
 ) {
-    val state = rememberLazyListState(selected)
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = selectedIndex.coerceIn(0, items.lastIndex)
+    )
+    val density = LocalDensity.current
+    val itemHeightPx = with(density) { itemHeight.toPx() }
+    val boxHeightDp = itemHeight * visibleItems
 
-    LaunchedEffect(selected) {
-        state.scrollToItem(selected)
+    // المتغير ده للعرض فقط - بيحسب أقرب عنصر للمنتصف
+    val visualCenterIndex by remember {
+        derivedStateOf {
+            val layoutInfo = listState.layoutInfo
+            val viewportCenter = layoutInfo.viewportStartOffset + layoutInfo.viewportSize.height / 2
+
+            layoutInfo.visibleItemsInfo
+                .minByOrNull { itemInfo ->
+                    val itemCenter = itemInfo.offset + itemInfo.size / 2
+                    abs(itemCenter - viewportCenter)
+                }?.index ?: selectedIndex
+        }
+    }
+
+    // بس لما السحب يخلص تماماً - نعمل snap
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (!listState.isScrollInProgress) {
+            // دلوقتي السحب خلص - نحسب أقرب عنصر
+            val layoutInfo = listState.layoutInfo
+            val viewportCenter = layoutInfo.viewportStartOffset + layoutInfo.viewportSize.height / 2
+
+            val targetIndex = layoutInfo.visibleItemsInfo
+                .minByOrNull { itemInfo ->
+                    val itemCenter = itemInfo.offset + itemInfo.size / 2
+                    abs(itemCenter - viewportCenter)
+                }?.index ?: selectedIndex
+
+            // نعمل snap للعنصر ده
+            listState.animateScrollToItem(
+                index = targetIndex.coerceIn(0, items.lastIndex),
+                scrollOffset = 0
+            )
+
+            // نبلغ الـ parent بالتغيير
+            if (targetIndex != selectedIndex) {
+                onSelectedChange(targetIndex)
+            }
+        }
+    }
+
+    // لو الـ selectedIndex اتغير من بره - نسنك بس لو مش بنسحب
+    LaunchedEffect(selectedIndex) {
+        if (!listState.isScrollInProgress) {
+            listState.animateScrollToItem(
+                index = selectedIndex.coerceIn(0, items.lastIndex),
+                scrollOffset = 0
+            )
+        }
     }
 
     Column(
@@ -302,43 +347,71 @@ fun TimeComponentPicker(
     ) {
         Box(
             modifier = Modifier
-                .height(boxHeight)
+                .height(boxHeightDp)
                 .fillMaxWidth()
                 .border(
                     width = 1.4.dp,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
                     shape = RoundedCornerShape(6.dp)
                 )
-                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .background(
+                    MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(6.dp)
+                )
         ) {
+            // المربع اللي في النص
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth()
+                    .height(itemHeight)
+                    .background(
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(6.dp)
+                    )
+            )
+
             LazyColumn(
-                state = state,
+                state = listState,
                 horizontalAlignment = Alignment.CenterHorizontally,
-                contentPadding = PaddingValues(vertical = 8.dp)
+                contentPadding = PaddingValues(vertical = itemHeight * (visibleItems / 2)),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        // بنمنع الـ tap gestures
+                        detectTapGestures { }
+                    }
             ) {
-                itemsIndexed(items) { i, v ->
-                    val isSel = i == selected
+                itemsIndexed(items) { index, value ->
+                    val isCentered = index == visualCenterIndex
+                    val distanceFromCenter = abs(index - visualCenterIndex)
+                    val alpha = when (distanceFromCenter) {
+                        0 -> 1f
+                        1 -> 0.6f
+                        else -> 0.3f
+                    }
+                    val scale = if (isCentered) 1.0f else 0.85f
 
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(38.dp),
+                            .height(itemHeight),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = v,
-                            fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = if (isSel) 20.sp else 15.sp,
-                            color = if (isSel) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            text = value,
+                            fontWeight = if (isCentered) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = if (isCentered) 20.sp else 16.sp,
+                            color = if (isCentered)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             modifier = Modifier
-                                .background(
-                                    if (isSel) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                    else Color.Transparent,
-                                    shape = RoundedCornerShape(6.dp)
-                                )
-                                .clickable { onSelected(i) }
-                                .padding(horizontal = 2.dp)
+                                .alpha(alpha)
+                                .graphicsLayer {
+                                    scaleX = scale
+                                    scaleY = scale
+                                }
                         )
                     }
                 }
