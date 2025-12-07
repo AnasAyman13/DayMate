@@ -1,31 +1,42 @@
-<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.day.mate">
 
+    <!-- Permissions required by the application's features -->
+
+    <!-- Core device permissions -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Location Permissions (for Prayer Times and Qibla Compass) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Notification & Alarm Permissions -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
-    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
-    <!-- ✅ للأجهزة Android 12 وأعلى -->
+    <!-- Exact Scheduling Permissions (for accurate Adhan and task reminders) -->
+    <!-- Required for devices running Android 12 (S) and higher -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
-
-    <!-- ✅ للأجهزة Android 14 وأعلى (إضافي للحماية) -->
+    <!-- Required for devices running Android 14 (U) and higher -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
-
-    <!-- ✅ للتأكد من عمل الـ Alarm في وضع Doze -->
+    <!-- Ensures alarms/receivers function correctly in Doze mode -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Background Service Permissions -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+
+    <!-- Biometric Authentication for Media Vault -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+
+    <!-- Storage Permission (for reading media files, Max SDK 32 enforced by system) -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
+    <!-- Feature Requirements (for Qibla Compass) -->
     <uses-feature android:name="android.hardware.sensor.compass" android:required="false" />
     <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="false" />
 
@@ -39,9 +50,10 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.DayMate">
+        android:theme="@style/Theme.DayMate"
+        tools:targetApi="31">
 
-        <!-- ✅ شاشة السبلاش - أول ما يفتح التطبيق -->
+        <!-- Splash Screen Activity: The application's main entry point -->
         <activity
             android:name=".SplashScreen"
             android:exported="true"
@@ -52,44 +64,43 @@
             </intent-filter>
         </activity>
 
-        <!-- ✅ شاشة الـ Onboarding الجديدة (Pager) -->
+        <!-- Onboarding Pager Activity: Displays sequential welcome screens for new users -->
         <activity
             android:name=".ui.onboarding.OnboardingPagerActivity"
             android:exported="false"
             android:theme="@style/Theme.DayMate" />
 
-
-        <!-- ✅ الشاشة الرئيسية -->
+        <!-- Main Activity: The core application host for bottom navigation and main features -->
         <activity
             android:name="com.day.mate.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.DayMate" />
 
-        <!-- ✅ شاشة المصادقة (Login/Register) -->
+        <!-- Auth Activity: Handles user login, registration, and authentication flow -->
         <activity
             android:name=".AuthActivity"
             android:exported="true"
             android:theme="@style/Theme.DayMate" />
 
-        <!-- ✅ خدمة الأذان -->
+        <!-- Adhan Service: Runs in the background for continuous sound playback during Adhan -->
         <service
             android:name=".services.AdhanService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
-        <!-- ✅ الـ Receiver للأذان -->
+        <!-- Adhan Receiver: Triggered by the system alarm manager to start AdhanService -->
         <receiver
             android:name="com.day.mate.ui.theme.screens.prayer.AdhanReceiver"
             android:enabled="true"
             android:exported="false" />
 
-        <!-- ✅ الـ Receiver للتذكيرات -->
+        <!-- General Reminder Receiver: Triggered by the system alarm manager for task/Pomodoro reminders -->
         <receiver
             android:name="com.day.mate.data.local.reminder.ReminderReceiver"
             android:exported="false" />
 
-        <!-- ✅ الـ Receiver لإعادة جدولة الأذان بعد إعادة تشغيل الجهاز -->
+        <!-- Boot Receiver: Re-schedules alarms/Adhan after device restart/reboot -->
         <receiver
             android:name=".ui.theme.screens.prayer.BootReceiver"
             android:enabled="true"

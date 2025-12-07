@@ -354,8 +354,8 @@ fun DayMateTopBar(viewModel: TimelineViewModel) {
             }
 
         }
-        }
     }
+}
 @Composable
 fun TimelineItem(event: TimelineEvent) {
     val iconImageVector: Int = when (event.type) {

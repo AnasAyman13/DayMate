@@ -17,7 +17,6 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.layout.ContentScale
@@ -78,8 +77,8 @@ fun VaultScreen(
             filterDocuments = "Documents"
         )
     }
+
     val backgroundColor = MaterialTheme.colorScheme.background
-    val surfaceColor = MaterialTheme.colorScheme.surface
     val primaryColor = MaterialTheme.colorScheme.primary
     val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
@@ -88,6 +87,7 @@ fun VaultScreen(
     val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val buttonColor = if (isDarkTheme) Color(0xFFD4AF37) else MaterialTheme.colorScheme.primaryContainer
     val buttonContentColor = if (isDarkTheme) Color.Black else MaterialTheme.colorScheme.onPrimaryContainer
+
     LaunchedEffect(isArabic) {
         val currentFilter = selectedFilter
         val newFilter = when (currentFilter) {
@@ -115,9 +115,7 @@ fun VaultScreen(
         contract = ActivityResultContracts.OpenMultipleDocuments(),
         onResult = { uris ->
             val newItems = uris.mapNotNull { uri ->
-
                 val mimeType = context.contentResolver.getType(uri)
-
                 val type = when {
                     mimeType?.startsWith("image/") == true -> VaultType.PHOTO
                     mimeType?.startsWith("video/") == true -> VaultType.VIDEO
@@ -138,8 +136,7 @@ fun VaultScreen(
                     )
                     Log.d("VAULT_PERMISSION", "Permission granted for URI: $uri")
                 } catch (e: Exception) {
-                    Log.e("VAULT_PERMISSION", "FAILED to grant persistable permission for URI: $uri", e)
-                    e.printStackTrace()
+                    Log.e("VAULT_PERMISSION", "Failed to grant permission for URI: $uri", e)
                 }
 
                 VaultItem(id = uri.hashCode(), uri = uri.toString(), type = type, name = name)
@@ -152,152 +149,135 @@ fun VaultScreen(
         containerColor = backgroundColor,
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    picker.launch(arrayOf("image/*", "video/*", "audio/*", "application/pdf"))
-                },
+                onClick = { picker.launch(arrayOf("image/*", "video/*", "audio/*", "application/pdf")) },
                 containerColor = buttonColor,
                 contentColor = buttonContentColor,
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = strings.add)
             }
-        }
+        },
+        modifier = Modifier.fillMaxSize()
     ) { padding ->
-        Column(
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(minSize = 150.dp),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 16.dp)
+                .padding(padding)
         ) {
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 150.dp),
-                contentPadding = PaddingValues(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.weight(1f) // تم استعادة weight(1f)
-            ) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Text(
+                    text = strings.title,
+                    color = onSurfaceColor,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
 
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Text(
-                        text = strings.title,
-                        color = onSurfaceColor,
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.headlineSmall,
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
                         modifier = Modifier
+                            .size(100.dp)
+                            .background(
+                                brush = Brush.linearGradient(
+                                    listOf(Color(0xFF81D4FA), Color(0xFF4DB6AC))
+                                ),
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Lock,
+                            contentDescription = strings.lock,
+                            tint = Color.White,
+                            modifier = Modifier.size(48.dp)
+                        )
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = strings.subtitle,
+                        color = onSurfaceVariantColor,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
+            }
 
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Spacer(Modifier.height(18.dp))
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                val filters = listOf(
+                    strings.filterAll,
+                    strings.filterPhotos,
+                    strings.filterVideos,
+                    strings.filterAudio,
+                    strings.filterDocuments
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    filters.forEach { filter ->
+                        val selected = selectedFilter == filter
                         Box(
                             modifier = Modifier
-                                .size(100.dp)
-                                .background(
-                                    brush = Brush.linearGradient(
-                                        listOf(Color(0xFF81D4FA), Color(0xFF4DB6AC))
-                                    ),
-                                    shape = CircleShape
-                                ),
-                            contentAlignment = Alignment.Center
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(if (selected) primaryColor else MaterialTheme.colorScheme.surfaceVariant)
+                                .border(
+                                    width = 1.dp,
+                                    color = if (selected) primaryColor else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                    shape = RoundedCornerShape(20.dp)
+                                )
+                                .clickable { viewModel.selectFilter(filter) }
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
                         ) {
-                            Icon(
-                                Icons.Default.Lock,
-                                contentDescription = strings.lock,
-                                tint = Color.White,
-                                modifier = Modifier.size(48.dp)
+                            Text(
+                                text = filter,
+                                color = if (selected) onPrimaryColor else onSurfaceColor,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
                             )
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Spacer(Modifier.height(12.dp))
-                        Text(
-                            text = strings.subtitle,
-                            color = onSurfaceVariantColor,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(Modifier.height(16.dp))
-                    }
-                }
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    val filters = listOf(
-                        strings.filterAll,
-                        strings.filterPhotos,
-                        strings.filterVideos,
-                        strings.filterAudio,
-                        strings.filterDocuments
-                    )
-
-                    Row(
-                        modifier = Modifier
-                            .horizontalScroll(rememberScrollState())
-                            .padding(horizontal = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        filters.forEach { filter ->
-                            val selected = selectedFilter == filter
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .background(
-                                        if (selected) primaryColor
-                                        else MaterialTheme.colorScheme.surfaceVariant
-                                    )
-                                    .border(
-                                        width = 1.dp,
-                                        color = if (selected) primaryColor
-                                        else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                                        shape = RoundedCornerShape(20.dp)
-                                    )
-                                    .clickable { viewModel.selectFilter(filter) }
-                                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                            ) {
-                                Text(
-                                    text = filter,
-                                    color = if (selected) onPrimaryColor else onSurfaceColor,
-                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
-                                )
-                            }
+            items(items) { item ->
+                VaultItemCard(
+                    item = item,
+                    onClick = {
+                        if (item.type == VaultType.AUDIO) {
+                            openAudioExternally(context, Uri.parse(item.uri), strings.playAudio)
+                        } else {
+                            navController.navigate("viewer/${Uri.encode(item.uri)}/${item.type.name}")
+                        }
+                    },
+                    overlayContent = {
+                        IconButton(
+                            onClick = { viewModel.removeItem(item) },
+                            modifier = Modifier.align(Alignment.TopEnd)
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = strings.delete,
+                                tint = Color.White
+                            )
                         }
                     }
-                    Spacer(Modifier.height(16.dp))
-                }
-                items(items) { item ->
-                    VaultItemCard(
-                        item = item,
-                        onClick = {
-                            if (item.type == VaultType.AUDIO) {
-                                openAudioExternally(context, Uri.parse(item.uri), strings.playAudio)
-                            } else {
-                                navController.navigate("viewer/${Uri.encode(item.uri)}/${item.type.name}")
-                            }
-                        },
-                        overlayContent = {
-                            IconButton(
-                                onClick = { viewModel.removeItem(item) },
-                                modifier = Modifier.align(Alignment.TopEnd)
-                            ) {
-                                Icon(
-                                    Icons.Default.Delete,
-                                    contentDescription = strings.delete,
-                                    tint = Color.White
-                                )
-                            }
-                        }
-                    )
-                }
+                )
             }
         }
     }
 }
+
 data class VaultStrings(
     val title: String,
     val subtitle: String,
@@ -349,7 +329,6 @@ fun VaultItemCard(
     overlayContent: (@Composable BoxScope.() -> Unit)? = null
 ) {
     val surfaceColor = MaterialTheme.colorScheme.surfaceVariant
-
     Card(
         modifier = Modifier
             .aspectRatio(1f)
@@ -368,7 +347,6 @@ fun VaultItemCard(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
-
                 VaultType.VIDEO -> Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -382,7 +360,6 @@ fun VaultItemCard(
                         modifier = Modifier.size(48.dp)
                     )
                 }
-
                 VaultType.AUDIO -> Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -400,7 +377,6 @@ fun VaultItemCard(
                         modifier = Modifier.size(64.dp)
                     )
                 }
-
                 VaultType.DOCUMENT -> Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -415,8 +391,6 @@ fun VaultItemCard(
                     )
                 }
             }
-
-            // عرض اسم الملف في الأسفل
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
@@ -432,7 +406,6 @@ fun VaultItemCard(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-
             overlayContent?.let { it() }
         }
     }
