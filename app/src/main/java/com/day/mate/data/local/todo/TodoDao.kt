@@ -83,4 +83,8 @@ interface TodoDao {
      */
     @Query("SELECT COUNT(*) FROM todos WHERE category = :categoryName")
     suspend fun countTasksWithCategory(categoryName: String): Int
+    @Query("SELECT * FROM todos WHERE remoteId = :remoteId LIMIT 1")
+    suspend fun getTodoByRemoteId(remoteId: String): TodoEntity?
+    @Query("SELECT COUNT(id) FROM todos WHERE date = :dateString AND isDone = 0")
+    suspend fun countIncompleteTasksByDate(dateString: String): Int
 }

@@ -13,7 +13,7 @@ enum class EventType {
 }
 
 data class TimelineEvent(
-    val id: String, //  "todo-123" أو "prayer-Fajr")
+    val id: String,
     val timestamp: Long,
     val title: String,
     val description: String,

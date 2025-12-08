@@ -41,7 +41,7 @@ fun Timings.toTimelineEvents(): List<TimelineEvent> {
         "Isha" to this.Isha
     )
 
-    val prayerColor = EventColorSky // أو أي لون آخر تحددينه للصلاة
+    val prayerColor = EventColorSky
 
     return prayerMap.map { (name, timeStr) ->
         val timestamp = convertPrayerTimeToTimestamp(timeStr)
@@ -51,11 +51,11 @@ fun Timings.toTimelineEvents(): List<TimelineEvent> {
             timestamp = timestamp,
             title = "$name Prayer",
             description = "Time to pray $name.",
-            timeRange = timeStr.split(" ")[0], // لإزالة الأقواس والمنطقة الزمنية (إن وجدت)
+            timeRange = timeStr.split(" ")[0],
             type = EventType.PRAYER,
-            icon = "self_improvement", // رمز الصلاة
+            icon = "self_improvement",
             iconColor = prayerColor,
-            isDone = false, // لا توجد حالة إنجاز للصلاة
+            isDone = false, 
             isProgress = null,
             timeLabel = formatTimestampToHourLabel(timestamp)
         )

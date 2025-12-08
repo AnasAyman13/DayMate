@@ -287,4 +287,6 @@
     <string name="desc_lock_icon">Lock Icon</string>
     <string name="pomodoro_timer_running">pomodoro Timer is Running</string>
     <string name="reset_sessions">Reset Sessions\n</string>
+
+    <string name="all_tasks_already_done">"All tasks for this day are already done!"</string>
 </resources>

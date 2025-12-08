@@ -31,9 +31,6 @@ class TimelineViewModel(
     private val todoRepository: TodoRepository,
     prayerRepository: PrayerRepository
 ) : ViewModel() {
-
-    // --- UI State Flows ---
-
     /** The date currently selected and displayed on the timeline. Defaults to today. */
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
@@ -49,13 +46,11 @@ class TimelineViewModel(
     val isViewingToday: StateFlow<Boolean> = _isViewingToday.asStateFlow()
 
     init {
-        // Start loading sequence upon initialization.
         loadInitialData()
     }
 
     private fun loadInitialData() {
         viewModelScope.launch {
-            // Placeholder for any async initial setup required.
         }
     }
 
@@ -84,19 +79,15 @@ class TimelineViewModel(
      *
      * @param date The specific date for which to mark all tasks as completed.
      */
-    fun markAllTasksAsDone(date: LocalDate) {
-        viewModelScope.launch {
-            // 1. Format the date string required by the repository function.
-            val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
-            val dateString = date.format(dateFormatter)
-
-            // 2. Call the direct batch update function in the repository.
-            todoRepository.markAllTasksAsDone(dateString)
+    suspend fun markAllTasksAsDone(date: LocalDate): Boolean {
+        val dateString = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
+        val alreadyDone = todoRepository.areAllTasksDone(dateString)
+        if (alreadyDone) {
+            return false
         }
+        todoRepository.markAllTasksAsDone(dateString)
+        return true
     }
-
-
-    // --- Data Source Flows (Transformation) ---
 
     /**
      * Converts the Flow of Todo entities from the local database into a Flow of TimelineEvents.
@@ -111,12 +102,8 @@ class TimelineViewModel(
      */
     private val prayerTimingsFlow = prayerRepository.getPrayerTimingsFlow("Cairo", "Egypt")
         .map { timings ->
-            // Timings here are typically based on the API response day (often today/current day).
             timings?.toTimelineEvents() ?: emptyList()
         }
-
-
-    // --- Final Timeline Events Flow (Combination and Logic) ---
 
     /**
      * The definitive list of events to display on the timeline.
@@ -129,46 +116,30 @@ class TimelineViewModel(
             _selectedDate,
             _hideCompleted
         ) { todoEvents, prayerEvents, selectedDate, hideCompleted ->
-
-            // Calculate offset parameters
             val oneDayInMillis = 24 * 60 * 60 * 1000L
             val today = LocalDate.now()
-            // Days difference between today and the selected date (0 for today, 1 for tomorrow, etc.)
             val daysOffset = ChronoUnit.DAYS.between(today, selectedDate)
             val offsetMillis = daysOffset * oneDayInMillis
             _isViewingToday.value = daysOffset == 0L
             val currentTime = System.currentTimeMillis()
 
-            // Calculate bounds for filtering events specific to the selected day
+
             val startOfDay = selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
             val endOfDay = selectedDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-
-            // 1. Filter Todo events by the selected date range (startOfDay to endOfDay)
             val todoEventsFilteredByDate = todoEvents
                 .filter { it.timestamp in startOfDay until endOfDay }
-
-
-            // 2. Process and shift Prayer events
             val shiftedPrayerEvents = prayerEvents.flatMap { event ->
                 val eventsList = mutableListOf<TimelineEvent>()
-                var currentDayTimestamp = event.timestamp // Timestamp of the prayer on the base day (usually today's timing)
+                var currentDayTimestamp = event.timestamp
 
-                // --- Prayer Shifting Logic ---
-
-                // If viewing TODAY (daysOffset == 0L):
-                // If a prayer already occurred (timestamp < currentTime), shift it to tomorrow's timing
                 if (daysOffset == 0L && currentDayTimestamp < currentTime) {
                     currentDayTimestamp += oneDayInMillis
                 }
-
-                // Apply the full day offset based on selectedDate (0 for today, 1 for tomorrow, etc.)
-                // This ensures that if selectedDate is 5 days from now, the prayer timings are shifted 5 days forward.
                 val finalTimestamp = currentDayTimestamp + offsetMillis
 
                 val finalEvent = event.copy(timestamp = finalTimestamp)
 
-                // Only include the prayer event if its final shifted timestamp falls within the selected day's bounds
                 if (finalEvent.timestamp in startOfDay until endOfDay) {
                     eventsList.add(finalEvent)
                 }
@@ -176,22 +147,20 @@ class TimelineViewModel(
                 eventsList
             }
 
-            // 3. Combine and filter all events
             var allEvents = (todoEventsFilteredByDate + shiftedPrayerEvents)
-                .filter { if (hideCompleted) !it.isDone else true } // Apply hide completed filter
-                .sortedBy { it.timestamp } // Sort by time
+                .filter { if (hideCompleted) !it.isDone else true }
+                .sortedBy { it.timestamp }
 
-            // 4. Final filter for Today's view: hide events that happened in the past
             if (daysOffset == 0L) {
-                // Keep only events that are scheduled now or in the future (allowing for a 1-hour grace period for events already passed)
+
                 allEvents = allEvents.filter { it.timestamp >= System.currentTimeMillis() - (60 * 60 * 1000) }
             }
 
             allEvents
         }
-            .flowOn(Dispatchers.Default) // Perform heavy filtering and shifting on the default dispatcher
+            .flowOn(Dispatchers.Default)
             .onEach {
-                _isLoading.value = false // Hide loading indicator once the data is processed
+                _isLoading.value = false
             }
             .stateIn(
                 scope = viewModelScope,

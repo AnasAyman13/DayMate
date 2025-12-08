@@ -1,9 +1,9 @@
 package com.day.mate.ui.theme.screens.timeline
 
+import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -40,7 +40,6 @@ import androidx.compose.ui.unit.sp
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.text.SimpleDateFormat
-import java.util.Date
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.day.mate.R
 import com.day.mate.data.model.EventType
@@ -52,19 +51,19 @@ import java.time.LocalDateTime
 import java.time.LocalDate
 import kotlin.random.Random
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.DpOffset
-
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 data class TimeBlock(
     val timeLabel: String,
     val events: List<TimelineEvent>,
     val isCurrentHour: Boolean
 )
-
-
 @Composable
 fun getTranslatedTitle(event: TimelineEvent): String {
     return when (event.title) {
@@ -91,12 +90,14 @@ fun getTranslatedCategory(category: String): String {
 
 
 @Composable
-fun TimelineMenu(viewModel: TimelineViewModel) {
+fun TimelineMenu(
+    viewModel: TimelineViewModel
+    , context: Context,
+                 coroutineScope: CoroutineScope, snackbarHostState: SnackbarHostState) {
     val selectedDate by viewModel.selectedDate.collectAsState()
     val hideCompleted by viewModel.hideCompleted.collectAsState()
     var isMenuExpanded by remember { mutableStateOf(false) }
     val isViewingTomorrow = selectedDate.isAfter(LocalDate.now())
-
     val isRtl = LocalConfiguration.current.locale.language == "ar"
     val horizontalOffset = if (isRtl) 180.dp else (-300).dp
 
@@ -198,8 +199,17 @@ fun TimelineMenu(viewModel: TimelineViewModel) {
                 )
             },
             onClick = {
-                viewModel.markAllTasksAsDone(selectedDate)
-                isMenuExpanded = false
+                coroutineScope.launch {
+                    val updated = viewModel.markAllTasksAsDone(selectedDate)
+
+                    if (!updated) {
+                        snackbarHostState.showSnackbar(
+                            message = context.getString(R.string.all_tasks_already_done),
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                    isMenuExpanded = false
+                }
             },
             colors = MenuDefaults.itemColors(
                 leadingIconColor = MaterialTheme.colorScheme.primary,
@@ -228,7 +238,6 @@ fun translateNumerals(text: String): String {
         .replace('8', '٨')
         .replace('9', '٩')
 }
-
 @Composable
 fun formatTimeForDisplay(time24h: String): String {
     val currentLanguage = LocalConfiguration.current.locale.language
@@ -287,7 +296,10 @@ fun groupEventsIntoTimeBlocks(events: List<TimelineEvent>): List<TimeBlock> {
 }
 
 @Composable
-fun DayMateTopBar(viewModel: TimelineViewModel) {
+fun DayMateTopBar(viewModel: TimelineViewModel,
+                  context: Context,
+                  coroutineScope: CoroutineScope,
+                  snackbarHostState: SnackbarHostState) {
     val background = MaterialTheme.colorScheme.background
     val onBackground = MaterialTheme.colorScheme.onBackground
 
@@ -350,7 +362,10 @@ fun DayMateTopBar(viewModel: TimelineViewModel) {
 
                 Spacer(Modifier.width(8.dp))
 
-                TimelineMenu(viewModel = viewModel)
+                TimelineMenu(viewModel = viewModel,
+                    context = context,
+                    coroutineScope = coroutineScope,
+                    snackbarHostState = snackbarHostState)
             }
 
         }
@@ -612,6 +627,9 @@ fun TimelineScreen(
     val selectedDate by viewModel.selectedDate.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState(initial = false)
     val isViewingToday by viewModel.isViewingToday.collectAsState()
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val timeBlocks = remember(events) {
         groupEventsIntoTimeBlocks(events)
@@ -625,24 +643,36 @@ fun TimelineScreen(
             getHourFromTimestamp(block.events.first().timestamp) >= currentHour
         }.coerceAtLeast(0)
     }
-
     // Auto-scroll to current hour
     LaunchedEffect(timeBlocks) {
         if (timeBlocks.isNotEmpty() && firstCurrentHourIndex > 0) {
             listState.animateScrollToItem(firstCurrentHourIndex)
         }
     }
-
     val currentLanguage = LocalConfiguration.current.locale.language
     val rawDateText = formatDateForDisplay(selectedDate)
-    val displayedDate = if (currentLanguage == "ar") {
+    val displayedDate = if (currentLanguage == "ar")
+    {
         translateNumerals(rawDateText)
     } else {
         rawDateText
     }
 
     Scaffold(
-        topBar = { DayMateTopBar(viewModel = viewModel) },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState) { data ->
+                Snackbar(
+                    snackbarData = data,
+                    containerColor = AppGold,
+                    contentColor = Color.Black,
+                    actionColor = MaterialTheme.colorScheme.primary
+                )
+            }
+        },
+        topBar = { DayMateTopBar(viewModel = viewModel,
+            context = context,
+            coroutineScope = coroutineScope,
+            snackbarHostState = snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(

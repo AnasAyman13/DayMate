@@ -33,10 +33,6 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
 
     private val DEFAULT_CATEGORIES = listOf("General", "Study", "Work", "Personal")
 
-    // ==========================================================
-    // State Flows for UI Consumption
-    // ==========================================================
-
     /**
      * Holds the current list of all Todo items fetched from the local database.
      */
@@ -49,7 +45,6 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
     private val _categories = MutableStateFlow(emptyList<String>())
     val categories: StateFlow<List<String>> = _categories.asStateFlow()
 
-    // Task Form State Variables
     private val _title = MutableStateFlow("")
     val title: StateFlow<String> = _title.asStateFlow()
 
@@ -71,7 +66,7 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
     private var reminderScheduler: ReminderScheduler? = null
 
     init {
-        // Start loading data immediately when the ViewModel is created
+
         loadTodos()
         loadCategories()
     }
@@ -106,9 +101,9 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
         viewModelScope.launch {
             repository.getAllCategories().collect { categoryList ->
                 _categories.value = categoryList
-                if (categoryList.isEmpty()) {
+                /*if (categoryList.isEmpty()) {
                     DEFAULT_CATEGORIES.forEach { addCategory(it) }
-                }
+                }*/
             }
         }
     }
@@ -148,16 +143,11 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
 
             repository.deleteCategory(name)
 
-            // Reset the currently selected category if it was the one deleted
             if (_category.value.equals(name, ignoreCase = true)) {
                 _category.value = "General"
             }
         }
     }
-
-    // ==========================================================
-    // Form State Update Functions
-    // ==========================================================
     fun onTitleChange(newValue: String) { _title.value = newValue }
     fun onDescriptionChange(newValue: String) { _description.value = newValue }
     fun onCategoryChange(newValue: String) { _category.value = newValue }
@@ -183,7 +173,7 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
         _description.value = ""
         _category.value = "General"
         _date.value = LocalDate.now()
-        _time.value = LocalTime.now().plusHours(1) // Set a reasonable default time, e.g., one hour from now
+        _time.value = LocalTime.now().plusHours(1)
         _remindMe.value = true
     }
 
@@ -203,7 +193,6 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
                 _time.value = try {
                     LocalTime.parse(taskToEdit.time)
                 } catch (e: Exception) {
-                    // Fallback to current time if parsing fails
                     LocalTime.now()
                 }
                 _remindMe.value = taskToEdit.remindMe
@@ -226,8 +215,8 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
 
         viewModelScope.launch {
             val newTodo = Todo(
-                id = 0, // Placeholder for local ID
-                remoteId = "", // Placeholder for remote ID
+                id = 0,
+                remoteId = "",
                 title = titleValue,
                 description = description.value.trim(),
                 category = category.value,
@@ -242,10 +231,9 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
 
             val remoteId = addTodoToFirestore(insertedTodo)
 
-            // Update local entry with the remote ID
+
             repository.update(insertedTodo.copy(remoteId = remoteId))
 
-            // Schedule reminder
             reminderScheduler?.schedule(insertedTodo.copy(remoteId = remoteId))
         }
     }
@@ -266,7 +254,7 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
 
         viewModelScope.launch {
             val oldTask = repository.getTodoById(id)
-            // Preserve the original 'isDone' status and remote ID
+
             val oldIsDoneStatus = oldTask?.isDone ?: false
             val oldRemoteId = oldTask?.remoteId ?: ""
 
@@ -284,10 +272,9 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
             repository.update(updatedTodo)
             updateTodoInFirestore(updatedTodo)
 
-            // Cancel old reminder
+
             reminderScheduler?.cancel(id)
 
-            // Schedule new reminder if enabled
             if (updatedTodo.remindMe) {
                 reminderScheduler?.schedule(updatedTodo)
             }
@@ -303,7 +290,6 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
     private suspend fun addTodoToFirestore(todo: Todo): String {
         val userId = auth.currentUser?.uid ?: return ""
 
-        // Generate a new document reference to get a unique ID
         val docRef = db.collection("users")
             .document(userId)
             .collection("tasks")
@@ -354,7 +340,7 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
             .document(userId)
             .collection("tasks")
             .document(rId)
-            .set(taskMap) // set() performs an overwrite or creates if not existing
+            .set(taskMap)
     }
 
     /**
@@ -366,7 +352,7 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
         val userId = auth.currentUser?.uid ?: return
 
         val rId = todo.remoteId
-        if (rId.isNullOrEmpty()) return // Safely check for remote ID presence
+        if (rId.isNullOrEmpty()) return
 
         db.collection("users")
             .document(userId)
@@ -410,7 +396,7 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
             val data = doc.data ?: return@mapNotNull null
 
             Todo(
-                id = 0, // ID will be generated upon local insertion
+                id = 0,
                 remoteId = data["remoteId"] as? String ?: "",
                 title = data["title"] as? String ?: "",
                 description = data["description"] as? String ?: "",
@@ -423,12 +409,21 @@ class TodoViewModel(private val repository: TodoRepository) : ViewModel() {
         }
 
         // Clear local database to prepare for sync
-        repository.clearAllTodos()
-
-        // Insert tasks from Firestore and update with their new local IDs
+       // repository.clearAllTodos()
         tasks.forEach { task ->
-            val newId = repository.insert(task)
-            repository.update(task.copy(id = newId))
+            val existingLocalTask = repository.getTodoByRemoteId(task.remoteId ?: "")
+
+            if (existingLocalTask != null) {
+                val updatedTask = task.copy(
+                    id = existingLocalTask.id,
+                    isDone = existingLocalTask.isDone
+                )
+                repository.update(updatedTask)
+
+            } else {
+                val newId = repository.insert(task)
+                repository.update(task.copy(id = newId))
+            }
         }
     }
 

@@ -10,16 +10,20 @@ import com.day.mate.data.local.todo.TodoDao
 import com.day.mate.data.local.todo.TodoEntity
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [TodoEntity::class, CategoryEntity::class],
-    version = 3, // (Or +1 from your last version)
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun todoDao(): TodoDao
-    abstract fun categoryDao(): CategoryDao // (Added the new Dao)
+    abstract fun categoryDao(): CategoryDao
 
     companion object {
         @Volatile
@@ -33,6 +37,18 @@ abstract class AppDatabase : RoomDatabase() {
                     "app_database"
                 )
                     .fallbackToDestructiveMigration()
+                    .addCallback(object : Callback() {
+                        override fun onCreate(db: SupportSQLiteDatabase) {
+                            super.onCreate(db)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                val DEFAULT_CATEGORIES = listOf("General", "Study", "Work", "Personal")
+                                val categoryDao = getInstance(context).categoryDao()
+                                DEFAULT_CATEGORIES.forEach { name ->
+                                    categoryDao.insert(CategoryEntity(name = name))
+                                }
+                            }
+                        }
+                    })
                     .build()
                     .also { INSTANCE = it }
             }

@@ -65,6 +65,9 @@ class TodoRepository(
     suspend fun delete(todo: Todo) {
         todoDao.delete(todo.toEntity())
     }
+    suspend fun areAllTasksDone(dateString: String): Boolean {
+        return todoDao.countIncompleteTasksByDate(dateString) == 0
+    }
 
     /**
      * Clear all todos
@@ -73,7 +76,6 @@ class TodoRepository(
         todoDao.clearAll()
     }
 
-    // ========== Category Functions ==========
 
     /**
      * Get all categories as Flow
@@ -97,6 +99,9 @@ class TodoRepository(
     suspend fun isCategoryInUse(name: String): Boolean {
         return todoDao.countTasksWithCategory(name) > 0
     }
+    suspend fun getTodoByRemoteId(remoteId: String): Todo? {
+        return todoDao.getTodoByRemoteId(remoteId)?.toModel()
+    }
 
     /**
      * Delete category by name
@@ -104,9 +109,9 @@ class TodoRepository(
     suspend fun deleteCategory(name: String) {
         categoryDao.deleteCategoryByName(name)
     }
+
 }
 
-// ========== Mapping Functions ==========
 
 /**
  * Convert TodoEntity to Todo model
@@ -114,7 +119,7 @@ class TodoRepository(
 fun TodoEntity.toModel(): Todo {
     return Todo(
         id = id.toInt(),
-        remoteId = remoteId ?: "", // Handle null from DB
+        remoteId = remoteId ?: "",
         title = title,
         description = description,
         category = category,
