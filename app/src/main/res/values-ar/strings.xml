@@ -267,6 +267,9 @@
     <string name="unlock_with_biometrics">فتح باستخدام البصمة</string>
     <string name="go_back">رجوع</string>
     <string name="biometric_helper_text">بياناتك البيومترية لا تغادر جهازك أبداً ويتم تخزينها بشكل آمن بواسطة نظام التشغيل.</string>
+    <string name="biometric_toast_no_setup">أنت لا تستخدم المصادقة البيومترية\nلزيادة الأمان، قم بإعداد كلمة مرور أو بصمة</string>
+    <string name="biometric_toast_success">تم التحقق بنجاح!</string>
+    <string name="biometric_toast_no_hardware">تم الدخول بدون مصادقة بيومترية\nلزيادة الأمان، قم بإعداد كلمة مرور</string>
 
     <!-- Biometric Status Messages -->
     <string name="biometric_auth_failed">فشلت المصادقة. حاول مرة أخرى.</string>

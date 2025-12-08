@@ -27,31 +27,22 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.scale
-import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
-import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.compose.foundation.layout.Arrangement
-import com.day.mate.R
-import com.day.mate.ui.theme.AppGold
-import com.plcoding.biometricauth.BiometricPromptManager
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import com.day.mate.R
+import com.day.mate.ui.theme.AppGold
+import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
+import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 
-/**
- * BiometricLockScreen
- *
- * Secure biometric authentication screen for accessing the Media Vault.
- *
- * @param navController Navigation controller for screen navigation
- * @param onUnlockSuccess Lambda function called when authentication succeeds.
- */
 @Composable
-fun BiometricLockScreen(navController: NavController,
-                        onUnlockSuccess: () -> Unit) { // <<< (1) المعلمة للحفاظ على التحديد
+fun BiometricLockScreen(
+    navController: NavController,
+    onUnlockSuccess: () -> Unit
+) {
     val context = LocalContext.current
-
     val promptManager = remember { BiometricPromptManager(context as AppCompatActivity) }
     val biometricResult by promptManager.promptResults.collectAsState(initial = null)
-
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val enrollLauncher = rememberLauncherForActivityResult(
@@ -59,7 +50,8 @@ fun BiometricLockScreen(navController: NavController,
         onResult = {
             promptManager.showBiometricPrompt(
                 title = context.getString(R.string.biometric_unlock_title),
-                description = context.getString(R.string.biometric_unlock_description)
+                description = context.getString(R.string.biometric_unlock_description),
+                allowWithoutLock = true
             )
         }
     )
@@ -75,10 +67,9 @@ fun BiometricLockScreen(navController: NavController,
         label = "lock_pulse"
     )
 
-    // *** (2) منطق النجاح الموحد (للتحديد) ***
     LaunchedEffect(biometricResult) {
         when (biometricResult) {
-            is BiometricPromptManager.BiometricResult.AuthenticationNotSet -> {
+            BiometricPromptManager.BiometricResult.AuthenticationNotSet -> {
                 if (Build.VERSION.SDK_INT >= 30) {
                     val enrollIntent = Intent(Settings.ACTION_BIOMETRIC_ENROLL).apply {
                         putExtra(
@@ -93,44 +84,35 @@ fun BiometricLockScreen(navController: NavController,
                 errorMessage = (biometricResult as BiometricPromptManager.BiometricResult.AuthenticationError).error
             }
             BiometricPromptManager.BiometricResult.AuthenticationFailed -> {
-                errorMessage = context.getString(R.string.biometric_auth_failed)
+                errorMessage = "فشل التحقق، حاول مرة أخرى"
             }
             BiometricPromptManager.BiometricResult.AuthenticationSuccess -> {
-                // استدعاء الدالة لتحديث الحالة بدلاً من التنقل
                 onUnlockSuccess()
             }
-            BiometricPromptManager.BiometricResult.FeatureUnavailable -> {
-                errorMessage = context.getString(R.string.biometric_feature_unavailable)
-            }
+            BiometricPromptManager.BiometricResult.FeatureUnavailable,
             BiometricPromptManager.BiometricResult.HardwareUnavailable -> {
-                errorMessage = context.getString(R.string.biometric_hardware_unavailable)
+                errorMessage = "الميزة غير متوفرة على هذا الجهاز"
             }
-            else -> {
-                // Initial state or other states
-            }
+            else -> Unit
         }
     }
 
-    // Scroll state for vertical scrolling
     val scrollState = rememberScrollState()
 
-    // Main UI
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // *** (3) إعادة Column مع verticalScroll لتمكين التمرير في الوضع الأفقي ***
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(24.dp)
-                .verticalScroll(scrollState), // تمكين التمرير
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
-            // ترتيب العناصر من الأعلى ليتناسب مع التمرير
             verticalArrangement = Arrangement.Center
         ) {
-            // Animated Lock Icon
+            // أيقونة القفل المتحركة
             Box(
                 modifier = Modifier
                     .size(120.dp)
@@ -142,7 +124,7 @@ fun BiometricLockScreen(navController: NavController,
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    Icons.Default.Lock,
+                    imageVector = Icons.Default.Lock,
                     contentDescription = stringResource(R.string.desc_lock_icon),
                     tint = AppGold,
                     modifier = Modifier.size(56.dp)
@@ -151,7 +133,6 @@ fun BiometricLockScreen(navController: NavController,
 
             Spacer(Modifier.height(32.dp))
 
-            // Title
             Text(
                 text = stringResource(R.string.media_vault_locked),
                 color = MaterialTheme.colorScheme.onBackground,
@@ -162,7 +143,6 @@ fun BiometricLockScreen(navController: NavController,
 
             Spacer(Modifier.height(12.dp))
 
-            // Description
             Text(
                 text = stringResource(R.string.media_vault_description),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -171,7 +151,7 @@ fun BiometricLockScreen(navController: NavController,
                 modifier = Modifier.padding(horizontal = 32.dp)
             )
 
-            // Error message card
+            // رسالة الخطأ
             errorMessage?.let { message ->
                 Spacer(Modifier.height(24.dp))
                 Card(
@@ -191,46 +171,16 @@ fun BiometricLockScreen(navController: NavController,
                 }
             }
 
-            // Status indicator
-            biometricResult?.let { result ->
-                Spacer(Modifier.height(16.dp))
-
-                val (statusText, statusColor) = when(result) {
-                    is BiometricPromptManager.BiometricResult.AuthenticationError ->
-                        stringResource(R.string.biometric_error_occurred) to MaterialTheme.colorScheme.error
-                    BiometricPromptManager.BiometricResult.AuthenticationFailed ->
-                        stringResource(R.string.biometric_auth_failed) to MaterialTheme.colorScheme.error
-                    BiometricPromptManager.BiometricResult.AuthenticationNotSet ->
-                        stringResource(R.string.biometric_setting_up) to MaterialTheme.colorScheme.primary
-                    BiometricPromptManager.BiometricResult.AuthenticationSuccess ->
-                        stringResource(R.string.biometric_success_redirecting) to Color(0xFF4CAF50)
-                    BiometricPromptManager.BiometricResult.FeatureUnavailable ->
-                        stringResource(R.string.biometric_feature_unavailable) to MaterialTheme.colorScheme.error
-                    BiometricPromptManager.BiometricResult.HardwareUnavailable ->
-                        stringResource(R.string.biometric_hardware_unavailable) to MaterialTheme.colorScheme.error
-                    else ->
-                        "" to Color.Transparent
-                }
-
-                if (statusText.isNotEmpty()) {
-                    Text(
-                        text = statusText,
-                        color = statusColor,
-                        fontSize = 12.sp,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-
             Spacer(Modifier.height(48.dp))
 
-            // Unlock Button
+            // زر فتح الخزن
             Button(
                 onClick = {
                     errorMessage = null
                     promptManager.showBiometricPrompt(
                         title = context.getString(R.string.biometric_unlock_title),
-                        description = context.getString(R.string.biometric_unlock_description)
+                        description = context.getString(R.string.biometric_unlock_description),
+                        allowWithoutLock = true
                     )
                 },
                 colors = ButtonDefaults.buttonColors(
@@ -257,11 +207,9 @@ fun BiometricLockScreen(navController: NavController,
 
             Spacer(Modifier.height(16.dp))
 
-            // Back Button
+            // زر العودة
             OutlinedButton(
-                onClick = {
-                    navController.popBackStack()
-                },
+                onClick = { navController.popBackStack() },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.outlinedButtonColors(
@@ -275,7 +223,6 @@ fun BiometricLockScreen(navController: NavController,
             }
 
             Spacer(Modifier.height(24.dp))
-
 
             Text(
                 text = stringResource(R.string.biometric_helper_text),

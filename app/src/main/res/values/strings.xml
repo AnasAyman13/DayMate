@@ -274,6 +274,9 @@
     <string name="unlock_with_biometrics">Unlock with Biometrics</string>
     <string name="go_back">Go Back</string>
     <string name="biometric_helper_text">Your biometric data never leaves your device and is securely stored by your operating system.</string>
+    <string name="biometric_toast_no_setup">You are not using biometrics\nFor more safety, set password or fingerprint</string>
+    <string name="biometric_toast_success">Verified successfully!</string>
+    <string name="biometric_toast_no_hardware">Entered without biometrics\nFor more safety, set a password</string>
 
     <!-- Biometric Status Messages -->
     <string name="biometric_auth_failed">Authentication failed. Please try again.</string>
