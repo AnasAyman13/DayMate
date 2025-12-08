@@ -72,6 +72,8 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 • Timeline Screen (UI & Logic)  
 • NavigationBar   
 • Notification  
+• Some Other Changes on Onther Screens
+
 
 **Islam Fawzy**  
 • Authentication (Login & SignUp) 
