@@ -64,7 +64,7 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 • Login & SignUp (UI)  
 • Onboarding with Modern Animations     
 • Prayer Screen (UI + Logic) & "Qibla-direction" & "Athan" System  
-• Presentation file & demo video
+• Presentation file & demo video    
 • Docs
 
 **Menna Ayman**  
@@ -72,7 +72,7 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 • Timeline Screen (UI & Logic)  
 • NavigationBar   
 • Notification  
-• Some Other Changes on Onther Screens
+• Some Other Changes on Other Screens
 
 
 **Islam Fawzy**  
