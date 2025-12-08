@@ -55,7 +55,7 @@ android {
             )
         }
         debug {
-            signingConfig = signingConfigs.getByName("shared") // Uses the same shared signing configuration for debug builds.
+           signingConfig = signingConfigs.getByName("shared") // Uses the same shared signing configuration for debug builds.
         }
     }
 
