@@ -76,13 +76,11 @@ The app aims to simplify daily life management while maintaining an elegant, fas
 
 
 **Islam Fawzy**  
-• Authentication (Login & SignUp) 
+• Authentication (Login & SignUp)
+• Firestore (Tasks)  
 
-
-**Youssef Barakat**  
-• Authentication (Login & SignUp)  
+**Youssef Barakat**   
 • Google Login & SignUp  
-• Firestore (Tasks)   
 • Alarm  
 
 **Basem Mohamed**   
