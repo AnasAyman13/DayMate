@@ -96,6 +96,36 @@ class AuthViewModel : ViewModel() {
         }
     }
 
+    //helper function to check email is exist
+    fun checkEmailExistsInFirestore(
+        context: Context,
+        email: String,
+        onResult: (Boolean) -> Unit
+    ) {
+        if (email.isBlank()) {
+            Toast.makeText(context, "Please enter your email", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        db.collection("users")
+            .whereEqualTo("email", email)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                onResult(!querySnapshot.isEmpty)
+            }
+            .addOnFailureListener { exception ->
+                Toast.makeText(
+                    context,
+                    exception.localizedMessage ?: "Error checking email",
+                    Toast.LENGTH_SHORT
+                ).show()
+                onResult(false)
+            }
+    }
+
+
+
     // --- Email & Password Sign-In ---
     fun signIn(context: Context, email: String, password: String) {
         if (email.isBlank() || password.isBlank()) {
@@ -111,7 +141,7 @@ class AuthViewModel : ViewModel() {
                     saveLoginMethod(context, "password")
                     Toast.makeText(context, "Welcome back!", Toast.LENGTH_SHORT).show()
                     _state.value = AuthUiState.Success
-                    // تم إزالة الانتقال من هنا - سيتم التعامل معه في LoginScreen
+
                 } else {
                     Toast.makeText(context, "Please verify your email before signing in.", Toast.LENGTH_LONG).show()
                     auth.signOut()
@@ -125,9 +155,13 @@ class AuthViewModel : ViewModel() {
     }
 
     // --- Email & Password Sign-Up ---
-    fun signUp(context: Context, name: String, email: String, password: String) {
-        if (name.isBlank() || email.isBlank() || password.isBlank()) {
+    fun signUp(context: Context, name: String, email: String, password: String,confirmPass:String) {
+        if (name.isBlank() || email.isBlank() || password.isBlank()||confirmPass.isBlank()) {
             Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if(password!=confirmPass){
+            Toast.makeText(context, "Please match your password with confirm password", Toast.LENGTH_SHORT).show()
             return
         }
         _state.value = AuthUiState.Loading
@@ -209,27 +243,35 @@ class AuthViewModel : ViewModel() {
 
     // --- Reset Password ---
     fun resetPassword(context: Context, email: String) {
+
         if (email.isBlank()) {
             Toast.makeText(context, "Please enter your email", Toast.LENGTH_SHORT).show()
             return
         }
-
-        auth.sendPasswordResetEmail(email)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    Toast.makeText(context, "Password reset email sent! Check your inbox.", Toast.LENGTH_LONG).show()
-                } else {
-                    val errorMessage = task.exception?.message ?: "Invalid email"
-                    Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
-                }
+        checkEmailExistsInFirestore(context, email) { exists ->
+            if (!exists) {
+                Toast.makeText(context, "Email not found", Toast.LENGTH_SHORT).show()
+            } else {
+                auth.sendPasswordResetEmail(email)
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            Toast.makeText(context, "Password reset email sent! Check your inbox.", Toast.LENGTH_LONG).show()
+                        } else {
+                            val errorMessage = task.exception?.message ?: "Invalid email"
+                            Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                        }
+                    }
             }
+        }
+
+
     }
 
-    // --- Sign Out ---
-    fun signOut() {
-        auth.signOut()
-        _state.value = AuthUiState.Idle
-    }
+//    // --- Sign Out ---
+//    fun signOut() {
+//        auth.signOut()
+//        _state.value = AuthUiState.Idle
+//    }
 
     // --- Current User ---
     fun getCurrentUser() = auth.currentUser
