@@ -46,70 +46,90 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.day.mate.R
 import com.day.mate.ui.theme.screens.prayer.PrayerViewModel
-import com.day.mate.ui.theme.screens.prayer.scheduleAdhan
 import com.day.mate.ui.theme.screens.prayer.cancelAdhanSchedule
 import com.day.mate.ui.theme.screens.prayer.checkExactAlarmPermission
 import com.day.mate.ui.theme.screens.prayer.getAdhanPref
 import com.day.mate.ui.theme.screens.prayer.saveAdhanPref
+import com.day.mate.ui.theme.screens.prayer.scheduleAdhan
 import kotlinx.coroutines.isActive
 import java.text.SimpleDateFormat
-import java.util.*
-import kotlin.math.*
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.min
+import kotlin.math.sin
 
-/**
- * PrayerScreen
- *
- * Main screen for displaying prayer times, Qibla compass, and managing Adhan notifications.
- * Handles location permissions, sensor data for compass, and exact alarm scheduling permission.
- *
- * @param viewModel The ViewModel providing prayer time data.
- */
+private fun hasLocationPermission(context: Context): Boolean {
+    val fine = ActivityCompat.checkSelfPermission(
+        context, Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+
+    val coarse = ActivityCompat.checkSelfPermission(
+        context, Manifest.permission.ACCESS_COARSE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+
+    return fine || coarse
+}
+
 @SuppressLint("MissingPermission")
 @Composable
 fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
     val timings by viewModel.timings.collectAsState()
     val ctx = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
     val scroll = rememberScrollState()
     val bgGradient = Brush.verticalGradient(listOf(Color(0xFF042825), Color(0xFF073B3A)))
 
-    var hasRequestedPermission by remember { mutableStateOf(false) }
+    // ✅ Permission state (ده المهم)
+    var locationPermissionGranted by remember { mutableStateOf(hasLocationPermission(ctx)) }
 
-    // Launcher for location permission request
+    // ✅ لو المستخدم راح Settings ورجع، نعيد فحص الإذن تلقائي
+    DisposableEffect(lifecycleOwner) {
+        val obs = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                locationPermissionGranted = hasLocationPermission(ctx)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(obs)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(obs) }
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
+        locationPermissionGranted = isGranted
         if (isGranted) {
             viewModel.loadPrayerTimes(ctx = ctx)
+        } else {
+            Toast.makeText(ctx, "Location permission is required", Toast.LENGTH_LONG).show()
         }
-        hasRequestedPermission = true
     }
 
-    // Launcher to open system settings for Exact Alarm Scheduling permission (Android 12+)
     val settingsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) {
-        // Re-attempt loading prayer times after user returns from settings
+        // لما يرجع من شاشة exact alarm permission
         viewModel.loadPrayerTimes(ctx = ctx)
     }
 
-    // Request location permission on initial screen composition
-    LaunchedEffect(Unit) {
-        if (!hasRequestedPermission) {
-            if (ActivityCompat.checkSelfPermission(
-                    ctx,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            } else {
-                hasRequestedPermission = true
-            }
+    // ✅ اطلب الإذن أول مرة، ولو اتقبل هيتعمل re-run لباقي الـ effects
+    LaunchedEffect(locationPermissionGranted) {
+        if (!locationPermissionGranted) {
+            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        } else {
+            viewModel.loadPrayerTimes(ctx = ctx)
         }
     }
 
-    // Time update effect: updates current time every second for the countdown timer
+    // Time ticker
     var nowMillis by remember { mutableStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
         while (isActive) {
@@ -118,10 +138,6 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
         }
     }
 
-    /**
-     * Converts a prayer time string ("HH:mm") to the next upcoming timestamp in milliseconds.
-     * Ensures the time is set for today or shifted to tomorrow if the time has already passed.
-     */
     fun timeStrToNextMillis(time24: String): Long? {
         return try {
             val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
@@ -134,15 +150,13 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                 set(Calendar.DAY_OF_MONTH, calNow.get(Calendar.DAY_OF_MONTH))
             }
             var millis = calT.timeInMillis
-            // If the calculated time is in the past, shift it forward by one day
             if (millis <= calNow.timeInMillis) millis += 24 * 3600 * 1000L
             millis
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
     }
 
-    // Calculate the next upcoming prayer and its exact time in milliseconds
     val nextPrayerPair: Pair<String, Long>? = remember(timings, nowMillis) {
         timings?.let { t ->
             val list = listOfNotNull(
@@ -152,18 +166,15 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                 "Maghrib" to timeStrToNextMillis(t.Maghrib),
                 "Isha" to timeStrToNextMillis(t.Isha)
             ).mapNotNull { if (it.second != null) it.first to it.second!! else null }
-            // Find the minimum timestamp (the closest upcoming prayer)
             list.minByOrNull { it.second }
         }
     }
 
-    // Calculate remaining time for the next prayer
     val remainingMillis = (nextPrayerPair?.second?.minus(nowMillis) ?: 0L).coerceAtLeast(0L)
     val remH = (remainingMillis / 3600000).toInt()
     val remM = ((remainingMillis % 3600000) / 60000).toInt()
     val remS = ((remainingMillis % 60000) / 1000).toInt()
 
-    // State map to track Adhan notification preference for each prayer
     val adhanEnabled = remember {
         mutableStateMapOf(
             "Fajr" to getAdhanPref(ctx, "Fajr"),
@@ -174,11 +185,9 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
         )
     }
 
-    // Schedule enabled Adhans when prayer timings are loaded
     LaunchedEffect(timings) {
         timings?.let {
             Log.d("PrayerScreen", "Loading prayer times and scheduling enabled adhans...")
-            // Re-schedule all enabled adhans to ensure alarms are set correctly upon loading timings
             adhanEnabled.forEach { (prayerName, isEnabled) ->
                 if (isEnabled) {
                     val timeStr = when (prayerName) {
@@ -190,11 +199,11 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                         else -> null
                     }
                     val timeMillis = timeStr?.let { str -> timeStrToNextMillis(str) }
-
                     if (timeMillis != null) {
                         val cal = Calendar.getInstance().apply { timeInMillis = timeMillis }
                         scheduleAdhan(
-                            ctx, prayerName,
+                            ctx,
+                            prayerName,
                             cal.get(Calendar.HOUR_OF_DAY),
                             cal.get(Calendar.MINUTE)
                         )
@@ -206,13 +215,21 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
 
     val hijriStr = remember { getHijriDateSafely(ctx) }
 
-    // ======== Qibla Compass Logic ========
+    // =========================
+    // ✅ Location + Compass (Live)
+    // =========================
     var userLocation by remember { mutableStateOf<Location?>(null) }
-    var deviceAzimuth by remember { mutableStateOf(0f) } // North angle (0-360) based on device sensor
-    var qiblaBearing by remember { mutableStateOf<Float?>(null) } // Angle from North to Qibla
+    var deviceAzimuth by remember { mutableStateOf(0f) }
+    var qiblaBearing by remember { mutableStateOf<Float?>(null) }
 
-    // Get user location using GPS/Network provider
-    DisposableEffect(ctx) {
+    // ✅ أهم Fix: Location updates بتشتغل فور ما الإذن يتاخد (مش لازم تخرج وتدخل)
+    DisposableEffect(locationPermissionGranted) {
+        if (!locationPermissionGranted) {
+            userLocation = null
+            onDispose { }
+            return@DisposableEffect onDispose { }
+        }
+
         val lm = ctx.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         val listener = object : LocationListener {
             override fun onLocationChanged(loc: Location) { userLocation = loc }
@@ -222,31 +239,23 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
             override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
         }
 
-        if (ActivityCompat.checkSelfPermission(
-                ctx,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            try {
-                // Request continuous location updates
-                lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5_000L, 5f, listener)
-                lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5_000L, 5f, listener)
-                // Get last known location as fallback
-                val last = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                    ?: lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-                if (last != null) userLocation = last
-            } catch (_: Exception) {
-            }
-        }
+        try {
+            // ✅ last known فورًا
+            val last = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                ?: lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+            if (last != null) userLocation = last
+
+            // ✅ updates أسرع في البداية
+            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000L, 0f, listener)
+            lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000L, 0f, listener)
+        } catch (_: Exception) {}
+
         onDispose {
-            try {
-                lm.removeUpdates(listener)
-            } catch (_: Exception) {
-            }
+            try { lm.removeUpdates(listener) } catch (_: Exception) {}
         }
     }
 
-    // Get device orientation (Azimuth) from Rotation Vector Sensor
+    // Compass (Rotation Vector)
     DisposableEffect(ctx) {
         val sm = ctx.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val sensor = sm.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
@@ -259,7 +268,6 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
             override fun onSensorChanged(event: SensorEvent) {
                 try {
                     SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
-                    // Remap coordinates to account for device screen orientation
                     SensorManager.remapCoordinateSystem(
                         rotationMatrix,
                         SensorManager.AXIS_X,
@@ -270,28 +278,26 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                     var azimuthDeg = Math.toDegrees(orientation[0].toDouble()).toFloat()
                     if (azimuthDeg < 0) azimuthDeg += 360f
                     deviceAzimuth = azimuthDeg
-                } catch (_: Exception) {
-                }
+                } catch (_: Exception) {}
             }
+
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
         }
 
-        if (sensor != null)
-            sm.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)
+        if (sensor != null) sm.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)
 
         onDispose {
             try { sm.unregisterListener(listener) } catch (_: Exception) {}
         }
     }
 
-    // Calculate Qibla bearing (angle from user to Kaaba)
+    // Qibla bearing calculation
     LaunchedEffect(userLocation) {
         userLocation?.let { loc ->
-            // Use the Haversine formula variant for Qibla calculation
             val lat1 = Math.toRadians(loc.latitude)
             val lon1 = Math.toRadians(loc.longitude)
-            val lat2 = Math.toRadians(21.4225) // Kaaba Latitude
-            val lon2 = Math.toRadians(39.8262) // Kaaba Longitude
+            val lat2 = Math.toRadians(21.4225) // Kaaba
+            val lon2 = Math.toRadians(39.8262)
             val dLon = lon2 - lon1
             val y = sin(dLon) * cos(lat2)
             val x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon)
@@ -300,33 +306,36 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
         }
     }
 
-    // Calculate the target angle for the compass needle (relative to North)
     val targetAngle = remember(deviceAzimuth, qiblaBearing) {
-        // Calculate the difference between Qibla bearing and device azimuth
         qiblaBearing?.let { (((it - deviceAzimuth) + 540f) % 360f - 180f) } ?: 0f
     }
     val animatedAngle by animateFloatAsState(
-        targetValue = targetAngle ?: 0f,
+        targetValue = targetAngle,
         animationSpec = TweenSpec(durationMillis = 400),
         label = "qiblaAngleAnimation"
     )
 
-    // Check if the device is correctly aligned with Qibla
     val deltaToQibla = qiblaBearing?.let {
-        ((it - deviceAzimuth + 360f) % 360f).let { if (it > 180f) 360f - it else it }
+        ((it - deviceAzimuth + 360f) % 360f).let { d -> if (d > 180f) 360f - d else d }
     } ?: 999f
-    val isAligned = deltaToQibla <= 8f // Alignment tolerance of 8 degrees
+    val isAligned = deltaToQibla <= 8f
 
-    // ======== UI Layout ========
+    // =========================
+    // UI
+    // =========================
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(bgGradient)
-            .verticalScroll(scroll)
-            .padding(16.dp)
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            // Hijri Date
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scroll)
+                // padding سفلي كبير عشان المحتوى مايتغطّيش بالـ BottomNav
+                .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 120.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Text(
                 text = hijriStr,
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
@@ -336,7 +345,6 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
 
             Spacer(Modifier.height(12.dp))
 
-            // Next Prayer Countdown Card
             val nextPrayerName = when (nextPrayerPair?.first) {
                 "Fajr" -> stringResource(R.string.fajr)
                 "Dhuhr" -> stringResource(R.string.dhuhr)
@@ -369,10 +377,9 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                             Text(
                                 text = nextPrayerName,
                                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                                color = Color(0xFF3E1F00) // Dark brown text for contrast
+                                color = Color(0xFF3E1F00)
                             )
                             Text(
-                                // Display remaining time in HH:MM:SS format
                                 String.format("%02d:%02d:%02d", remH, remM, remS),
                                 color = Color(0xFF2C1A00)
                             )
@@ -381,9 +388,7 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                             Icons.Outlined.AccessTime,
                             contentDescription = stringResource(R.string.desc_remaining_time),
                             tint = Color(0xFF3E1F00),
-                            modifier = Modifier
-                                .size(40.dp)
-                                .padding(start = 8.dp)
+                            modifier = Modifier.size(40.dp).padding(start = 8.dp)
                         )
                     }
                 }
@@ -391,7 +396,6 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
 
             Spacer(Modifier.height(18.dp))
 
-            // Prayer Times List
             val sdf24 = SimpleDateFormat("HH:mm", Locale.getDefault())
             val sdf12 = SimpleDateFormat("hh:mm a", Locale.getDefault())
 
@@ -403,16 +407,9 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                     "Maghrib" to t.Maghrib,
                     "Isha" to t.Isha
                 ).forEach { (name, timeStr) ->
-                    val formatted = try {
-                        // Convert 24-hour time string to 12-hour format based on locale
-                        sdf12.format(sdf24.parse(timeStr)!!)
-                    } catch (_: Exception) {
-                        timeStr // Fallback
-                    }
-
+                    val formatted = try { sdf12.format(sdf24.parse(timeStr)!!) } catch (_: Exception) { timeStr }
                     val timeMillis = timeStrToNextMillis(timeStr)
 
-                    // FIX: Extract the translated name here for use in both PrayerRow and Toast
                     val translatedName = stringResource(
                         when (name) {
                             "Fajr" -> R.string.fajr
@@ -425,7 +422,7 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                     )
 
                     PrayerRow(
-                        name = translatedName, // Pass the translated name
+                        name = translatedName,
                         time = formatted,
                         enabled = adhanEnabled[name] == true
                     ) { checked ->
@@ -433,15 +430,10 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                         saveAdhanPref(ctx, name, checked)
 
                         if (timeMillis != null) {
-                            if (checked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !checkExactAlarmPermission(
-                                    ctx
-                                )
-                            ) {
-                                // Permission missing: Direct user to settings for Exact Alarm
-                                val intent =
-                                    Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-                                        data = Uri.fromParts("package", ctx.packageName, null)
-                                    }
+                            if (checked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !checkExactAlarmPermission(ctx)) {
+                                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                                    data = Uri.fromParts("package", ctx.packageName, null)
+                                }
                                 settingsLauncher.launch(intent)
                                 Toast.makeText(
                                     ctx,
@@ -449,34 +441,20 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                                     Toast.LENGTH_LONG
                                 ).show()
                             } else if (checked) {
-                                // Permission granted or not needed: Schedule Adhan
                                 val cal = Calendar.getInstance().apply { timeInMillis = timeMillis }
-                                scheduleAdhan(
-                                    ctx, name,
-                                    cal.get(Calendar.HOUR_OF_DAY),
-                                    cal.get(Calendar.MINUTE)
-                                )
-                                // FIX: Use the translated name in the Toast message
-                                Toast.makeText(ctx, ctx.getString(R.string.adhan_enabled, translatedName), Toast.LENGTH_SHORT)
-                                    .show()
+                                scheduleAdhan(ctx, name, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
+                                Toast.makeText(ctx, ctx.getString(R.string.adhan_enabled, translatedName), Toast.LENGTH_SHORT).show()
                             } else {
-                                // Cancel scheduling
                                 cancelAdhanSchedule(ctx, name)
-                                // FIX: Use the translated name in the Toast message
-                                Toast.makeText(ctx, ctx.getString(R.string.adhan_disabled, translatedName), Toast.LENGTH_SHORT)
-                                    .show()
+                                Toast.makeText(ctx, ctx.getString(R.string.adhan_disabled, translatedName), Toast.LENGTH_SHORT).show()
                             }
                         }
                     }
                 }
-            } ?: Text(
-                stringResource(R.string.loading_prayer_times),
-                color = Color.White
-            )
+            } ?: Text(stringResource(R.string.loading_prayer_times), color = Color.White)
 
             Spacer(Modifier.height(26.dp))
 
-            // Qibla Compass Section Title
             Text(
                 stringResource(R.string.qibla_direction),
                 color = Color.White,
@@ -484,9 +462,9 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
+
             Spacer(Modifier.height(12.dp))
 
-            // Qibla Compass Card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -500,7 +478,6 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                         .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Compass Canvas Drawing
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier.size(140.dp)
@@ -511,11 +488,8 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                             val center = Offset(cx, cy)
                             val radius = min(size.width, size.height) / 2 - 12f
 
-                            // Outer compass background
                             drawCircle(color = Color(0xFF0B3A36), center = center, radius = radius + 12f)
-                            // Inner compass background
                             drawCircle(color = Color(0xFF012A27), center = center, radius = radius)
-                            // Decorative gold ring
                             drawCircle(
                                 brush = Brush.radialGradient(listOf(Color(0xFFFFD700), Color(0xFFCCAC00))),
                                 center = center,
@@ -523,7 +497,6 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                                 style = androidx.compose.ui.graphics.drawscope.Stroke(width = 6f)
                             )
 
-                            // Kaaba placeholder (Gold Cube)
                             val cubeSize = 20f
                             drawRect(
                                 brush = Brush.verticalGradient(listOf(Color(0xFFFFD700), Color(0xFFC6A000))),
@@ -531,14 +504,15 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                                 size = androidx.compose.ui.geometry.Size(cubeSize, cubeSize)
                             )
 
-                            // Compass Needle (Rotated based on animatedAngle)
                             rotate(degrees = animatedAngle) {
                                 val end = Offset(cx, cy - radius + 20f)
                                 drawLine(
-                                    color = Color(0xFFFFC107), start = center, end = end,
-                                    strokeWidth = 10f, cap = StrokeCap.Round
+                                    color = Color(0xFFFFC107),
+                                    start = center,
+                                    end = end,
+                                    strokeWidth = 10f,
+                                    cap = StrokeCap.Round
                                 )
-                                // Drawing the needle head
                                 val headSize = 18f
                                 val left = Offset(end.x - headSize / 2, end.y + headSize)
                                 val right = Offset(end.x + headSize / 2, end.y + headSize)
@@ -550,7 +524,6 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
 
                     Spacer(Modifier.width(16.dp))
 
-                    // Islamic Quotes/Text
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -560,45 +533,31 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-
                             "اللهم صلِّ على سيِّدنا محمدَ ﷺ",
-
                             color = Color(0xFF4B2E00),
-
                             fontWeight = FontWeight.Bold,
-
                             textAlign = TextAlign.Center,
-
                             fontSize = 20.sp
-
                         )
 
                         Spacer(Modifier.height(16.dp))
 
                         Text(
-
                             "إِنَّ الصَّلَاةَ كَانَتْ عَلَى الْمُؤْمِنِين كِتَابًا مَوْقُوتًاَ",
-
                             color = Color(0xFF4B2E00),
-
                             fontWeight = FontWeight.Bold,
-
                             textAlign = TextAlign.Center,
-
-                            fontSize = 18.sp)
+                            fontSize = 18.sp
+                        )
                     }
                 }
             }
 
             Spacer(Modifier.height(8.dp))
 
-            // Qibla Alignment Message
             Box(
                 modifier = Modifier
-                    .background(
-                        color = Color(0x33FFFFFF), // Semi-transparent white background
-                        shape = RoundedCornerShape(6.dp)
-                    )
+                    .background(color = Color(0x33FFFFFF), shape = RoundedCornerShape(6.dp))
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Text(
@@ -623,13 +582,6 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
 
 /**
  * PrayerRow
- *
- * A single row item displaying a prayer name, time, and Adhan toggle switch.
- *
- * @param name The localized name of the prayer (e.g., الفجر).
- * @param time The formatted time of the prayer (e.g., 05:30 AM).
- * @param enabled Current state of the Adhan toggle.
- * @param onToggle Callback when the switch is toggled.
  */
 @Composable
 fun PrayerRow(name: String, time: String, enabled: Boolean, onToggle: (Boolean) -> Unit) {
@@ -647,7 +599,6 @@ fun PrayerRow(name: String, time: String, enabled: Boolean, onToggle: (Boolean) 
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                // The 'name' variable here is already the translated string
                 Text(name, fontWeight = FontWeight.Bold, color = Color.Black)
                 Text(time, color = Color.Gray)
             }
@@ -668,12 +619,6 @@ fun PrayerRow(name: String, time: String, enabled: Boolean, onToggle: (Boolean) 
 
 /**
  * getHijriDateSafely
- *
- * Retrieves the current Hijri (Islamic) date, using modern APIs where available,
- * or falling back to standard Java date formatting.
- *
- * @param ctx The application context.
- * @return Formatted Hijri date string (e.g., "1 Shawwal 1446").
  */
 fun getHijriDateSafely(ctx: Context): String {
     return try {
@@ -693,7 +638,6 @@ fun getHijriDateSafely(ctx: Context): String {
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
                 val hijrah = java.time.chrono.HijrahDate.now()
-                // Format using default English locale as a safe base
                 val formatter =
                     java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.ENGLISH)
                 hijrah.format(formatter)

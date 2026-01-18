@@ -1,6 +1,8 @@
 package com.day.mate
 
+import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,7 +13,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.compose.NavHost
@@ -22,6 +29,7 @@ import com.day.mate.ui.screens.SignUpScreen
 import com.day.mate.viewmodel.AuthViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
+import java.util.Locale
 
 class AuthActivity : ComponentActivity() {
 
@@ -59,44 +67,70 @@ class AuthActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 var showForgotPasswordDialog by remember { mutableStateOf(false) }
 
-                Surface {
-                    NavHost(
-                        navController = navController,
-                        startDestination = "signin"
-                    ) {
-                        composable("signin") {
-                            LoginScreen(
-                                viewModel = authViewModel,
-                                onLoggedIn = {
-                                    navigateToMainActivity()
-                                },
-                                onNavigateToSignUp = { navController.navigate("signup") },
-                                onForgotPassword = { showForgotPasswordDialog = true },
-                                onGoogleSignInClicked = { startGoogleSignIn() }
-                            )
-                        }
+                // ✅ Shared language state for BOTH signin/signup
+                val context = LocalContext.current
+                val systemLangIsArabic = LocalConfiguration.current.locales[0].language == "ar"
+                var langTag by rememberSaveable { mutableStateOf(if (systemLangIsArabic) "ar" else "en") }
+                val isArabic = langTag == "ar"
 
-                        composable("signup") {
-                            SignUpScreen(
-                                viewModel = authViewModel,
-                                onSignedUp = {
-                                    // عند التسجيل بـ Google ينتقل للـ MainActivity
-                                    navigateToMainActivity()
-                                },
-                                onNavigateToSignIn = { navController.popBackStack() }
-                            )
-                        }
-                    }
+                val localizedContext = remember(langTag, context) {
+                    context.createAuthLocalizedContext(langTag)
+                }
+                val t: (Int) -> String = remember(localizedContext) {
+                    { id -> localizedContext.getString(id) }
+                }
 
-                    // Forgot Password Dialog
-                    if (showForgotPasswordDialog) {
-                        ForgotPasswordDialog(
-                            onDismiss = { showForgotPasswordDialog = false },
-                            onConfirm = { email ->
-                                authViewModel.resetPassword(this@AuthActivity, email)
-                                showForgotPasswordDialog = false
+                val layoutDirection = if (isArabic) LayoutDirection.Rtl else LayoutDirection.Ltr
+                val toggleLang = { langTag = if (isArabic) "en" else "ar" }
+
+                CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+                    Surface {
+                        NavHost(
+                            navController = navController,
+                            startDestination = "signin"
+                        ) {
+                            composable("signin") {
+                                LoginScreen(
+                                    viewModel = authViewModel,
+                                    onLoggedIn = { navigateToMainActivity() },
+                                    onNavigateToSignUp = { navController.navigate("signup") },
+                                    onForgotPassword = { showForgotPasswordDialog = true },
+                                    onGoogleSignInClicked = { startGoogleSignIn() },
+
+                                    // ✅ shared translation
+                                    t = t,
+                                    isArabic = isArabic,
+                                    onToggleLang = toggleLang
+                                )
                             }
-                        )
+
+                            composable("signup") {
+                                SignUpScreen(
+                                    viewModel = authViewModel,
+                                    onSignedUp = {
+                                        // Google signup/login -> main
+                                        navigateToMainActivity()
+                                    },
+                                    onNavigateToSignIn = { navController.popBackStack() },
+
+                                    // ✅ shared translation
+                                    t = t,
+                                    isArabic = isArabic,
+                                    onToggleLang = toggleLang
+                                )
+                            }
+                        }
+
+                        // Forgot Password Dialog
+                        if (showForgotPasswordDialog) {
+                            ForgotPasswordDialog(
+                                onDismiss = { showForgotPasswordDialog = false },
+                                onConfirm = { email ->
+                                    authViewModel.resetPassword(this@AuthActivity, email)
+                                    showForgotPasswordDialog = false
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -125,6 +159,15 @@ class AuthActivity : ComponentActivity() {
             navigateToMainActivity()
         }
     }
+}
+
+// ✅ Localize ONLY Auth screens (does NOT change app language)
+private fun Context.createAuthLocalizedContext(langTag: String): Context {
+    val locale = Locale.forLanguageTag(langTag)
+    val config = Configuration(resources.configuration)
+    config.setLocale(locale)
+    config.setLayoutDirection(locale)
+    return createConfigurationContext(config)
 }
 
 @Composable
@@ -176,9 +219,7 @@ fun ForgotPasswordDialog(
 
                     Button(
                         onClick = {
-                            if (email.isNotBlank()) {
-                                onConfirm(email)
-                            }
+                            if (email.isNotBlank()) onConfirm(email)
                         },
                         modifier = Modifier.weight(1f),
                         enabled = email.isNotBlank()

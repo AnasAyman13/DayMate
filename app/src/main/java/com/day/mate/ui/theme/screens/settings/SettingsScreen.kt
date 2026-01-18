@@ -34,25 +34,18 @@ import com.day.mate.R
 import com.day.mate.data.model.User
 import com.day.mate.util.LocaleUtils
 
-/**
- * Opens the system notification settings screen for this app.
- * User can enable/disable notifications and channels from Android Settings.
- */
 fun openAppNotificationSettings(activity: Activity) {
     val intent = Intent().apply {
         when {
-            // Android 8.0+ (Oreo and above): direct app notification settings
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.O -> {
                 action = android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
                 putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, activity.packageName)
             }
-            // Android 5.0 - 7.1: legacy action for app notification settings
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP -> {
                 action = "android.settings.APP_NOTIFICATION_SETTINGS"
                 putExtra("app_package", activity.packageName)
                 putExtra("app_uid", activity.applicationInfo.uid)
             }
-            // Older versions: open app details page as a fallback
             else -> {
                 action = android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
                 addCategory(Intent.CATEGORY_DEFAULT)
@@ -63,15 +56,6 @@ fun openAppNotificationSettings(activity: Activity) {
     activity.startActivity(intent)
 }
 
-/**
- * SettingsScreenContainer
- *
- * Main container for the settings screen that manages the ViewModel.
- * Creates ViewModel with proper factory to inject Context dependency.
- *
- * @param navController Navigation controller for navigating between screens
- * @param onBackClick Callback when back button is pressed
- */
 @Composable
 fun SettingsScreenContainer(
     navController: NavHostController,
@@ -80,19 +64,16 @@ fun SettingsScreenContainer(
     val context = LocalContext.current
     val activity = context as? Activity
 
-    // ✅ Create ViewModel with Factory that provides Context
     val viewModel: SettingsViewModel = viewModel(
         factory = SettingsViewModelFactory(context.applicationContext)
     )
 
-    // Load user data when the screen is first composed
     LaunchedEffect(Unit) {
         viewModel.loadUser()
     }
 
     val state by viewModel.uiState.collectAsState()
 
-    // Observe logout state and navigate to AuthActivity when user logs out
     LaunchedEffect(state.isLoggedOut) {
         if (state.isLoggedOut) {
             Toast.makeText(
@@ -111,36 +92,14 @@ fun SettingsScreenContainer(
         onBackClick = onBackClick,
         onToggleDarkMode = { viewModel.toggleDarkMode(it) },
         onToggleCloudSync = { viewModel.toggleCloudSync(it) },
-        // When user taps notifications row, open system notification settings for this app
-        onToggleNotifications = {
-            activity?.let { openAppNotificationSettings(it) }
-        },
-        // Toggle between Arabic and English and restart the app with new locale
-        onToggleLanguage = { lang ->
-            activity?.let { LocaleUtils.setLocaleAndRestart(it, lang) }
-        },
+        onToggleNotifications = { activity?.let { openAppNotificationSettings(it) } },
+        onToggleLanguage = { lang -> activity?.let { LocaleUtils.setLocaleAndRestart(it, lang) } },
         onLogout = { viewModel.onLogoutClicked() },
         onChangePassword = { viewModel.onChangePasswordClicked(context) },
         onNavigate = { route -> navController.navigate(route) }
     )
 }
 
-/**
- * SettingsScreen
- *
- * Stateless UI composable for the settings screen.
- * Displays user profile, appearance settings, account settings, and support options.
- *
- * @param state Current UI state containing user data and settings
- * @param onBackClick Callback when back button is pressed
- * @param onToggleDarkMode Callback when dark mode is toggled
- * @param onToggleCloudSync Callback when cloud sync is toggled
- * @param onToggleNotifications Callback when notifications row is clicked
- * @param onToggleLanguage Callback when language is changed
- * @param onLogout Callback when logout is clicked
- * @param onNavigate Callback for navigation to other screens
- * @param onChangePassword Callback when change password is clicked
- */
 @Composable
 fun SettingsScreen(
     state: SettingsState,
@@ -156,136 +115,133 @@ fun SettingsScreen(
     val scroll = rememberScrollState()
     val context = LocalContext.current
 
-    // Get currently saved language or fall back to device default
     val savedLang = LocaleUtils.getSavedLanguage(context)
         ?: java.util.Locale.getDefault().language
 
-    Column(
+    // ✅✅ زي Prayer: الخلفية Full Screen
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(scroll)
-            .padding(horizontal = 16.dp)
     ) {
-        Spacer(Modifier.height(16.dp))
-
-        // Top app bar row (back button + title)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    Icons.Outlined.ArrowBack,
-                    contentDescription = stringResource(R.string.desc_back_button)
-                )
-            }
-            Text(
-                stringResource(R.string.settings_title_and_profile),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-            )
-            Spacer(Modifier.width(48.dp))
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        // User profile (name + email)
-        ProfileHeader(user = state.user)
-
-        Spacer(Modifier.height(20.dp))
-
-        // Appearance section (dark mode + language)
-        SettingsCard(title = stringResource(R.string.settings_appearance)) {
-            SettingsToggleRow(
-                icon = Icons.Outlined.DarkMode,
-                title = stringResource(R.string.settings_dark_mode),
-                checked = state.darkModeEnabled,
-                onCheckedChange = onToggleDarkMode
-            )
-            Divider(modifier = Modifier.padding(vertical = 4.dp))
-
-            // Language change item: toggles between Arabic and English
-            SettingsClickableRow(
-                icon = Icons.Outlined.Language,
-                title = if (savedLang == "en")
-                    stringResource(R.string.settings_change_to_arabic)
-                else
-                    stringResource(R.string.settings_change_to_english),
-                onClick = {
-                    val nextLang = if (savedLang == "en") "ar" else "en"
-                    onToggleLanguage(nextLang)
-                }
-            )
-        }
-
-        // Account section (notifications + change password)
-        SettingsCard(title = stringResource(R.string.settings_account)) {
-            // Open system notification settings for this app
-            SettingsClickableRow(
-                Icons.Outlined.Notifications,
-                stringResource(R.string.settings_notifications)
-            ) {
-                onToggleNotifications()
-            }
-            SettingsClickableRow(
-                Icons.Outlined.Password,
-                stringResource(R.string.settings_change_password)
-            ) { onChangePassword() }
-        }
-
-        // Support & Legal section (help, terms, developers)
-        SettingsCard(title = stringResource(R.string.settings_support_legal)) {
-            SettingsClickableRow(
-                Icons.Outlined.Help,
-                stringResource(R.string.settings_help_support)
-            ) { onNavigate("help_support") }
-            SettingsClickableRow(
-                Icons.Outlined.Gavel,
-                stringResource(R.string.settings_terms_service)
-            ) { onNavigate("terms") }
-            SettingsClickableRow(
-                Icons.Outlined.Code,
-                stringResource(R.string.settings_developers)
-            ) { onNavigate("developers") }
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        // Logout button
-        Button(
-            onClick = { onLogout() },
+        // ✅✅ زي Prayer: الـ scroll هو اللي ياخد padding سفلي عشان الناف مايغطيش
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-            shape = RoundedCornerShape(12.dp)
+                .fillMaxSize()
+                .verticalScroll(scroll)
+                .padding(
+                    start = 16.dp,
+                    top = 0.dp,
+                    end = 16.dp,
+                    bottom = 120.dp
+                )
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0x1AFF0000), shape = RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center
+            Spacer(Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        Icons.Outlined.ArrowBack,
+                        contentDescription = stringResource(R.string.desc_back_button)
+                    )
+                }
                 Text(
-                    stringResource(R.string.settings_log_out),
-                    color = Color.Red,
-                    fontWeight = FontWeight.Bold
+                    stringResource(R.string.settings_title_and_profile),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+                Spacer(Modifier.width(48.dp))
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            ProfileHeader(user = state.user)
+
+            Spacer(Modifier.height(20.dp))
+
+            SettingsCard(title = stringResource(R.string.settings_appearance)) {
+                SettingsToggleRow(
+                    icon = Icons.Outlined.DarkMode,
+                    title = stringResource(R.string.settings_dark_mode),
+                    checked = state.darkModeEnabled,
+                    onCheckedChange = onToggleDarkMode
+                )
+                Divider(modifier = Modifier.padding(top = 4.dp, bottom = 4.dp))
+
+                SettingsClickableRow(
+                    icon = Icons.Outlined.Language,
+                    title = if (savedLang == "en")
+                        stringResource(R.string.settings_change_to_arabic)
+                    else
+                        stringResource(R.string.settings_change_to_english),
+                    onClick = {
+                        val nextLang = if (savedLang == "en") "ar" else "en"
+                        onToggleLanguage(nextLang)
+                    }
                 )
             }
-        }
 
-        Spacer(Modifier.height(32.dp))
+            SettingsCard(title = stringResource(R.string.settings_account)) {
+                SettingsClickableRow(
+                    Icons.Outlined.Notifications,
+                    stringResource(R.string.settings_notifications)
+                ) { onToggleNotifications() }
+
+                SettingsClickableRow(
+                    Icons.Outlined.Password,
+                    stringResource(R.string.settings_change_password)
+                ) { onChangePassword() }
+            }
+
+            SettingsCard(title = stringResource(R.string.settings_support_legal)) {
+                SettingsClickableRow(
+                    Icons.Outlined.Help,
+                    stringResource(R.string.settings_help_support)
+                ) { onNavigate("help_support") }
+
+                SettingsClickableRow(
+                    Icons.Outlined.Gavel,
+                    stringResource(R.string.settings_terms_service)
+                ) { onNavigate("terms") }
+
+                SettingsClickableRow(
+                    Icons.Outlined.Code,
+                    stringResource(R.string.settings_developers)
+                ) { onNavigate("developers") }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            Button(
+                onClick = { onLogout() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0x1AFF0000), shape = RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        stringResource(R.string.settings_log_out),
+                        color = Color.Red,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(32.dp))
+        }
     }
 }
 
-/**
- * ProfileHeader
- *
- * Displays user profile information (name and email).
- *
- * @param user User data to display
- */
 @Composable
 private fun ProfileHeader(user: User) {
     Column(
@@ -301,20 +257,12 @@ private fun ProfileHeader(user: User) {
     }
 }
 
-/**
- * SettingsCard
- *
- * Reusable card container for a settings group/section.
- *
- * @param title Section title
- * @param content Card content composable
- */
 @Composable
 private fun SettingsCard(title: String, content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(top = 8.dp, bottom = 8.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(14.dp)
     ) {
@@ -322,23 +270,13 @@ private fun SettingsCard(title: String, content: @Composable ColumnScope.() -> U
             Text(
                 title,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+                modifier = Modifier.padding(start = 4.dp, top = 0.dp, end = 0.dp, bottom = 8.dp)
             )
             content()
         }
     }
 }
 
-/**
- * SettingsToggleRow
- *
- * Reusable row with icon, label, and Switch for boolean settings.
- *
- * @param icon Icon to display
- * @param title Setting title/label
- * @param checked Current toggle state
- * @param onCheckedChange Callback when toggle is changed
- */
 @Composable
 private fun SettingsToggleRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -349,7 +287,7 @@ private fun SettingsToggleRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 6.dp),
+            .padding(start = 4.dp, top = 6.dp, end = 4.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -367,15 +305,6 @@ private fun SettingsToggleRow(
     }
 }
 
-/**
- * SettingsClickableRow
- *
- * Reusable clickable row with icon, label, and chevron arrow.
- *
- * @param icon Icon to display
- * @param title Setting title/label
- * @param onClick Callback when row is clicked
- */
 @Composable
 private fun SettingsClickableRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -386,7 +315,7 @@ private fun SettingsClickableRow(
         Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 4.dp, vertical = 10.dp),
+            .padding(start = 4.dp, top = 10.dp, end = 4.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -408,9 +337,6 @@ private fun SettingsClickableRow(
     }
 }
 
-/**
- * Preview for SettingsScreen
- */
 @Preview(showBackground = true)
 @Composable
 private fun SettingsScreenPreview() {

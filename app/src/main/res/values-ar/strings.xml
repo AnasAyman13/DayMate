@@ -104,7 +104,7 @@
     <string name="dont_have_account">ليس لديك حساب؟ سجّل الآن</string>
 
     <!-- Sign Up Screen -->
-    <string name="signup_header_title">داي ميت</string>
+    <string name="signup_header_title">DayMate</string>
     <string name="signup_create_account">أنشئ حسابك</string>
     <string name="signup_subtitle">ابدأ بتنظيم يومك بطريقتك الخاصة.</string>
     <string name="fullname_label">الاسم الكامل</string>

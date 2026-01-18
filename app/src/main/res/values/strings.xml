@@ -286,6 +286,9 @@
     <string name="biometric_feature_unavailable">Biometric feature unavailable on this device</string>
     <string name="biometric_hardware_unavailable">Biometric hardware unavailable</string>
 
+
+    <string name="default_web_client_id">1052155530713-ejd10bvrcjlr5o4b452dtu454dnrte68.apps.googleusercontent.com</string>
+
     <!-- Content Descriptions -->
     <string name="desc_lock_icon">Lock Icon</string>
     <string name="pomodoro_timer_running">pomodoro Timer is Running</string>

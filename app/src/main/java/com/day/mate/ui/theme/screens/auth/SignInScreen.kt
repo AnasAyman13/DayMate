@@ -1,7 +1,7 @@
 package com.day.mate.ui.screens
 
-
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,6 +31,11 @@ fun LoginScreen(
     onNavigateToSignUp: () -> Unit,
     onForgotPassword: () -> Unit,
     onGoogleSignInClicked: () -> Unit,
+
+    // ✅ shared from AuthNavGraph
+    t: (Int) -> String,
+    isArabic: Boolean,
+    onToggleLang: () -> Unit
 ) {
     val uiState by viewModel.state.collectAsState()
     var email by remember { mutableStateOf("") }
@@ -39,17 +43,24 @@ fun LoginScreen(
 
     val backgroundDark = Color(0xFF102022)
     val primaryColor = Color(0xFF13DAEC)
-
     val context = LocalContext.current
 
     LaunchedEffect(uiState) {
         when (uiState) {
             is AuthUiState.Success -> {
-                Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    if (isArabic) "تم تسجيل الدخول بنجاح!" else "Login successful!",
+                    Toast.LENGTH_SHORT
+                ).show()
                 onLoggedIn()
             }
             is AuthUiState.Error -> {
-                Toast.makeText(context, (uiState as AuthUiState.Error).message, Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    (uiState as AuthUiState.Error).message,
+                    Toast.LENGTH_SHORT
+                ).show()
             }
             else -> Unit
         }
@@ -65,34 +76,55 @@ fun LoginScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .align(Alignment.Center)
-                .verticalScroll(rememberScrollState()), // FIX: إضافة التمرير الرأسي
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Spacer(Modifier.height(16.dp))
 
-            // ---------- Header ----------
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    painter = painterResource(id = R.drawable.forgrnd),
-                    contentDescription = null,
-                    tint = Color.Unspecified,
-                    modifier = Modifier.size(64.dp)
-                )
-                Text(
-                    text = stringResource(R.string.login_welcome_title),
-                    color = Color.White,
-                    fontSize = 24.sp,
-                    style = MaterialTheme.typography.headlineSmall
-                )
-                Text(
-                    stringResource(R.string.login_welcome_subtitle),
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 14.sp
-                )
+            // ---------- Header (text centered, button floats top-end) ----------
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp)
+            ) {
+                Column(
+                    modifier = Modifier.align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.forgrnd),
+                        contentDescription = null,
+                        tint = Color.Unspecified,
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Text(
+                        text = t(R.string.login_welcome_title),
+                        color = Color.White,
+                        fontSize = 24.sp,
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    Text(
+                        text = t(R.string.login_welcome_subtitle),
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 14.sp
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(y = (-10).dp)
+                ) {
+                    LanguageToggleButton(
+                        isArabic = isArabic,
+                        primaryColor = primaryColor,
+                        onClick = onToggleLang
+                    )
+                }
             }
 
-            // ---------- Inputs  ----------
+            // ---------- Inputs ----------
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -100,7 +132,7 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
-                    label = { Text(stringResource(R.string.email_label)) },
+                    label = { Text(t(R.string.email_label)) },
                     leadingIcon = {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_email),
@@ -126,7 +158,7 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text(stringResource(R.string.password_label)) },
+                    label = { Text(t(R.string.password_label)) },
                     leadingIcon = {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_lock),
@@ -146,7 +178,8 @@ fun LoginScreen(
                         }
                     },
                     singleLine = true,
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    visualTransformation =
+                        if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = primaryColor,
@@ -164,10 +197,12 @@ fun LoginScreen(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = {
+                        // لو عايز callback:
+                        // onForgotPassword()
                         viewModel.resetPassword(context, email)
                     }) {
                         Text(
-                            stringResource(R.string.forgot_password),
+                            text = t(R.string.forgot_password),
                             color = primaryColor,
                             fontSize = 14.sp
                         )
@@ -175,7 +210,7 @@ fun LoginScreen(
                 }
             }
 
-            // ---------- Login button  ----------
+            // ---------- Login button ----------
             Button(
                 onClick = { viewModel.signIn(context, email, password) },
                 modifier = Modifier
@@ -185,20 +220,20 @@ fun LoginScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
             ) {
                 Text(
-                    stringResource(R.string.login_button),
+                    text = t(R.string.login_button),
                     color = backgroundDark,
                     fontSize = 18.sp
                 )
             }
 
-            // ---------- Divider  ----------
+            // ---------- Divider ----------
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Divider(modifier = Modifier.weight(1f), color = Color.White.copy(alpha = 0.3f))
                 Text(
-                    "  " + stringResource(R.string.or_continue_with) + "  ",
+                    text = "  ${t(R.string.or_continue_with)}  ",
                     color = Color.White.copy(alpha = 0.6f),
                     fontSize = 12.sp
                 )
@@ -222,15 +257,35 @@ fun LoginScreen(
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.google_button))
+                Text(t(R.string.google_button))
             }
 
             Spacer(Modifier.height(1.dp))
             TextButton(onClick = onNavigateToSignUp) {
                 Text(
-                    stringResource(R.string.dont_have_account),
+                    text = t(R.string.dont_have_account),
                     color = primaryColor,
                     fontSize = 14.sp
+                )
+            }
+
+            // ---------- Spam Notice ----------
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                color = Color.White.copy(alpha = 0.04f),
+                border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.35f)),
+                tonalElevation = 0.dp
+            ) {
+                Text(
+                    text = if (isArabic)
+                        "تنبيه: قد تصل رسالة التفعيل إلى البريد غير المرغوب فيه (Spam). لو مش لاقيها في الوارد، راجع Spam وعلّمها كـ “ليست مزعجة”."
+                    else
+                        "Heads up: Your verification email may land in your Spam folder. If you don’t see it in your inbox, please check there and mark it as ‘Not spam’.",
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                    color = Color.White.copy(alpha = 0.85f),
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp
                 )
             }
         }
@@ -247,7 +302,10 @@ fun PreviewLoginScreen() {
             onLoggedIn = {},
             onNavigateToSignUp = {},
             onForgotPassword = {},
-            onGoogleSignInClicked = {}
+            onGoogleSignInClicked = {},
+            t = { "Preview" },
+            isArabic = false,
+            onToggleLang = {}
         )
     }
 }
