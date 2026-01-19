@@ -2,7 +2,6 @@
 
 package com.day.mate.ui.theme.screens.settings
 
-import android.R.attr.fontWeight
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -15,9 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.material3.CardDefaults.elevatedCardElevation
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,7 +24,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.stringResource
 import com.day.mate.R
 
 data class Developer(
@@ -62,8 +58,8 @@ fun DeveloperScreen(onBack: () -> Unit = {}) {
                         )
                         Spacer(Modifier.width(10.dp))
                         Text(
-                            text="Software Engineers",
-                                    fontWeight = FontWeight.Bold,
+                            text = "Software Engineers",
+                            fontWeight = FontWeight.Bold,
                             fontSize = 20.sp
                         )
                     }
@@ -71,7 +67,7 @@ fun DeveloperScreen(onBack: () -> Unit = {}) {
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            imageVector = Icons.Outlined.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                             contentDescription = "Back"
                         )
                     }
@@ -84,7 +80,11 @@ fun DeveloperScreen(onBack: () -> Unit = {}) {
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(padding)
-                .padding(10.dp),
+                .padding(horizontal = 10.dp), // بادينج الجوانب
+
+            // 🔥 الحل: إضافة مساحة 80dp في أسفل القائمة لرفع العناصر فوق الـ Bar
+            contentPadding = PaddingValues(top = 10.dp, bottom = 80.dp),
+
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -105,7 +105,6 @@ fun DeveloperScreen(onBack: () -> Unit = {}) {
     }
 }
 
-
 @Composable
 fun DeveloperCard(
     dev: Developer,
@@ -114,7 +113,7 @@ fun DeveloperCard(
 ) {
     Card(
         shape = RoundedCornerShape(17.dp),
-        elevation = elevatedCardElevation(3.dp),
+        elevation = CardDefaults.elevatedCardElevation(3.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)

@@ -1,6 +1,11 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.day.mate.ui.theme.screens.todo
 
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
@@ -10,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -35,15 +41,9 @@ import com.day.mate.R
 import com.day.mate.data.model.Todo
 import com.day.mate.ui.theme.AppCyan
 import com.day.mate.ui.theme.AppGold
-import com.vanpra.composematerialdialogs.MaterialDialog
-import com.vanpra.composematerialdialogs.datetime.date.datepicker
-import com.vanpra.composematerialdialogs.rememberMaterialDialogState
-import java.time.LocalDate
-import java.time.LocalTime
+import java.time.*
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.verticalScroll
 import kotlin.math.roundToInt
 
 /**
@@ -63,12 +63,6 @@ private fun getCategoryStyle(category: String): CategoryStyle {
 
 private data class CategoryStyle(val color: Color, val icon: ImageVector)
 
-/**
- * CategoryLabel
- *
- * Returns localized label for a category key (study, work, etc.).
- * Uses string resources so it supports Arabic/English.
- */
 @Composable
 fun CategoryLabel(category: String): String {
     return when (category.lowercase(Locale.ROOT)) {
@@ -81,16 +75,6 @@ fun CategoryLabel(category: String): String {
     }
 }
 
-/**
- * TasksScreen
- *
- * Main screen displaying tasks organized by date and category.
- * Supports landscape and portrait orientations with different layouts.
- * Uses MaterialTheme colors for proper dark/light mode support.
- *
- * @param viewModel ViewModel managing todos and categories
- * @param onEditTask Callback when editing a task
- */
 @Composable
 fun TasksScreen(
     viewModel: TodoViewModel,
@@ -99,7 +83,6 @@ fun TasksScreen(
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
-    // ✅ Use MaterialTheme colors
     val backgroundColor = MaterialTheme.colorScheme.background
     val surfaceColor = MaterialTheme.colorScheme.surface
     val onBackgroundColor = MaterialTheme.colorScheme.onBackground
@@ -108,7 +91,8 @@ fun TasksScreen(
     val today = LocalDate.now()
     val weekDays = (-3L..3L).map { today.plusDays(it) }
     var selectedDate by remember { mutableStateOf(today) }
-    val dateDialogState = rememberMaterialDialogState()
+
+    var showDatePicker by remember { mutableStateOf(false) }
 
     val categories by viewModel.categories.collectAsState()
     val allCategoriesText = stringResource(id = R.string.form_category_all)
@@ -117,7 +101,6 @@ fun TasksScreen(
 
     val allTodos by viewModel.todos.collectAsState()
 
-    // Calculate task count per day for badges
     val tasksPerDay = remember(allTodos) {
         allTodos.groupBy { it.date }.mapValues { it.value.size }
     }
@@ -137,13 +120,11 @@ fun TasksScreen(
     val context = LocalContext.current
 
     if (isLandscape) {
-        // Landscape Layout - Two column design
         Row(
             Modifier
                 .fillMaxSize()
                 .background(backgroundColor)
         ) {
-            // Left Panel - Date & Category Selection
             Column(
                 Modifier
                     .width(280.dp)
@@ -160,7 +141,6 @@ fun TasksScreen(
 
                 Spacer(Modifier.height(16.dp))
 
-                // Date Selection - Scrollable
                 Column(
                     modifier = Modifier
                         .weight(1f)
@@ -179,13 +159,12 @@ fun TasksScreen(
                             )
                         }
 
-                        // Calendar Button
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(18.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .clickable { dateDialogState.show() }
+                                .clickable { showDatePicker = true }
                                 .padding(horizontal = 16.dp, vertical = 12.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -212,20 +191,19 @@ fun TasksScreen(
 
                 Spacer(Modifier.height(20.dp))
 
-                // Category Filters - Scrollable
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .verticalScroll(rememberScrollState())
                 ) {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         filters.forEach { filter ->
                             val isAll = filter == allCategoriesText
                             val displayText = if (isAll) allCategoriesText else CategoryLabel(filter)
 
-                            CategoryButton(
+                            ModernCategoryChip(
                                 text = displayText,
                                 isSelected = selectedFilter == filter,
                                 onClick = { selectedFilter = filter },
@@ -233,8 +211,6 @@ fun TasksScreen(
                             )
                         }
 
-
-                        // Settings Button
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -266,7 +242,6 @@ fun TasksScreen(
                 }
             }
 
-            // Right Panel - Tasks List
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -316,7 +291,6 @@ fun TasksScreen(
             }
         }
     } else {
-        // Portrait Layout
         Column(
             Modifier
                 .fillMaxSize()
@@ -332,7 +306,6 @@ fun TasksScreen(
             )
             Spacer(Modifier.height(16.dp))
 
-            // Date selection row
             Row(
                 Modifier
                     .horizontalScroll(rememberScrollState())
@@ -348,7 +321,7 @@ fun TasksScreen(
                     )
                 }
                 IconButton(
-                    onClick = { dateDialogState.show() },
+                    onClick = { showDatePicker = true },
                     modifier = Modifier
                         .padding(start = 8.dp)
                         .clip(RoundedCornerShape(18.dp))
@@ -363,18 +336,18 @@ fun TasksScreen(
             }
             Spacer(Modifier.height(16.dp))
 
-            // Category filter row
             Row(
                 Modifier
                     .horizontalScroll(rememberScrollState())
                     .padding(horizontal = 20.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 filters.forEach { filter ->
                     val isAll = filter == allCategoriesText
                     val displayText = if (isAll) allCategoriesText else CategoryLabel(filter)
 
-                    CategoryButton(
+                    ModernCategoryChip(
                         text = displayText,
                         isSelected = selectedFilter == filter,
                         onClick = { selectedFilter = filter }
@@ -384,7 +357,6 @@ fun TasksScreen(
                 IconButton(
                     onClick = { showManageCategoriesDialog = true },
                     modifier = Modifier
-                        .padding(start = 8.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {
@@ -397,7 +369,6 @@ fun TasksScreen(
             }
             Spacer(Modifier.height(24.dp))
 
-            // Tasks list
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp)
@@ -446,65 +417,53 @@ fun TasksScreen(
         }
     }
 
-    // Date picker dialog
-    MaterialDialog(
-        dialogState = dateDialogState,
-        backgroundColor = surfaceColor,
-        buttons = {
-            positiveButton(stringResource(R.string.dialog_ok))
-            negativeButton(stringResource(R.string.dialog_cancel))
+    if (showDatePicker) {
+        val todayMillis = remember {
+            LocalDate.now().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
         }
-    ) {
-        if (isLandscape) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 300.dp)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                datepicker(
-                    initialDate = selectedDate,
-                    title = stringResource(R.string.select_date),
-                    onDateChange = { selectedDate = it },
-                    colors = com.vanpra.composematerialdialogs.datetime.date.DatePickerDefaults.colors(
-                        headerBackgroundColor = MaterialTheme.colorScheme.primary,
-                        headerTextColor = MaterialTheme.colorScheme.onPrimary,
-                        calendarHeaderTextColor = onBackgroundColor,
-                        dateActiveBackgroundColor = AppGold,
-                        dateActiveTextColor = MaterialTheme.colorScheme.onPrimary,
-                        dateInactiveTextColor = onBackgroundColor
-                    )
-                )
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = todayMillis
+        )
+
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let {
+                        val selected = Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate()
+                        selectedDate = selected
+                    }
+                    showDatePicker = false
+                }) {
+                    Text(stringResource(R.string.dialog_ok), color = AppGold, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text(stringResource(R.string.dialog_cancel), color = onSurfaceVariant)
+                }
             }
-        } else {
-            datepicker(
-                initialDate = selectedDate,
-                title = stringResource(R.string.select_date),
-                onDateChange = { selectedDate = it },
-                colors = com.vanpra.composematerialdialogs.datetime.date.DatePickerDefaults.colors(
-                    headerBackgroundColor = MaterialTheme.colorScheme.primary,
-                    headerTextColor = MaterialTheme.colorScheme.onPrimary,
-                    calendarHeaderTextColor = onBackgroundColor,
-                    dateActiveBackgroundColor = AppGold,
-                    dateActiveTextColor = MaterialTheme.colorScheme.onPrimary,
-                    dateInactiveTextColor = onBackgroundColor
+        ) {
+            DatePicker(
+                state = datePickerState,
+                colors = DatePickerDefaults.colors(
+                    titleContentColor = AppGold,
+                    headlineContentColor = onBackgroundColor,
+                    selectedDayContainerColor = AppGold,
+                    selectedDayContentColor = Color.Black,
+                    todayContentColor = AppGold,
+                    todayDateBorderColor = AppGold
                 )
             )
         }
     }
 
-    // Manage categories dialog
     if (showManageCategoriesDialog) {
         ManageCategoriesDialog(
             viewModel = viewModel,
             onDismiss = { showManageCategoriesDialog = false },
             onError = { errorKey ->
-                val errorId = try {
-                    context.resources.getIdentifier(errorKey, "string", context.packageName)
-                } catch (e: Exception) {
-                    0
-                }
-
+                val errorId = try { context.resources.getIdentifier(errorKey, "string", context.packageName) } catch (e: Exception) { 0 }
                 categoryErrorMessage = if (errorId != 0) context.getString(errorId) else errorKey
                 showManageCategoriesDialog = false
                 showCategoryErrorDialog = true
@@ -512,7 +471,6 @@ fun TasksScreen(
         )
     }
 
-    // Category error dialog
     if (showCategoryErrorDialog) {
         AlertDialog(
             onDismissRequest = { showCategoryErrorDialog = false },
@@ -528,11 +486,45 @@ fun TasksScreen(
     }
 }
 
-/**
- * ManageCategoriesDialog
- *
- * Dialog for managing (deleting) categories.
- */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ModernCategoryChip(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    isVertical: Boolean = false
+) {
+    FilterChip(
+        selected = isSelected,
+        onClick = onClick,
+        enabled = true,
+        label = {
+            Text(
+                text = text,
+                fontSize = 13.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                modifier = if (isVertical) Modifier.fillMaxWidth().padding(vertical = 4.dp) else Modifier,
+                textAlign = if (isVertical) TextAlign.Center else TextAlign.Start
+            )
+        },
+        shape = RoundedCornerShape(12.dp),
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = AppGold,
+            selectedLabelColor = Color.Black,
+            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        border = FilterChipDefaults.filterChipBorder(
+            enabled = true,
+            selected = isSelected,
+            borderColor = if (isSelected) Color.Transparent else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
+            borderWidth = 1.dp,
+            selectedBorderColor = Color.Transparent
+        ),
+        modifier = if (isVertical) Modifier.fillMaxWidth() else Modifier
+    )
+}
+
 @Composable
 fun ManageCategoriesDialog(
     viewModel: TodoViewModel,
@@ -543,32 +535,18 @@ fun ManageCategoriesDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Text(
-                stringResource(R.string.dialog_manage_categories),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        },
+        title = { Text(stringResource(R.string.dialog_manage_categories), color = MaterialTheme.colorScheme.onSurface) },
         text = {
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
                 items(categories, key = { it }) { categoryName ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // عرض اسم الكاتيجوري كما هو (لو عايز هنا كمان تقدر تستخدم CategoryLabel)
                         Text(categoryName, color = MaterialTheme.colorScheme.onSurface)
-                        IconButton(onClick = {
-                            viewModel.deleteCategory(categoryName, onError)
-                        }) {
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = stringResource(R.string.dialog_delete) + " $categoryName",
-                                tint = MaterialTheme.colorScheme.error
-                            )
+                        IconButton(onClick = { viewModel.deleteCategory(categoryName, onError) }) {
+                            Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                         }
                     }
                     Divider(color = MaterialTheme.colorScheme.surfaceVariant)
@@ -576,19 +554,12 @@ fun ManageCategoriesDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.dialog_done), color = AppGold)
-            }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.dialog_done), color = AppGold) }
         },
         containerColor = MaterialTheme.colorScheme.surface
     )
 }
 
-/**
- * ListHeader
- *
- * Section header for task lists.
- */
 @Composable
 fun ListHeader(text: String) {
     Text(
@@ -600,11 +571,6 @@ fun ListHeader(text: String) {
     )
 }
 
-/**
- * SwipeToDeleteTaskItem
- *
- * Task item with swipe-to-delete gesture.
- */
 @Composable
 fun SwipeToDeleteTaskItem(
     todo: Todo,
@@ -631,7 +597,6 @@ fun SwipeToDeleteTaskItem(
             .fillMaxWidth()
             .padding(vertical = if (isCompact) 4.dp else 8.dp)
     ) {
-        // Background Delete Icon
         if (animatedOffsetX < -10f) {
             Box(
                 modifier = Modifier
@@ -640,16 +605,10 @@ fun SwipeToDeleteTaskItem(
                     .background(Color(0xFF8B0000)),
                 contentAlignment = Alignment.CenterEnd
             ) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = Color.White,
-                    modifier = Modifier.padding(end = 24.dp)
-                )
+                Icon(Icons.Default.Delete, contentDescription = null, tint = Color.White, modifier = Modifier.padding(end = 24.dp))
             }
         }
 
-        // Task Card with Swipe
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -657,69 +616,34 @@ fun SwipeToDeleteTaskItem(
                 .pointerInput(todo.id) {
                     detectHorizontalDragGestures(
                         onDragEnd = {
-                            if (offsetX < -swipeThreshold) {
-                                showDeleteDialog = true
-                                offsetX = 0f
-                            } else {
-                                offsetX = 0f
-                            }
-                        },
-                        onDragCancel = {
+                            if (offsetX < -swipeThreshold) showDeleteDialog = true
                             offsetX = 0f
                         },
+                        onDragCancel = { offsetX = 0f },
                         onHorizontalDrag = { _, dragAmount ->
                             val newOffset = (offsetX + dragAmount)
-                            offsetX = when {
-                                newOffset > 0 -> 0f
-                                newOffset < -maxSwipe -> -maxSwipe
-                                else -> newOffset
-                            }
+                            offsetX = if (newOffset > 0) 0f else if (newOffset < -maxSwipe) -maxSwipe else newOffset
                         }
                     )
                 }
         ) {
-            TaskItem(
-                todo = todo,
-                onToggle = onToggle,
-                onDelete = onDelete,
-                onEdit = onEdit,
-                isCompact = isCompact
-            )
+            TaskItem(todo = todo, onToggle = onToggle, onDelete = onDelete, onEdit = onEdit)
         }
     }
 
-    // Delete confirmation dialog
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = {
-                Text(
-                    stringResource(R.string.dialog_delete),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            },
-            text = {
-                Text(
-                    stringResource(R.string.delete_toast),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            },
+            title = { Text(stringResource(R.string.dialog_delete), color = MaterialTheme.colorScheme.onSurface) },
+            text = { Text(stringResource(R.string.delete_toast), color = MaterialTheme.colorScheme.onSurface) },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        onDelete()
-                        showDeleteDialog = false
-                    }
-                ) {
+                TextButton(onClick = { onDelete(); showDeleteDialog = false }) {
                     Text(stringResource(R.string.dialog_ok), color = Color(0xFF8B0000))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text(
-                        stringResource(R.string.dialog_cancel),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Text(stringResource(R.string.dialog_cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
             containerColor = MaterialTheme.colorScheme.surface
@@ -728,324 +652,149 @@ fun SwipeToDeleteTaskItem(
 }
 
 /**
- * TaskItem
- *
- * Individual task card with checkbox, category icon, and menu.
+ * Modern Task Item - Updated to match the requested look
+ *//**
+ * Modern Task Item - تم تحديثه ليظهر اسم الكاتيجوري أسفل العنوان
+ *//**
+ * Modern Task Item - تم تصغير الكارد ووضع الكاتيجوري والوقت جنب بعض
  */
 @Composable
 fun TaskItem(
     todo: Todo,
     onToggle: () -> Unit,
     onDelete: () -> Unit,
-    onEdit: () -> Unit,
-    isCompact: Boolean
+    onEdit: () -> Unit
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
-    val style = getCategoryStyle(todo.category)
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+            .clickable { onEdit() },
+        shape = RoundedCornerShape(16.dp), // صغرت الحواف شوية عشان تليق مع الحجم الجديد
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), // قللت الـ padding الرأسي
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Checkbox
-            Icon(
-                imageVector = if (todo.isDone) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
-                contentDescription = stringResource(R.string.desc_toggle_task),
-                tint = if (todo.isDone) AppGold else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .size(28.dp)
-                    .clickable { onToggle() }
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            // Category Icon
+            // Status Circle Icon
             Box(
                 modifier = Modifier
-                    .size(40.dp)
-                    .background(style.color.copy(alpha = 0.2f), CircleShape)
-                    .padding(8.dp),
+                    .size(24.dp) // صغرت الدائرة شوية
+                    .border(2.dp, if (todo.isDone) AppGold else Color.Gray, CircleShape)
+                    .clip(CircleShape)
+                    .background(if (todo.isDone) AppGold else Color.Transparent)
+                    .clickable { onToggle() },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = style.icon,
-                    contentDescription = stringResource(R.string.desc_category_icon),
-                    tint = style.color
-                )
+                if (todo.isDone) Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp), tint = Color.Black)
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(Modifier.width(12.dp))
 
-            // Title, Category label, Description, and Time Column
-            Column(
-                Modifier.weight(1f)
-            ) {
-                // Title
+            Column(Modifier.weight(1f)) {
+                // عنوان المهمة
                 Text(
                     text = todo.title,
-                    color = if (todo.isDone) MaterialTheme.colorScheme.onSurfaceVariant
-                    else MaterialTheme.colorScheme.onBackground,
-                    textDecoration = if (todo.isDone) TextDecoration.LineThrough else TextDecoration.None,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 15.sp, // صغرت الخط درجة واحدة
+                    textDecoration = if (todo.isDone) TextDecoration.LineThrough else null,
+                    maxLines = 1
                 )
 
-                // Category label (localized)
-                Text(
-                    text = CategoryLabel(todo.category),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp
-                )
-
-                // Description
-                if (todo.description.isNotBlank()) {
-                    Text(
-                        text = todo.description,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp,
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                    )
-                }
-
-                // Time
-                if (todo.time.isNotBlank()) {
-                    Text(
-                        text = try {
-                            LocalTime.parse(todo.time)
-                                .format(DateTimeFormatter.ofPattern("hh:mm a"))
-                        } catch (e: Exception) {
-                            todo.time
-                        },
-                        color = if (todo.isDone) MaterialTheme.colorScheme.onSurfaceVariant else AppGold,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Menu (3 dots)
-            Box {
-                Icon(
-                    Icons.Default.MoreVert,
-                    contentDescription = stringResource(R.string.desc_task_options),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.clickable { menuExpanded = true }
-                )
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false },
-                    modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f))
+                // سطر المعلومات (الكاتيجوري + الوقت)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 2.dp)
                 ) {
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                stringResource(R.string.menu_edit),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        },
-                        onClick = {
-                            onEdit()
-                            menuExpanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                stringResource(R.string.menu_delete),
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        },
-                        onClick = {
-                            onDelete()
-                            menuExpanded = false
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * DateButton
- *
- * Date selector button with task count badge.
- * Supports both horizontal (portrait) and vertical (landscape) layouts.
- */
-@Composable
-fun DateButton(
-    date: LocalDate,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    isVertical: Boolean = false,
-    taskCount: Int = 0
-) {
-    val locale = Locale.getDefault()
-    val dayName = date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, locale).uppercase()
-    val dayNumber = date.dayOfMonth.toString()
-    val isToday = date == LocalDate.now()
-
-    val containerColor = if (isSelected) AppGold else MaterialTheme.colorScheme.surfaceVariant
-    val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary
-    else (if (isToday) AppGold else MaterialTheme.colorScheme.onBackground)
-
-    // Animation for selection
-    val scale by animateFloatAsState(
-        targetValue = if (isSelected) 1.05f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "scale"
-    )
-
-    Box(
-        modifier = Modifier
-            .then(
-                if (isVertical) Modifier.fillMaxWidth()
-                else Modifier.padding(end = 8.dp)
-            )
-            .scale(scale)
-            .clip(RoundedCornerShape(18.dp))
-            .background(containerColor)
-            .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        if (isVertical) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // اسم الكاتيجوري
                     Text(
-                        dayName,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = contentColor
+                        text = CategoryLabel(todo.category),
+                        color = AppGold,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 11.sp
                     )
-                    if (taskCount > 0) {
-                        Spacer(Modifier.width(6.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(18.dp)
-                                .background(
-                                    if (isSelected) MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)
-                                    else AppGold.copy(alpha = 0.3f),
-                                    CircleShape
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                taskCount.toString(),
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isSelected) MaterialTheme.colorScheme.surface else AppGold
-                            )
-                        }
-                    }
-                }
-                Text(
-                    dayNumber,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = contentColor
-                )
-            }
-        } else {
-            Box {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        dayName,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = contentColor.copy(alpha = 0.7f)
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        dayNumber,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = contentColor
-                    )
-                    // Task count badge
-                    if (taskCount > 0) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .background(
-                                    if (isSelected) MaterialTheme.colorScheme.surface else AppGold,
-                                    CircleShape
-                                )
+
+                    // فاصل صغير لو فيه وقت
+                    if (todo.time.isNotBlank()) {
+                        Text(
+                            text = " • ",
+                            color = Color.Gray,
+                            fontSize = 11.sp
+                        )
+                        // الوقت
+                        Text(
+                            text = try {
+                                LocalTime.parse(todo.time).format(DateTimeFormatter.ofPattern("hh:mm a"))
+                            } catch (e: Exception) { todo.time },
+                            color = Color.Gray,
+                            fontSize = 11.sp
                         )
                     }
                 }
             }
+
+            // قائمة الخيارات (3 نقط)
+            Box {
+                IconButton(
+                    onClick = { menuExpanded = true },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(Icons.Default.MoreVert, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false },
+                    modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.menu_edit)) },
+                        onClick = { onEdit(); menuExpanded = false }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.menu_delete), color = Color.Red) },
+                        onClick = { onDelete(); menuExpanded = false }
+                    )
+                }
+            }
         }
     }
 }
 
-/**
- * CategoryButton
- *
- * Category filter button.
- * Supports both horizontal (portrait) and vertical (landscape) layouts.
- */
 @Composable
-fun CategoryButton(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    isVertical: Boolean = false
-) {
-    if (isVertical) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(18.dp))
-                .background(
-                    if (isSelected) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.surfaceVariant
-                )
-                .clickable { onClick() }
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                else MaterialTheme.colorScheme.onBackground
-            )
-        }
-    } else {
-        Button(
-            onClick = onClick,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (isSelected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                else MaterialTheme.colorScheme.onBackground
-            ),
-            shape = RoundedCornerShape(18.dp),
-            modifier = Modifier.padding(end = 8.dp)
-        ) {
-            Text(text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+fun DateButton(date: LocalDate, isSelected: Boolean, onClick: () -> Unit, isVertical: Boolean = false, taskCount: Int = 0) {
+    val locale = Locale.getDefault()
+    val dayName = date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, locale).uppercase()
+    val dayNumber = date.dayOfMonth.toString()
+    val containerColor = if (isSelected) AppGold else MaterialTheme.colorScheme.surfaceVariant
+    val contentColor = if (isSelected) Color.Black else (if (date == LocalDate.now()) AppGold else MaterialTheme.colorScheme.onBackground)
+
+    val scale by animateFloatAsState(targetValue = if (isSelected) 1.05f else 1f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow), label = "scale")
+
+    Box(modifier = Modifier.then(if (isVertical) Modifier.fillMaxWidth() else Modifier.padding(end = 8.dp)).scale(scale).clip(RoundedCornerShape(18.dp)).background(containerColor).clickable { onClick() }.padding(horizontal = 16.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
+        if (isVertical) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(dayName, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = contentColor)
+                    if (taskCount > 0) {
+                        Spacer(Modifier.width(6.dp))
+                        Box(Modifier.size(18.dp).background(if (isSelected) Color.White.copy(alpha = 0.3f) else AppGold.copy(alpha = 0.3f), CircleShape), contentAlignment = Alignment.Center) {
+                            Text(taskCount.toString(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = contentColor)
+                        }
+                    }
+                }
+                Text(dayNumber, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = contentColor)
+            }
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(dayName, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = contentColor.copy(alpha = 0.7f))
+                Text(dayNumber, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = contentColor)
+                if (taskCount > 0) {
+                    Box(Modifier.size(6.dp).background(if (isSelected) Color.Black else AppGold, CircleShape))
+                }
+            }
         }
     }
 }

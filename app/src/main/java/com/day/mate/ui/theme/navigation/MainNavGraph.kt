@@ -1,5 +1,11 @@
 package com.day.mate.ui.theme.screens.media
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -99,7 +105,6 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
     val navOffset = 14.dp
     val bottomClearance = floatingNavSpace + navOffset + 8.dp
 
-    // ✅ Prayer + Settings لازم يمّلوا الشاشة (من غير bottom padding من NavHost)
     val prayerRoute = BottomNavItem.Prayer.route
     val settingsRoute = BottomNavItem.Settings.route
 
@@ -133,6 +138,10 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
             }
         ) { innerPadding ->
 
+            // 🔥 الأنيميشن السينمائي (Fade + Scale) 🔥
+            // التوقيت: 600ms (وسط ومثالي)
+            val animDuration = 600
+
             NavHost(
                 navController = navController,
                 startDestination = actualStartRoute,
@@ -144,7 +153,38 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
                         top = 0.dp,
                         end = 0.dp,
                         bottom = navHostBottomPadding
-                    )
+                    ),
+                // دخول الصفحة: تظهر (Fade) وتكبر (Scale) من 90% لـ 100%
+                enterTransition = {
+                    fadeIn(animationSpec = tween(animDuration, easing = FastOutSlowInEasing)) +
+                            scaleIn(
+                                initialScale = 0.90f, // تبدأ بحجم 90% عشان التكبير يكون ملحوظ
+                                animationSpec = tween(animDuration, easing = FastOutSlowInEasing)
+                            )
+                },
+                // خروج الصفحة: تختفي (Fade) وتصغر (Scale) لـ 90%
+                exitTransition = {
+                    fadeOut(animationSpec = tween(animDuration, easing = FastOutSlowInEasing)) +
+                            scaleOut(
+                                targetScale = 0.90f,
+                                animationSpec = tween(animDuration, easing = FastOutSlowInEasing)
+                            )
+                },
+                // الرجوع للخلف: نفس التأثير
+                popEnterTransition = {
+                    fadeIn(animationSpec = tween(animDuration, easing = FastOutSlowInEasing)) +
+                            scaleIn(
+                                initialScale = 0.90f,
+                                animationSpec = tween(animDuration, easing = FastOutSlowInEasing)
+                            )
+                },
+                popExitTransition = {
+                    fadeOut(animationSpec = tween(animDuration, easing = FastOutSlowInEasing)) +
+                            scaleOut(
+                                targetScale = 0.90f,
+                                animationSpec = tween(animDuration, easing = FastOutSlowInEasing)
+                            )
+                }
             ) {
                 composable(BottomNavItem.TimeLine.route) {
                     val timelineViewModel: TimelineViewModel = viewModel(
@@ -232,7 +272,6 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
             }
         }
 
-        // BottomNav overlay (floating) + مرفوع لفوق
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)

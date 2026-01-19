@@ -1,757 +1,489 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.day.mate.ui.theme.screens.timeline
 
 import android.content.Context
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.WatchLater
-import androidx.compose.material.icons.outlined.RadioButtonUnchecked
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.material.icons.filled.EventNote
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.filled.DoneAll
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.time.format.DateTimeFormatter
-import java.util.Locale
-import java.text.SimpleDateFormat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.day.mate.R
 import com.day.mate.data.model.EventType
 import com.day.mate.data.model.TimelineEvent
 import com.day.mate.ui.theme.AppGold
-import java.time.Instant
-import java.time.ZoneId
-import java.time.LocalDateTime
-import java.time.LocalDate
-import kotlin.random.Random
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.DpOffset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import kotlin.random.Random
 
+// --- Models ---
 data class TimeBlock(
+    val hour: Int,
     val timeLabel: String,
     val events: List<TimelineEvent>,
     val isCurrentHour: Boolean
 )
+
+// ✅ NEW: list items (blocks + now marker)
+sealed class TimelineListItem {
+    data class Block(val block: TimeBlock) : TimelineListItem()
+    object NowMarker : TimelineListItem()
+}
+
+// --- Utility Functions ---
 @Composable
 fun getTranslatedTitle(event: TimelineEvent): String {
-    return when (event.title) {
-        "Fajr Prayer" -> stringResource(R.string.fajr)
-        "Dhuhr Prayer" -> stringResource(R.string.dhuhr)
-        "Asr Prayer" -> stringResource(R.string.asr)
-        "Maghrib Prayer" -> stringResource(R.string.maghrib)
-        "Isha Prayer" -> stringResource(R.string.isha)
+    return when {
+        event.type == EventType.PRAYER && event.title.contains("Fajr", ignoreCase = true) -> stringResource(R.string.fajr)
+        event.type == EventType.PRAYER && event.title.contains("Dhuhr", ignoreCase = true) -> stringResource(R.string.dhuhr)
+        event.type == EventType.PRAYER && event.title.contains("Asr", ignoreCase = true) -> stringResource(R.string.asr)
+        event.type == EventType.PRAYER && event.title.contains("Maghrib", ignoreCase = true) -> stringResource(R.string.maghrib)
+        event.type == EventType.PRAYER && event.title.contains("Isha", ignoreCase = true) -> stringResource(R.string.isha)
         else -> event.title
     }
 }
 
 @Composable
-fun getTranslatedCategory(category: String): String {
-    return when (category) {
-        "Work" -> stringResource(R.string.category_work)
-        "Study" -> stringResource(R.string.category_study)
-        "Personal" -> stringResource(R.string.category_personal)
-        "Health" -> stringResource(R.string.category_health)
-        "General" -> stringResource(R.string.category_General)
-        else -> category
-    }
-}
-
-
-@Composable
-fun TimelineMenu(
-    viewModel: TimelineViewModel
-    , context: Context,
-                 coroutineScope: CoroutineScope, snackbarHostState: SnackbarHostState) {
-    val selectedDate by viewModel.selectedDate.collectAsState()
-    val hideCompleted by viewModel.hideCompleted.collectAsState()
-    var isMenuExpanded by remember { mutableStateOf(false) }
-    val isViewingTomorrow = selectedDate.isAfter(LocalDate.now())
-    val isRtl = LocalConfiguration.current.locale.language == "ar"
-    val horizontalOffset = if (isRtl) 180.dp else (-300).dp
-
-    IconButton(onClick = { isMenuExpanded = true }) {
-        Icon(
-            imageVector = Icons.Filled.MoreVert,
-            contentDescription = stringResource(R.string.more),
-            tint = MaterialTheme.colorScheme.onSurface
+fun formatTimeForDisplayFixed(time24h: String): String {
+    val currentLanguage = LocalConfiguration.current.locales[0].language
+    return try {
+        val time = LocalTime.parse(
+            time24h.trim().uppercase().replace(" ", ""),
+            DateTimeFormatter.ofPattern("H:mm", Locale.US)
         )
-    }
-
-    DropdownMenu(
-        expanded = isMenuExpanded,
-        onDismissRequest = { isMenuExpanded = false },
-        offset = DpOffset(x = horizontalOffset, y = 0.dp),
-        modifier = Modifier
-            .background(MaterialTheme.colorScheme.surface)
-            .clip(RoundedCornerShape(12.dp))
-            .border(
-                0.5.dp,
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                RoundedCornerShape(12.dp)
-            )
-    ) {
-
-        DropdownMenuItem(
-            text = {
-                Text(
-                    text = stringResource(
-                        if (isViewingTomorrow) R.string.menu_view_today
-                        else R.string.menu_view_tomorrow
-                    ),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Filled.EventNote,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            },
-            onClick = {
-                if (isViewingTomorrow) {
-                    viewModel.viewToday()
-                } else {
-                    viewModel.viewTomorrow()
-                }
-                isMenuExpanded = false
-            },
-            colors = MenuDefaults.itemColors(
-                leadingIconColor = MaterialTheme.colorScheme.primary,
-                textColor = MaterialTheme.colorScheme.onSurface
-            )
-        )
-        DropdownMenuItem(
-            text = {
-                Text(
-                    text = stringResource(
-                        if (hideCompleted) R.string.menu_show_completed
-                        else R.string.menu_hide_completed
-                    ),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Filled.VisibilityOff,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            },
-            onClick = {
-                viewModel.toggleHideCompleted()
-                isMenuExpanded = false
-            },
-            colors = MenuDefaults.itemColors(
-                leadingIconColor = MaterialTheme.colorScheme.primary,
-                textColor = MaterialTheme.colorScheme.onSurface
-            )
-        )
-
-        Divider(
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-            thickness = 0.5.dp
-        )
-        DropdownMenuItem(
-            text = {
-                Text(
-                    text = stringResource(R.string.menu_mark_all_done),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Filled.DoneAll,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            },
-            onClick = {
-                coroutineScope.launch {
-                    val updated = viewModel.markAllTasksAsDone(selectedDate)
-
-                    if (!updated) {
-                        snackbarHostState.showSnackbar(
-                            message = context.getString(R.string.all_tasks_already_done),
-                            duration = SnackbarDuration.Short
-                        )
-                    }
-                    isMenuExpanded = false
-                }
-            },
-            colors = MenuDefaults.itemColors(
-                leadingIconColor = MaterialTheme.colorScheme.primary,
-                textColor = MaterialTheme.colorScheme.onSurface
-            )
-        )
-    }
-}
-@Composable
-fun formatDateForDisplay(dateToFormat: LocalDate): String {
-    val currentLocale = LocalConfiguration.current.locale
-    val formatter = DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", currentLocale)
-    return dateToFormat.format(formatter)
+        val formatted = time.format(DateTimeFormatter.ofPattern("h:mm a", Locale(currentLanguage)))
+        if (currentLanguage == "ar") translateNumerals(formatted) else formatted
+    } catch (e: Exception) { time24h }
 }
 
 fun translateNumerals(text: String): String {
-    return text
-        .replace('0', '٠')
-        .replace('1', '١')
-        .replace('2', '٢')
-        .replace('3', '٣')
-        .replace('4', '٤')
-        .replace('5', '٥')
-        .replace('6', '٦')
-        .replace('7', '٧')
-        .replace('8', '٨')
-        .replace('9', '٩')
+    val numerals = mapOf(
+        '0' to '٠', '1' to '١', '2' to '٢', '3' to '٣', '4' to '٤',
+        '5' to '٥', '6' to '٦', '7' to '٧', '8' to '٨', '9' to '٩'
+    )
+    return text.map { numerals[it] ?: it }.joinToString("")
 }
-@Composable
-fun formatTimeForDisplay(time24h: String): String {
-    val currentLanguage = LocalConfiguration.current.locale.language
-    val outputLocale = if (currentLanguage == "ar") Locale("ar") else Locale.US
 
-    return try {
-        val cleaned = time24h.trim()
-        val parsed = when {
-            cleaned.matches(Regex("\\d{1,2}:\\d{2}")) -> {
-                SimpleDateFormat("HH:mm", Locale.US).parse(cleaned)
-            }
-            cleaned.matches(Regex("\\d{1,2}\\s?(AM|PM)", RegexOption.IGNORE_CASE)) -> {
-                SimpleDateFormat("hh a", Locale.US).parse(cleaned)
-            }
-            else -> null
-        }
-
-        if (parsed != null) {
-            SimpleDateFormat("h:mm a", outputLocale).format(parsed)
-        } else {
-            time24h
-        }
-    } catch (e: Exception) {
-        time24h
-    }
-}
-fun getHourFromTimestamp(timestamp: Long): Int {
-    return try {
-        val instant = Instant.ofEpochMilli(timestamp)
-        val localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
-        localDateTime.hour
-    } catch (e: Exception) {
-        -1
-    }
-}
-fun groupEventsIntoTimeBlocks(events: List<TimelineEvent>): List<TimeBlock> {
-    if (events.isEmpty()) return emptyList()
-    val sortedEvents = events.sortedBy { it.timestamp }
-    val groupedByHour = sortedEvents.groupBy { getHourFromTimestamp(it.timestamp) }
-    val currentHour = getHourFromTimestamp(System.currentTimeMillis())
-
-    return groupedByHour.keys
-        .sortedBy { hour -> groupedByHour[hour]?.first()?.timestamp ?: 0L }
-        .mapNotNull { hour ->
-            val hourEvents = groupedByHour[hour]?.sortedBy { it.timestamp }
-            if (hourEvents.isNullOrEmpty()) return@mapNotNull null
-
-            val primaryTimeLabel = hourEvents.first().timeLabel
-
-            TimeBlock(
-                timeLabel = primaryTimeLabel,
-                events = hourEvents,
-                isCurrentHour = (hour == currentHour)
-            )
-        }
-}
+// --- UI Components ---
 
 @Composable
-fun DayMateTopBar(viewModel: TimelineViewModel,
-                  context: Context,
-                  coroutineScope: CoroutineScope,
-                  snackbarHostState: SnackbarHostState) {
-    val background = MaterialTheme.colorScheme.background
-    val onBackground = MaterialTheme.colorScheme.onBackground
-
+fun DayMateTopBar(
+    viewModel: TimelineViewModel,
+    context: Context,
+    coroutineScope: CoroutineScope,
+    snackbarHostState: SnackbarHostState
+) {
     val primary = MaterialTheme.colorScheme.primary
-    val quoteBrush = remember(primary) {
-        Brush.linearGradient(
-            colors = listOf(
-                AppGold,
-                primary
-            )
-        )
-    }
-
+    val quoteBrush = remember { Brush.linearGradient(colors = listOf(AppGold, primary)) }
     val quotes = listOf(
         stringResource(R.string.topbar_quote_1),
         stringResource(R.string.topbar_quote_2),
         stringResource(R.string.topbar_quote_3),
-        stringResource(R.string.topbar_quote_4),
-        stringResource(R.string.topbar_quote_5),
-        stringResource(R.string.topbar_quote_6),
-        stringResource(R.string.topbar_quote_7),
-        stringResource(R.string.topbar_quote_8),
-        stringResource(R.string.topbar_quote_9),
-        stringResource(R.string.topbar_quote_10),
         stringResource(R.string.timeline_topbar_title)
     )
+    val randomQuote = remember { quotes[Random.nextInt(quotes.size)] }
 
-    val randomQuote = quotes[Random.nextInt(quotes.size)]
-
-    Surface(
-        tonalElevation = 0.dp,
-        color = background
-    ) {
-        CompositionLocalProvider(LocalContentColor provides onBackground) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                Icon(
-                    painter = painterResource(id = R.drawable.forgrnd),
-                    contentDescription = null,
-                    tint = Color.Unspecified,
-                    modifier = Modifier.size(56.dp)
-                )
-
-                Spacer(Modifier.width(12.dp))
-
-                Text(
-                    text = randomQuote,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center,
-                    style = TextStyle(brush = quoteBrush),
-                    maxLines = 1
-                )
-
-                Spacer(Modifier.width(8.dp))
-
-                TimelineMenu(viewModel = viewModel,
-                    context = context,
-                    coroutineScope = coroutineScope,
-                    snackbarHostState = snackbarHostState)
-            }
-
+    Surface(color = MaterialTheme.colorScheme.background, tonalElevation = 0.dp) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painterResource(id = R.drawable.forgrnd),
+                null,
+                tint = Color.Unspecified,
+                modifier = Modifier.size(56.dp)
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = randomQuote,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center,
+                style = TextStyle(brush = quoteBrush),
+                maxLines = 1
+            )
+            TimelineMenu(viewModel, context, coroutineScope, snackbarHostState)
         }
     }
 }
+
+@Composable
+fun TimelineMenu(
+    viewModel: TimelineViewModel,
+    context: Context,
+    coroutineScope: CoroutineScope,
+    snackbarHostState: SnackbarHostState
+) {
+    val selectedDate by viewModel.selectedDate.collectAsState()
+    val hideCompleted by viewModel.hideCompleted.collectAsState()
+    var isMenuExpanded by remember { mutableStateOf(false) }
+    val isRtl = LocalConfiguration.current.locales[0].language == "ar"
+
+    Box {
+        IconButton(onClick = { isMenuExpanded = true }) {
+            Icon(Icons.Filled.MoreVert, contentDescription = null)
+        }
+        DropdownMenu(
+            expanded = isMenuExpanded,
+            onDismissRequest = { isMenuExpanded = false },
+            offset = DpOffset(if (isRtl) 20.dp else (-180).dp, 8.dp),
+            modifier = Modifier
+                .width(220.dp)
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f), RoundedCornerShape(24.dp))
+                .border(1.dp, AppGold.copy(alpha = 0.3f), RoundedCornerShape(24.dp))
+        ) {
+            val isTomorrow = selectedDate.isAfter(LocalDate.now())
+            ModernDropdownItem(
+                text = stringResource(if (isTomorrow) R.string.menu_view_today else R.string.menu_view_tomorrow),
+                icon = Icons.Filled.EventNote,
+                onClick = {
+                    if (isTomorrow) viewModel.viewToday() else viewModel.viewTomorrow()
+                    isMenuExpanded = false
+                }
+            )
+            ModernDropdownItem(
+                text = stringResource(if (hideCompleted) R.string.menu_show_completed else R.string.menu_hide_completed),
+                icon = Icons.Filled.VisibilityOff,
+                onClick = {
+                    viewModel.toggleHideCompleted()
+                    isMenuExpanded = false
+                }
+            )
+            Divider(Modifier.padding(horizontal = 16.dp), color = Color.Gray.copy(alpha = 0.2f))
+            ModernDropdownItem(
+                text = stringResource(R.string.menu_mark_all_done),
+                icon = Icons.Filled.DoneAll,
+                onClick = {
+                    coroutineScope.launch {
+                        if (!viewModel.markAllTasksAsDone(selectedDate)) {
+                            snackbarHostState.showSnackbar(context.getString(R.string.all_tasks_already_done))
+                        }
+                        isMenuExpanded = false
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun ModernDropdownItem(
+    text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit
+) {
+    DropdownMenuItem(
+        text = { Text(text, fontWeight = FontWeight.Medium, fontSize = 14.sp) },
+        leadingIcon = {
+            Box(
+                Modifier
+                    .size(30.dp)
+                    .background(AppGold.copy(alpha = 0.1f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, null, Modifier.size(16.dp), tint = AppGold)
+            }
+        },
+        onClick = onClick
+    )
+}
+
 @Composable
 fun TimelineItem(event: TimelineEvent) {
-    val iconImageVector: Int = when (event.type) {
-        EventType.PRAYER -> R.drawable.ic_mosque_filled
-        EventType.TODO_TASK -> R.drawable.ic_todo_filled
-    }
-
-    val borderColor = event.iconColor.copy(alpha = 0.3f)
-    val containerColor = event.iconColor.copy(alpha = 0.1f)
-
-    val currentLanguage = LocalConfiguration.current.locale.language
-    val rawTimeText = formatTimeForDisplay(event.timeRange)
-    val displayedTime = if (currentLanguage == "ar") {
-        translateNumerals(rawTimeText)
-    } else {
-        rawTimeText
-    }
+    val iconRes =
+        if (event.type == EventType.PRAYER) R.drawable.ic_mosque_filled else R.drawable.ic_todo_filled
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = containerColor
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
-        border = BorderStroke(1.dp, borderColor),
-        shape = RoundedCornerShape(12.dp)
+            .padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = event.iconColor.copy(alpha = 0.12f)),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(0.5.dp, event.iconColor.copy(alpha = 0.3f))
     ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Event icon
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier
-                    .size(40.dp)
+                Modifier
+                    .size(42.dp)
                     .clip(CircleShape)
                     .background(event.iconColor.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    painter = painterResource(id = iconImageVector),
-                    contentDescription = event.title,
+                    painterResource(iconRes),
+                    null,
                     tint = event.iconColor,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
-
-            Spacer(Modifier.width(16.dp))
-
-            // Event details
-            Column(modifier = Modifier.weight(1f)) {
-                val translatedTitle = getTranslatedTitle(event)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
                 Text(
-                    text = translatedTitle,
+                    getTranslatedTitle(event),
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    textDecoration = if (event.isDone && event.type == EventType.TODO_TASK)
-                        TextDecoration.LineThrough else null,
-                    color = if (event.isDone)
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    else
-                        MaterialTheme.colorScheme.onBackground
+                    fontSize = 15.sp,
+                    textDecoration =
+                        if (event.isDone && event.type == EventType.TODO_TASK) TextDecoration.LineThrough
+                        else null
                 )
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Filled.WatchLater,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = displayedTime,
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                // Progress indicator
-                event.isProgress?.let { progress ->
-                    LinearProgressIndicator(
-                        progress = progress,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(6.dp)
-                            .padding(top = 4.dp)
-                            .clip(CircleShape),
-                        color = event.iconColor,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                }
+                Text(
+                    formatTimeForDisplayFixed(event.timeRange),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-
-            Spacer(Modifier.width(8.dp))
-
-            // Todo status and category
             if (event.type == EventType.TODO_TASK) {
-                Column(
-                    horizontalAlignment = Alignment.End
-                ) {
-                    Icon(
-                        imageVector = if (event.isDone)
-                            Icons.Filled.CheckCircle
-                        else
-                            Icons.Outlined.RadioButtonUnchecked,
-                        contentDescription = null,
-                        tint = if (event.isDone)
-                            Color(0xFF4CAF50)
-                        else
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    if (!event.category.isNullOrBlank()) {
-                        Spacer(Modifier.height(4.dp))
-                        val translatedCategory = getTranslatedCategory(event.category!!)
-                        Text(
-                            text = translatedCategory,
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.End,
-                            maxLines = 1,
-                            modifier = Modifier.widthIn(max = 60.dp)
-                        )
-                    }
-                }
+                Icon(
+                    if (event.isDone) Icons.Filled.CheckCircle else Icons.Filled.RadioButtonUnchecked,
+                    null,
+                    tint = if (event.isDone) Color(0xFF4CAF50) else Color.Gray
+                )
             }
         }
     }
 }
 
-/**
- * TimelineRow
- *
- * Row showing time label with vertical line and events
- */
+
+// ✅ NEW: Now marker item - يظهر كخط عرضي أنيق بين الساعات
 @Composable
-fun TimelineRow(
-    timeLabel: String,
-    content: @Composable () -> Unit,
-    isCurrentHour: Boolean = false,
-    isViewingToday: Boolean = true
-) {
-    val currentLanguage = LocalConfiguration.current.locale.language
-    val rawTimeText = formatTimeForDisplay(timeLabel.take(5))
-    val displayedTime = if (currentLanguage == "ar") {
-        translateNumerals(rawTimeText)
-    } else {
-        rawTimeText
-    }
+fun NowMarkerItem() {
+    val lang = LocalConfiguration.current.locales[0].language
+    val label = if (lang == "ar") "الآن" else "NOW"
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Max),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(vertical = 4.dp), // تقليل المسافة ليكون أدق
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // Time label column
-        Box(
-            modifier = Modifier.width(50.dp),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            Text(
-                text = displayedTime,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            // Vertical line
-            Spacer(
+        // موازنة مع عمود الوقت (60dp)
+        Box(modifier = Modifier.width(60.dp), contentAlignment = Alignment.Center) {
+            Box(
                 modifier = Modifier
-                    .padding(top = if (timeLabel.isNotEmpty()) 50.dp else 2.dp)
-                    .width(2.dp)
-                    .fillMaxHeight()
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .size(10.dp)
+                    .background(AppGold, CircleShape)
+                    .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
+            )
+        }
+
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            HorizontalDivider(
+                modifier = Modifier.weight(1f),
+                thickness = 2.dp,
+                color = AppGold
             )
 
-            // Current hour indicator
-            if (isCurrentHour&& isViewingToday) {
-                Box(
-                    modifier = Modifier
-                        .padding(top = 40.dp)
-                        .fillMaxWidth()
-                        .align(Alignment.Center)
-                ) {
-                    Divider(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(2.dp),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = stringResource(R.string.timeline_now),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .align(Alignment.CenterStart)
-                            .offset(x = 10.dp)
-                    )
-                }
-            }
-        }
-
-        // Events content
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .padding(top = if (timeLabel.isNotEmpty()) 0.dp else 10.dp)
-        ) {
-            content()
-        }
-    }
-}
-
-/**
- * TimelineGroupedRow
- *
- * Row showing all events in a time block
- */
-@Composable
-fun TimelineGroupedRow(block: TimeBlock,
-                       isViewingToday: Boolean) {
-    TimelineRow(
-        timeLabel = block.timeLabel,
-        isCurrentHour = block.isCurrentHour,
-        isViewingToday = isViewingToday,
-        content = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                block.events.forEach { event ->
-                    TimelineItem(event = event)
-                }
-            }
-        }
-    )
-    Spacer(modifier = Modifier.height(16.dp))
-}
-
-/**
- * TimelineScreen
- *
- * Main timeline screen showing events for the selected day
- */
-@Composable
-fun TimelineScreen(
-    viewModel: TimelineViewModel = viewModel()
-) {
-    val events by viewModel.timelineEvents.collectAsState()
-    val selectedDate by viewModel.selectedDate.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState(initial = false)
-    val isViewingToday by viewModel.isViewingToday.collectAsState()
-    val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    val timeBlocks = remember(events) {
-        groupEventsIntoTimeBlocks(events)
-    }
-
-    val listState = rememberLazyListState()
-    val currentHour = getHourFromTimestamp(System.currentTimeMillis())
-
-    val firstCurrentHourIndex = remember(timeBlocks) {
-        timeBlocks.indexOfFirst { block ->
-            getHourFromTimestamp(block.events.first().timestamp) >= currentHour
-        }.coerceAtLeast(0)
-    }
-    // Auto-scroll to current hour
-    LaunchedEffect(timeBlocks) {
-        if (timeBlocks.isNotEmpty() && firstCurrentHourIndex > 0) {
-            listState.animateScrollToItem(firstCurrentHourIndex)
-        }
-    }
-    val currentLanguage = LocalConfiguration.current.locale.language
-    val rawDateText = formatDateForDisplay(selectedDate)
-    val displayedDate = if (currentLanguage == "ar")
-    {
-        translateNumerals(rawDateText)
-    } else {
-        rawDateText
-    }
-
-    Scaffold(
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState) { data ->
-                Snackbar(
-                    snackbarData = data,
-                    containerColor = AppGold,
-                    contentColor = Color.Black,
-                    actionColor = MaterialTheme.colorScheme.primary
+            Surface(
+                color = AppGold,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.padding(start = 8.dp)
+            ) {
+                Text(
+                    text = label,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                    color = Color.Black,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.ExtraBold
                 )
             }
-        },
-        topBar = { DayMateTopBar(viewModel = viewModel,
-            context = context,
-            coroutineScope = coroutineScope,
-            snackbarHostState = snackbarHostState) },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
+        }
+    }
+}
+@Composable
+fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
+    // 1. حساب الوقت بدقة (الساعة 6:21 مساءً حالياً)
+    val currentMinute = LocalTime.now().minute
+    val fractionOfHour = currentMinute / 60f
+
+    // 2. أنيميشن النبض (Pulse) لجعل النقطة تبدو "حية"
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val glowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.2f,
+        targetValue = 0.6f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ), label = "glowAlpha"
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Max) // لضمان امتداد الخط الرأسي بطول المحتوى
+    ) {
+        // عمود الوقت والمؤشر
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(MaterialTheme.colorScheme.background)
+            modifier = Modifier.width(60.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Date header
             Text(
-                text = displayedDate,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
+                text = formatTimeForDisplayFixed("${block.hour}:00"),
+                fontSize = 11.sp,
+                color = if (block.isCurrentHour && isViewingToday) AppGold else Color.Gray,
+                fontWeight = if (block.isCurrentHour && isViewingToday) FontWeight.Bold else FontWeight.Normal
+            )
+
+            // الحاوية الخاصة بالخط والمؤشر المتحرك
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(top = 12.dp, bottom = 8.dp)
-            )
+                    .weight(1f)
+                    .width(12.dp), // عرض الحاوية لضمان عدم قص التوهج
+                contentAlignment = Alignment.TopCenter
+            ) {
+                // الخط الرمادي الخلفي (الثابت)
+                Box(
+                    modifier = Modifier
+                        .width(2.dp)
+                        .fillMaxHeight()
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                )
 
-            Divider(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                thickness = 0.5.dp
-            )
-
-            // Content
-            when {
-                isLoading -> {
-                    // Loading state
+                if (block.isCurrentHour && isViewingToday) {
+                    // الخط الذهبي الأمامي (المتغير حسب الدقائق)
                     Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                        modifier = Modifier
+                            .width(2.dp)
+                            .fillMaxHeight(fractionOfHour)
+                            .background(AppGold)
+                    )
+
+                    // 🔥 التنفيذ المظبوط للمؤشر العائم
+                    // نستخدم Box بملء الطول المتاح حتى الدقيقة الحالية
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(fractionOfHour),
+                        contentAlignment = Alignment.BottomCenter // النقطة دائماً في نهاية الخط الذهبي
                     ) {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(48.dp)
+                        // هالة التوهج (Glow)
+                        Box(
+                            modifier = Modifier
+                                .size(14.dp)
+                                .background(AppGold.copy(alpha = glowAlpha), CircleShape)
+                        )
+                        // النقطة الذهبية المركزية
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(AppGold, CircleShape)
+                                .border(1.5.dp, MaterialTheme.colorScheme.background, CircleShape)
                         )
                     }
                 }
-                timeBlocks.isEmpty() -> {
-                    // Empty state
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(horizontal = 32.dp)
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_timeline_outline),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                modifier = Modifier.size(64.dp)
-                            )
-                            Spacer(Modifier.height(16.dp))
-                            Text(
-                                text = stringResource(R.string.no_events_message),
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-                }
-                else -> {
-                    // Timeline list
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        items(timeBlocks.size) { index ->
-                            val block = timeBlocks[index]
-                            TimelineGroupedRow(block = block,
-                                isViewingToday = isViewingToday)
-                        }
+            }
+        }
+
+        // عمود الأحداث (التصميم العائم Floating)
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 12.dp, bottom = 28.dp)
+        ) {
+            block.events.forEach { event ->
+                TimelineItem(event)
+            }
+        }
+    }
+}
+@Composable
+fun TimelineScreen(viewModel: TimelineViewModel = viewModel()) {
+    val events by viewModel.timelineEvents.collectAsState()
+    val selectedDate by viewModel.selectedDate.collectAsState()
+    val isViewingToday by viewModel.isViewingToday.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState(initial = false)
+    val listState = rememberLazyListState()
+
+    // ترتيب الساعات
+    val timeBlocks = remember(events) {
+        val currentH = LocalTime.now().hour
+        events.groupBy {
+            val dt = LocalDateTime.ofInstant(Instant.ofEpochMilli(it.timestamp), ZoneId.systemDefault())
+            dt.hour
+        }.map { (h, evs) ->
+            TimeBlock(h, evs.first().timeLabel, evs.sortedBy { it.timestamp }, h == currentH)
+        }.sortedBy { it.hour }
+    }
+
+    // 🔥 الـ Scroll التلقائي للساعة الحالية أول ما يفتح
+    LaunchedEffect(timeBlocks) {
+        if (isViewingToday && timeBlocks.isNotEmpty()) {
+            val nowHour = LocalTime.now().hour
+            val index = timeBlocks.indexOfFirst { it.hour >= nowHour }.coerceAtLeast(0)
+            listState.animateScrollToItem(index)
+        }
+    }
+
+    Scaffold(
+        topBar = { DayMateTopBar(viewModel, LocalContext.current, rememberCoroutineScope(), remember { SnackbarHostState() }) }
+    ) { padding ->
+        Column(Modifier.padding(padding).fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+            val lang = LocalConfiguration.current.locales[0].language
+            val dateStr = selectedDate.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale(lang)))
+
+            Text(
+                text = if (lang == "ar") translateNumerals(dateStr) else dateStr,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(16.dp),
+                fontWeight = FontWeight.ExtraBold
+            )
+
+            if (isLoading) {
+                Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = AppGold) }
+            } else if (timeBlocks.isEmpty()) {
+                Box(Modifier.fillMaxSize(), Alignment.Center) { Text(stringResource(R.string.no_events_message)) }
+            } else {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(bottom = 120.dp)
+                ) {
+                    items(timeBlocks.size) { index ->
+                        TimelineRow(timeBlocks[index], isViewingToday)
                     }
                 }
             }

@@ -101,7 +101,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.material3:material3:1.4.0")
     implementation("androidx.compose.material:material-icons-extended:1.7.0")
-    implementation("androidx.navigation:navigation-compose:2.8.2") // Compose Navigation
+    implementation("androidx.navigation:navigation-compose:2.8.5") // Compose Navigation
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 

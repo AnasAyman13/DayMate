@@ -1,37 +1,51 @@
 package com.day.mate.ui.theme.navigation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 
-/**
- * Floating Bottom Navigation Bar
- * - Wider layout (less outer horizontal padding)
- * - Safe inner padding so indicator won't be clipped
- * - No navigationBarsPadding (so no black/white strip below)
- * - Slightly lifted look (bigger bottom outer padding + shadow + border)
- */
 @Composable
 fun BottomNavigationBar(
     navController: NavController,
@@ -48,80 +62,136 @@ fun BottomNavigationBar(
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = activeRoute ?: navBackStackEntry?.destination?.route
+    val haptic = LocalHapticFeedback.current
+
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+
+    val containerColor = if (isDark) {
+        Color(0xFF1E2126).copy(alpha = 0.98f)
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+
+    val borderColor = if (isDark) {
+        Color.White.copy(alpha = 0.08f)
+    } else {
+        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+    }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            // ✅ بدل padding(horizontal=.., vertical=..) عشان نسخة Compose عندك
-            .padding(
-                start = 10.dp,
-                top = 10.dp,
-                end = 10.dp,
-                bottom = 18.dp // ✅ أكبر شوية عشان يبان مرفوع/عايم
-            )
+            .padding(start = 16.dp, end = 16.dp, bottom = 24.dp)
     ) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
-            tonalElevation = 8.dp,
-            shadowElevation = 20.dp,
-            border = BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-            ),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(74.dp),
+            shape = RoundedCornerShape(38.dp),
+            shadowElevation = if (isDark) 0.dp else 12.dp,
+            tonalElevation = if (isDark) 0.dp else 8.dp,
+            border = BorderStroke(1.dp, borderColor),
+            color = containerColor
         ) {
-            NavigationBar(
+            Row(
                 modifier = Modifier
-                    .height(72.dp)
-                    // ✅ inset داخلي يمنع قصّ الـ indicator عند الأطراف
-                    .padding(start = 14.dp, top = 0.dp, end = 14.dp, bottom = 0.dp),
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0f),
-                windowInsets = WindowInsets(0)
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 items.forEach { item ->
                     val selected = currentRoute == item.route
 
-                    NavigationBarItem(
+                    CustomBottomNavItem(
+                        item = item,
                         selected = selected,
+                        isDark = isDark,
                         onClick = {
                             if (!selected) {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 navController.navigate(item.route) {
-                                    popUpTo(navController.graph.startDestinationId) {
-                                        saveState = true
-                                    }
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
                             }
-                        },
-                        icon = {
-                            Icon(
-                                painter = painterResource(
-                                    id = if (selected) item.selectedIconRes else item.iconRes
-                                ),
-                                contentDescription = stringResource(item.titleRes)
-                            )
-                        },
-                        label = {
-                            if (selected) {
-                                Text(
-                                    text = stringResource(item.titleRes),
-                                    fontSize = 11.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        },
-                        alwaysShowLabel = false,
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                        )
+                        }
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun CustomBottomNavItem(
+    item: BottomNavItem,
+    selected: Boolean,
+    isDark: Boolean,
+    onClick: () -> Unit
+) {
+    // 🔥 خليت الوقت 700ms عشان الحركة تبان ناعمة وبطيئة شوية (زي ما طلبت)
+    val scale by animateFloatAsState(
+        targetValue = if (selected) 1.0f else 0.85f, // زودت نسبة التصغير شوية عشان الفرق يبان
+        animationSpec = tween(
+            durationMillis = 700,
+            easing = FastOutSlowInEasing
+        ),
+        label = "scale"
+    )
+
+    val selectedContentColor = if (isDark) Color(0xFF26C6DA) else Color(0xFF00ACC1)
+    val unselectedContentColor = if (isDark) Color(0xFF90A4AE) else MaterialTheme.colorScheme.onSurfaceVariant
+
+    val indicatorColor = if (selected) {
+        if (isDark) Color(0xFF37474F).copy(alpha = 0.8f) else Color(0xFFE0F7FA)
+    } else Color.Transparent
+
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { onClick() }
+            .padding(4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(width = 44.dp, height = 34.dp)
+                .background(
+                    color = indicatorColor,
+                    shape = RoundedCornerShape(18.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(id = if (selected) item.selectedIconRes else item.iconRes),
+                contentDescription = stringResource(item.titleRes),
+                tint = if (selected) selectedContentColor else unselectedContentColor,
+                modifier = Modifier
+                    .size(24.dp)
+                    .scale(scale)
+            )
+        }
+
+        // أنيميشن ظهور النص: خليته بطيء برضه (700ms)
+        AnimatedVisibility(
+            visible = selected,
+            enter = fadeIn(animationSpec = tween(700)) + expandVertically(animationSpec = tween(700)),
+            exit = fadeOut(animationSpec = tween(400)) + shrinkVertically(animationSpec = tween(400))
+        ) {
+            Text(
+                text = stringResource(item.titleRes),
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                color = selectedContentColor,
+                maxLines = 1,
+                modifier = Modifier.padding(top = 2.dp)
+            )
         }
     }
 }
