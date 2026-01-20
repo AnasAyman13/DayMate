@@ -226,7 +226,7 @@ fun PomodoroTitleBar(mode: TimerMode, isLandscape: Boolean, onSettingsClick: () 
             },
             textAlign = TextAlign.Center,
             modifier = Modifier.weight(1f),
-            fontSize = if (isLandscape) 36.sp else 42.sp,
+            fontSize = if (isLandscape) 28.sp else 34.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
 

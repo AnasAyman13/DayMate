@@ -394,8 +394,8 @@ fun ManageCategoriesSheetContent(
                             }
                         },
                         modifier = Modifier
-                            .padding(top = 6.dp)
-                            .size(50.dp),
+                            .padding(top = 8.dp)
+                            .size(48.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = IconButtonDefaults.filledIconButtonColors(
                             containerColor = AppGold,

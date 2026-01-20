@@ -184,7 +184,7 @@
     <string name="dialog_add_category">إضافة فئة جديدة</string>
     <string name="dialog_category_name">اسم الفئة</string>
     <string name="dialog_add">إضافة</string>
-    <string name="dialog_done">تم</string>
+    <string name="dialog_done">خروج</string>
     <string name="dialog_error">خطأ</string>
     <string name="dialog_ok">موافق</string>
     <string name="dialog_delete">حذف</string>

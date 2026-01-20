@@ -188,7 +188,7 @@
     <string name="dialog_add_category">Add New Category</string>
     <string name="dialog_category_name">Category Name</string>
     <string name="dialog_add">Add</string>
-    <string name="dialog_done">Done</string>
+    <string name="dialog_done">Exit</string>
     <string name="dialog_error">Error</string>
     <string name="dialog_ok">OK</string>
     <string name="dialog_delete">Delete</string>

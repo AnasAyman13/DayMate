@@ -86,6 +86,9 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
         else BottomNavItem.TimeLine.route
     }
 
+    // ✅ اخفاء البوتوم ناف في شاشة الـ Preview (viewer)
+    val showBottomBar = currentRoute?.startsWith("viewer") != true
+
     // Active Bottom Nav route (mapping)
     val activeBottomNavRoute = remember(currentRoute) {
         when {
@@ -98,7 +101,7 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
 
     val isTaskScreen = currentRoute?.startsWith("task_screen") == true
 
-    // 🔥🔥🔥 التعديل هنا: شيلنا شرط الـ Timeline عشان الزرار يختفي من هناك 🔥🔥🔥
+    // FAB: يظهر في todo فقط
     val showFab = (activeBottomNavRoute == BottomNavItem.Todo.route) && !isTaskScreen
 
     // Floating nav sizes
@@ -111,11 +114,22 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
     val timelineRoute = BottomNavItem.TimeLine.route
     val todoRoute = BottomNavItem.Todo.route
     val createtaskscreenRoute = BottomNavItem.CreateTaskScreen.route
-    val mediaRoute =BottomNavItem.Media.route
+    val mediaRoute = BottomNavItem.Media.route
+
+    // ✅ لو البوتوم ناف مخفية (في viewer) يبقى مفيش أي bottom padding إضافي
     val navHostBottomPadding =
-        if (activeBottomNavRoute == prayerRoute || activeBottomNavRoute == settingsRoute || activeBottomNavRoute == todoRoute ||
-            activeBottomNavRoute == timelineRoute || createtaskscreenRoute== timelineRoute ||activeBottomNavRoute==mediaRoute ) 0.dp
-        else bottomClearance
+        if (!showBottomBar) {
+            0.dp
+        } else {
+            if (
+                activeBottomNavRoute == prayerRoute ||
+                activeBottomNavRoute == settingsRoute ||
+                activeBottomNavRoute == todoRoute ||
+                activeBottomNavRoute == timelineRoute ||
+                createtaskscreenRoute == timelineRoute ||
+                activeBottomNavRoute == mediaRoute
+            ) 0.dp else bottomClearance
+        }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -143,7 +157,6 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
             }
         ) { innerPadding ->
 
-            // 🔥 الأنيميشن السينمائي (Fade + Scale) 🔥
             val animDuration = 600
 
             NavHost(
@@ -152,12 +165,7 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(
-                        start = 0.dp,
-                        top = 0.dp,
-                        end = 0.dp,
-                        bottom = navHostBottomPadding
-                    ),
+                    .padding(bottom = navHostBottomPadding),
                 enterTransition = {
                     fadeIn(animationSpec = tween(animDuration, easing = FastOutSlowInEasing)) +
                             scaleIn(
@@ -187,6 +195,7 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
                             )
                 }
             ) {
+
                 composable(BottomNavItem.TimeLine.route) {
                     val timelineViewModel: TimelineViewModel = viewModel(
                         modelClass = TimelineViewModel::class.java,
@@ -273,15 +282,18 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
             }
         }
 
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(start = 0.dp, top = 0.dp, end = 0.dp, bottom = navOffset)
-        ) {
-            BottomNavigationBar(
-                navController = navController,
-                activeRoute = activeBottomNavRoute
-            )
+        // ✅ عرض البوتوم ناف بشرط (تختفي في viewer)
+        if (showBottomBar) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = navOffset)
+            ) {
+                BottomNavigationBar(
+                    navController = navController,
+                    activeRoute = activeBottomNavRoute
+                )
+            }
         }
     }
 }
