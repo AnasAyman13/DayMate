@@ -3,12 +3,7 @@
 package com.day.mate.ui.theme.screens.timeline
 
 import android.content.Context
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,7 +19,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
@@ -35,6 +29,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -62,13 +57,21 @@ data class TimeBlock(
     val isCurrentHour: Boolean
 )
 
-// ✅ NEW: list items (blocks + now marker)
-sealed class TimelineListItem {
-    data class Block(val block: TimeBlock) : TimelineListItem()
-    object NowMarker : TimelineListItem()
+// --- Utility Functions ---
+
+// 🔥 دالة جديدة لترجمة الكاتيجوري
+@Composable
+fun getTranslatedCategory(category: String): String {
+    return when (category.lowercase(Locale.ROOT)) {
+        "study" -> stringResource(R.string.category_study)
+        "work" -> stringResource(R.string.category_work)
+        "personal" -> stringResource(R.string.category_personal)
+        "shopping" -> stringResource(R.string.category_shopping)
+        "general" -> stringResource(R.string.category_general)
+        else -> category
+    }
 }
 
-// --- Utility Functions ---
 @Composable
 fun getTranslatedTitle(event: TimelineEvent): String {
     return when {
@@ -103,7 +106,6 @@ fun translateNumerals(text: String): String {
 }
 
 // --- UI Components ---
-
 @Composable
 fun DayMateTopBar(
     viewModel: TimelineViewModel,
@@ -231,9 +233,26 @@ fun ModernDropdownItem(
 }
 
 @Composable
+fun CategoryTag(text: String, modifier: Modifier = Modifier) {
+    Surface(
+        color = AppGold.copy(alpha = 0.15f),
+        shape = RoundedCornerShape(6.dp),
+        modifier = modifier
+    ) {
+        Text(
+            text = text,
+            color = AppGold,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+        )
+    }
+}
+
+@Composable
 fun TimelineItem(event: TimelineEvent) {
-    val iconRes =
-        if (event.type == EventType.PRAYER) R.drawable.ic_mosque_filled else R.drawable.ic_todo_filled
+    val iconRes = if (event.type == EventType.PRAYER) R.drawable.ic_mosque_filled else R.drawable.ic_todo_filled
+    val isRtl = LocalConfiguration.current.locales[0].language == "ar"
 
     Card(
         modifier = Modifier
@@ -244,6 +263,7 @@ fun TimelineItem(event: TimelineEvent) {
         border = BorderStroke(0.5.dp, event.iconColor.copy(alpha = 0.3f))
     ) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            // 1. Icon Box
             Box(
                 Modifier
                     .size(42.dp)
@@ -259,88 +279,60 @@ fun TimelineItem(event: TimelineEvent) {
                 )
             }
             Spacer(Modifier.width(12.dp))
+
+            // 2. Content
             Column(Modifier.weight(1f)) {
                 Text(
-                    getTranslatedTitle(event),
+                    text = getTranslatedTitle(event),
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
-                    textDecoration =
-                        if (event.isDone && event.type == EventType.TODO_TASK) TextDecoration.LineThrough
-                        else null
+                    textDecoration = if (event.isDone && event.type == EventType.TODO_TASK) TextDecoration.LineThrough else null,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
+
                 Text(
-                    formatTimeForDisplayFixed(event.timeRange),
+                    text = formatTimeForDisplayFixed(event.timeRange),
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 2.dp)
                 )
             }
-            if (event.type == EventType.TODO_TASK) {
-                Icon(
-                    if (event.isDone) Icons.Filled.CheckCircle else Icons.Filled.RadioButtonUnchecked,
-                    null,
-                    tint = if (event.isDone) Color(0xFF4CAF50) else Color.Gray
-                )
-            }
-        }
-    }
-}
 
-
-// ✅ NEW: Now marker item - يظهر كخط عرضي أنيق بين الساعات
-@Composable
-fun NowMarkerItem() {
-    val lang = LocalConfiguration.current.locales[0].language
-    val label = if (lang == "ar") "الآن" else "NOW"
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp), // تقليل المسافة ليكون أدق
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // موازنة مع عمود الوقت (60dp)
-        Box(modifier = Modifier.width(60.dp), contentAlignment = Alignment.Center) {
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .background(AppGold, CircleShape)
-                    .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
-            )
-        }
-
-        Row(
-            modifier = Modifier.weight(1f),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            HorizontalDivider(
-                modifier = Modifier.weight(1f),
-                thickness = 2.dp,
-                color = AppGold
-            )
-
-            Surface(
-                color = AppGold,
-                shape = RoundedCornerShape(12.dp),
+            // 3. Checkbox & Category
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Center,
                 modifier = Modifier.padding(start = 8.dp)
             ) {
-                Text(
-                    text = label,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                    color = Color.Black,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
+                if (event.type == EventType.TODO_TASK) {
+                    Icon(
+                        if (event.isDone) Icons.Filled.CheckCircle else Icons.Filled.RadioButtonUnchecked,
+                        null,
+                        tint = if (event.isDone) Color(0xFF4CAF50) else Color.Gray,
+                        modifier = Modifier.size(24.dp)
+                    )
+
+                    val categoryText = event.category ?: ""
+                    if (categoryText.isNotEmpty()) {
+                        Spacer(Modifier.height(4.dp))
+                        // 🔥 هنا استخدمنا الدالة الجديدة لترجمة الكاتيجوري
+                        CategoryTag(text = getTranslatedCategory(categoryText))
+                    }
+                } else if (event.type == EventType.PRAYER) {
+                    val prayerText = if (isRtl) "صلاة" else "Prayer"
+                    CategoryTag(text = prayerText)
+                }
             }
         }
     }
 }
+
 @Composable
 fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
-    // 1. حساب الوقت بدقة (الساعة 6:21 مساءً حالياً)
     val currentMinute = LocalTime.now().minute
     val fractionOfHour = currentMinute / 60f
 
-    // 2. أنيميشن النبض (Pulse) لجعل النقطة تبدو "حية"
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val glowAlpha by infiniteTransition.animateFloat(
         initialValue = 0.2f,
@@ -354,9 +346,8 @@ fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Max) // لضمان امتداد الخط الرأسي بطول المحتوى
+            .height(IntrinsicSize.Max)
     ) {
-        // عمود الوقت والمؤشر
         Column(
             modifier = Modifier.width(60.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -368,14 +359,12 @@ fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
                 fontWeight = if (block.isCurrentHour && isViewingToday) FontWeight.Bold else FontWeight.Normal
             )
 
-            // الحاوية الخاصة بالخط والمؤشر المتحرك
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .width(12.dp), // عرض الحاوية لضمان عدم قص التوهج
+                    .width(12.dp),
                 contentAlignment = Alignment.TopCenter
             ) {
-                // الخط الرمادي الخلفي (الثابت)
                 Box(
                     modifier = Modifier
                         .width(2.dp)
@@ -384,7 +373,6 @@ fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
                 )
 
                 if (block.isCurrentHour && isViewingToday) {
-                    // الخط الذهبي الأمامي (المتغير حسب الدقائق)
                     Box(
                         modifier = Modifier
                             .width(2.dp)
@@ -392,21 +380,17 @@ fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
                             .background(AppGold)
                     )
 
-                    // 🔥 التنفيذ المظبوط للمؤشر العائم
-                    // نستخدم Box بملء الطول المتاح حتى الدقيقة الحالية
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .fillMaxHeight(fractionOfHour),
-                        contentAlignment = Alignment.BottomCenter // النقطة دائماً في نهاية الخط الذهبي
+                        contentAlignment = Alignment.BottomCenter
                     ) {
-                        // هالة التوهج (Glow)
                         Box(
                             modifier = Modifier
                                 .size(14.dp)
                                 .background(AppGold.copy(alpha = glowAlpha), CircleShape)
                         )
-                        // النقطة الذهبية المركزية
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
@@ -418,7 +402,6 @@ fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
             }
         }
 
-        // عمود الأحداث (التصميم العائم Floating)
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -430,6 +413,7 @@ fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
         }
     }
 }
+
 @Composable
 fun TimelineScreen(viewModel: TimelineViewModel = viewModel()) {
     val events by viewModel.timelineEvents.collectAsState()
@@ -438,7 +422,6 @@ fun TimelineScreen(viewModel: TimelineViewModel = viewModel()) {
     val isLoading by viewModel.isLoading.collectAsState(initial = false)
     val listState = rememberLazyListState()
 
-    // ترتيب الساعات
     val timeBlocks = remember(events) {
         val currentH = LocalTime.now().hour
         events.groupBy {
@@ -449,7 +432,6 @@ fun TimelineScreen(viewModel: TimelineViewModel = viewModel()) {
         }.sortedBy { it.hour }
     }
 
-    // 🔥 الـ Scroll التلقائي للساعة الحالية أول ما يفتح
     LaunchedEffect(timeBlocks) {
         if (isViewingToday && timeBlocks.isNotEmpty()) {
             val nowHour = LocalTime.now().hour

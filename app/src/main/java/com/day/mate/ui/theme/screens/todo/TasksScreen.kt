@@ -3,7 +3,6 @@
 package com.day.mate.ui.theme.screens.todo
 
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -87,6 +87,9 @@ fun TasksScreen(
     val surfaceColor = MaterialTheme.colorScheme.surface
     val onBackgroundColor = MaterialTheme.colorScheme.onBackground
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+
+    // 🔥 اللون الرمادي المحايد بدلاً من البينك
+    val neutralCardColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
 
     val today = LocalDate.now()
     val weekDays = (-3L..3L).map { today.plusDays(it) }
@@ -155,7 +158,8 @@ fun TasksScreen(
                                 isSelected = selectedDate == day,
                                 onClick = { selectedDate = day },
                                 isVertical = true,
-                                taskCount = tasksPerDay[day.toString()] ?: 0
+                                taskCount = tasksPerDay[day.toString()] ?: 0,
+                                neutralColor = neutralCardColor
                             )
                         }
 
@@ -163,7 +167,7 @@ fun TasksScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(18.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .background(neutralCardColor) // 🔥 استخدام اللون المحايد
                                 .clickable { showDatePicker = true }
                                 .padding(horizontal = 16.dp, vertical = 12.dp),
                             contentAlignment = Alignment.Center
@@ -207,7 +211,8 @@ fun TasksScreen(
                                 text = displayText,
                                 isSelected = selectedFilter == filter,
                                 onClick = { selectedFilter = filter },
-                                isVertical = true
+                                isVertical = true,
+                                neutralColor = neutralCardColor
                             )
                         }
 
@@ -215,7 +220,7 @@ fun TasksScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(18.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .background(neutralCardColor) // 🔥 استخدام اللون المحايد
                                 .clickable { showManageCategoriesDialog = true }
                                 .padding(horizontal = 16.dp, vertical = 12.dp),
                             contentAlignment = Alignment.Center
@@ -256,7 +261,8 @@ fun TasksScreen(
                         todo = todo,
                         onToggle = { viewModel.toggleTodoDone(todo) },
                         onDelete = { viewModel.deleteTodo(todo) },
-                        onEdit = { onEditTask(todo.id) }
+                        onEdit = { onEditTask(todo.id) },
+                        neutralColor = neutralCardColor
                     )
                 }
 
@@ -269,7 +275,8 @@ fun TasksScreen(
                         todo = todo,
                         onToggle = { viewModel.toggleTodoDone(todo) },
                         onDelete = { viewModel.deleteTodo(todo) },
-                        onEdit = { onEditTask(todo.id) }
+                        onEdit = { onEditTask(todo.id) },
+                        neutralColor = neutralCardColor
                     )
                 }
 
@@ -317,7 +324,8 @@ fun TasksScreen(
                         date = day,
                         isSelected = selectedDate == day,
                         onClick = { selectedDate = day },
-                        taskCount = tasksPerDay[day.toString()] ?: 0
+                        taskCount = tasksPerDay[day.toString()] ?: 0,
+                        neutralColor = neutralCardColor
                     )
                 }
                 IconButton(
@@ -325,7 +333,7 @@ fun TasksScreen(
                     modifier = Modifier
                         .padding(start = 8.dp)
                         .clip(RoundedCornerShape(18.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .background(neutralCardColor) // 🔥 استخدام اللون المحايد
                 ) {
                     Icon(
                         Icons.Default.CalendarToday,
@@ -350,7 +358,8 @@ fun TasksScreen(
                     ModernCategoryChip(
                         text = displayText,
                         isSelected = selectedFilter == filter,
-                        onClick = { selectedFilter = filter }
+                        onClick = { selectedFilter = filter },
+                        neutralColor = neutralCardColor
                     )
                 }
 
@@ -358,7 +367,7 @@ fun TasksScreen(
                     onClick = { showManageCategoriesDialog = true },
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .background(neutralCardColor) // 🔥 استخدام اللون المحايد
                 ) {
                     Icon(
                         Icons.Default.Settings,
@@ -381,7 +390,8 @@ fun TasksScreen(
                         todo = todo,
                         onToggle = { viewModel.toggleTodoDone(todo) },
                         onDelete = { viewModel.deleteTodo(todo) },
-                        onEdit = { onEditTask(todo.id) }
+                        onEdit = { onEditTask(todo.id) },
+                        neutralColor = neutralCardColor
                     )
                 }
 
@@ -394,7 +404,8 @@ fun TasksScreen(
                         todo = todo,
                         onToggle = { viewModel.toggleTodoDone(todo) },
                         onDelete = { viewModel.deleteTodo(todo) },
-                        onEdit = { onEditTask(todo.id) }
+                        onEdit = { onEditTask(todo.id) },
+                        neutralColor = neutralCardColor
                     )
                 }
 
@@ -492,7 +503,8 @@ fun ModernCategoryChip(
     text: String,
     isSelected: Boolean,
     onClick: () -> Unit,
-    isVertical: Boolean = false
+    isVertical: Boolean = false,
+    neutralColor: Color // 🔥 تمرير اللون المحايد
 ) {
     FilterChip(
         selected = isSelected,
@@ -512,7 +524,7 @@ fun ModernCategoryChip(
             selectedContainerColor = AppGold,
             selectedLabelColor = Color.Black,
             labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            containerColor = neutralColor // 🔥 استخدام اللون المحايد
         ),
         border = FilterChipDefaults.filterChipBorder(
             enabled = true,
@@ -549,7 +561,7 @@ fun ManageCategoriesDialog(
                             Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                         }
                     }
-                    Divider(color = MaterialTheme.colorScheme.surfaceVariant)
+                    Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)) // 🔥 فاصل رمادي خفيف
                 }
             }
         },
@@ -577,7 +589,8 @@ fun SwipeToDeleteTaskItem(
     onToggle: () -> Unit,
     onDelete: () -> Unit,
     onEdit: () -> Unit,
-    isCompact: Boolean = false
+    isCompact: Boolean = false,
+    neutralColor: Color // 🔥 تمرير اللون المحايد
 ) {
     var offsetX by remember { mutableStateOf(0f) }
     val animatedOffsetX by animateFloatAsState(
@@ -627,7 +640,7 @@ fun SwipeToDeleteTaskItem(
                     )
                 }
         ) {
-            TaskItem(todo = todo, onToggle = onToggle, onDelete = onDelete, onEdit = onEdit)
+            TaskItem(todo = todo, onToggle = onToggle, onDelete = onDelete, onEdit = onEdit, neutralColor = neutralColor)
         }
     }
 
@@ -652,18 +665,15 @@ fun SwipeToDeleteTaskItem(
 }
 
 /**
- * Modern Task Item - Updated to match the requested look
- *//**
- * Modern Task Item - تم تحديثه ليظهر اسم الكاتيجوري أسفل العنوان
- *//**
- * Modern Task Item - تم تصغير الكارد ووضع الكاتيجوري والوقت جنب بعض
+ * Modern Task Item - تصميم نظيف بدون أيقونات الكاتيجوري التقليدية
  */
 @Composable
 fun TaskItem(
     todo: Todo,
     onToggle: () -> Unit,
     onDelete: () -> Unit,
-    onEdit: () -> Unit
+    onEdit: () -> Unit,
+    neutralColor: Color // 🔥 تمرير اللون المحايد
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
 
@@ -671,17 +681,18 @@ fun TaskItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onEdit() },
-        shape = RoundedCornerShape(16.dp), // صغرت الحواف شوية عشان تليق مع الحجم الجديد
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = neutralColor) // 🔥 استخدام اللون المحايد
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), // قللت الـ padding الرأسي
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.Top // محاذاة للأعلى عشان الديسكريبشن لو طويل
         ) {
-            // Status Circle Icon
+            // دائرة الحالة (Status Check)
             Box(
                 modifier = Modifier
-                    .size(24.dp) // صغرت الدائرة شوية
+                    .padding(top = 2.dp) // موازنة مع أول سطر نص
+                    .size(24.dp)
                     .border(2.dp, if (todo.isDone) AppGold else Color.Gray, CircleShape)
                     .clip(CircleShape)
                     .background(if (todo.isDone) AppGold else Color.Transparent)
@@ -691,40 +702,67 @@ fun TaskItem(
                 if (todo.isDone) Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp), tint = Color.Black)
             }
 
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(16.dp))
 
             Column(Modifier.weight(1f)) {
-                // عنوان المهمة
-                Text(
-                    text = todo.title,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp, // صغرت الخط درجة واحدة
-                    textDecoration = if (todo.isDone) TextDecoration.LineThrough else null,
-                    maxLines = 1
-                )
-
-                // سطر المعلومات (الكاتيجوري + الوقت)
+                // السطر الأول: العنوان + نوع الكاتيجوري على اليمين
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(top = 2.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // اسم الكاتيجوري
                     Text(
-                        text = CategoryLabel(todo.category),
-                        color = AppGold,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 11.sp
+                        text = todo.title,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        textDecoration = if (todo.isDone) TextDecoration.LineThrough else null,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
 
-                    // فاصل صغير لو فيه وقت
-                    if (todo.time.isNotBlank()) {
+                    // الكاتيجوري كـ Tag بسيط على اليمين
+                    Surface(
+                        color = AppGold.copy(alpha = 0.15f),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.padding(start = 8.dp)
+                    ) {
                         Text(
-                            text = " • ",
-                            color = Color.Gray,
-                            fontSize = 11.sp
+                            text = CategoryLabel(todo.category),
+                            color = AppGold,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                         )
-                        // الوقت
+                    }
+                }
+
+                // السطر الثاني: الديسكريبشن
+                if (todo.description.isNotBlank()) {
+                    Text(
+                        text = todo.description,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+
+                // السطر الثالث: الوقت (لو موجود)
+                if (todo.time.isNotBlank()) {
+                    Row(
+                        modifier = Modifier.padding(top = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.AccessTime,
+                            contentDescription = null,
+                            tint = Color.Gray,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
                         Text(
                             text = try {
                                 LocalTime.parse(todo.time).format(DateTimeFormatter.ofPattern("hh:mm a"))
@@ -764,11 +802,13 @@ fun TaskItem(
 }
 
 @Composable
-fun DateButton(date: LocalDate, isSelected: Boolean, onClick: () -> Unit, isVertical: Boolean = false, taskCount: Int = 0) {
+fun DateButton(date: LocalDate, isSelected: Boolean, onClick: () -> Unit, isVertical: Boolean = false, taskCount: Int = 0, neutralColor: Color) {
     val locale = Locale.getDefault()
     val dayName = date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, locale).uppercase()
     val dayNumber = date.dayOfMonth.toString()
-    val containerColor = if (isSelected) AppGold else MaterialTheme.colorScheme.surfaceVariant
+
+    // 🔥 استخدام اللون المحايد
+    val containerColor = if (isSelected) AppGold else neutralColor
     val contentColor = if (isSelected) Color.Black else (if (date == LocalDate.now()) AppGold else MaterialTheme.colorScheme.onBackground)
 
     val scale by animateFloatAsState(targetValue = if (isSelected) 1.05f else 1f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow), label = "scale")

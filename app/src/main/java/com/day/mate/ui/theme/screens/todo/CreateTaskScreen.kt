@@ -32,6 +32,19 @@ import java.time.*
 import java.util.Locale
 import java.time.format.DateTimeFormatter
 
+// 🔥 دالة مساعدة لترجمة الكاتيجوري
+@Composable
+fun getCategoryLabel(category: String): String {
+    return when (category.lowercase(Locale.ROOT)) {
+        "study" -> stringResource(R.string.category_study)
+        "work" -> stringResource(R.string.category_work)
+        "personal" -> stringResource(R.string.category_personal)
+        "shopping" -> stringResource(R.string.category_shopping)
+        "general" -> stringResource(R.string.category_general)
+        else -> category
+    }
+}
+
 @Composable
 fun CreateTaskScreen(
     navController: NavController,
@@ -43,7 +56,10 @@ fun CreateTaskScreen(
 
     val backgroundColor = MaterialTheme.colorScheme.background
     val textColor = MaterialTheme.colorScheme.onBackground
-    val fieldColor = MaterialTheme.colorScheme.surfaceVariant
+
+    // 🔥 التعديل هنا: استخدام لون محايد (رمادي خفيف) بدلاً من surfaceVariant اللي كان بيطلع بينك
+    val fieldColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+
     val hintColor = MaterialTheme.colorScheme.onSurfaceVariant
     val accentColor = AppGold
 
@@ -161,7 +177,7 @@ fun CreateTaskScreen(
                     FilterChip(
                         selected = selectedCategory == cat,
                         onClick = { viewModel.onCategoryChange(cat) },
-                        label = { Text(cat) },
+                        label = { Text(getCategoryLabel(cat)) },
                         shape = RoundedCornerShape(12.dp),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = accentColor,
@@ -234,7 +250,6 @@ fun CreateTaskScreen(
         )
     }
 
-    // 🔥 الحل النهائي لمشكلة يوم 18: حساب وقت البداية بنظام UTC الخام لليوم الحالي
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = remember {
