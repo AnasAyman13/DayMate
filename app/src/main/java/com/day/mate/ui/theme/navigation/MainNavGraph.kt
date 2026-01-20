@@ -107,9 +107,12 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
 
     val prayerRoute = BottomNavItem.Prayer.route
     val settingsRoute = BottomNavItem.Settings.route
-
+    val timelineRoute = BottomNavItem.TimeLine.route
+    val todoRoute = BottomNavItem.Todo.route
+    val createtaskscreenRoute = BottomNavItem.CreateTaskScreen.route
     val navHostBottomPadding =
-        if (activeBottomNavRoute == prayerRoute || activeBottomNavRoute == settingsRoute) 0.dp
+        if (activeBottomNavRoute == prayerRoute || activeBottomNavRoute == settingsRoute || activeBottomNavRoute == todoRoute ||
+            activeBottomNavRoute == timelineRoute || createtaskscreenRoute== timelineRoute) 0.dp
         else bottomClearance
 
     Box(modifier = Modifier.fillMaxSize()) {

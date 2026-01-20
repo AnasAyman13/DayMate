@@ -251,7 +251,10 @@ fun TasksScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(backgroundColor),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 20.dp)
+                contentPadding = PaddingValues(start = 20.dp,
+                    top = 20.dp,
+                    end = 20.dp,
+                    bottom = 140.dp)
             ) {
                 item(key = "header_in_progress") {
                     ListHeader(stringResource(R.string.header_in_progress))
@@ -380,7 +383,10 @@ fun TasksScreen(
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp)
+                contentPadding = PaddingValues(start = 20.dp,
+                    top = 8.dp,
+                    end = 20.dp,
+                    bottom = 136.dp)
             ) {
                 item(key = "header_in_progress") {
                     ListHeader(stringResource(R.string.header_in_progress))

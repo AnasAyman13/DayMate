@@ -53,4 +53,19 @@ sealed class BottomNavItem(
         R.drawable.ic_profile_outline,
         R.drawable.ic_profile_filled
     )
+
+    // ✅ شاشة داخلية (مش Tab) عشان نستخدم route ثابت بدل string
+    data object CreateTaskScreen : BottomNavItem(
+        // مش هتظهر في الـ Bottom Bar فـ title/icon مش مهمين
+        // لكن لازم نحط قيم موجودة عشان الكونستركتور
+        R.string.nav_todo,
+        "task_screen/{taskId}",
+        R.drawable.ic_todo_outline,
+        R.drawable.ic_todo_filled
+    )
+
+    companion object {
+        // ✅ helper لبناء route بسهولة
+        fun createTaskRoute(taskId: String) = "task_screen/$taskId"
+    }
 }

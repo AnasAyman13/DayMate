@@ -453,7 +453,7 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                 }
             } ?: Text(stringResource(R.string.loading_prayer_times), color = Color.White)
 
-            Spacer(Modifier.height(26.dp))
+            Spacer(Modifier.height(10.dp))
 
             Text(
                 stringResource(R.string.qibla_direction),
@@ -463,7 +463,7 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(6.dp))
 
             Card(
                 modifier = Modifier

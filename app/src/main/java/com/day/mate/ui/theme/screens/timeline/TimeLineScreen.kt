@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
@@ -106,6 +107,7 @@ fun translateNumerals(text: String): String {
 }
 
 // --- UI Components ---
+
 @Composable
 fun DayMateTopBar(
     viewModel: TimelineViewModel,
@@ -328,6 +330,7 @@ fun TimelineItem(event: TimelineEvent) {
     }
 }
 
+
 @Composable
 fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
     val currentMinute = LocalTime.now().minute
@@ -359,12 +362,14 @@ fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
                 fontWeight = if (block.isCurrentHour && isViewingToday) FontWeight.Bold else FontWeight.Normal
             )
 
+            // الحاوية الخاصة بالخط والمؤشر المتحرك
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .width(12.dp),
                 contentAlignment = Alignment.TopCenter
             ) {
+                // الخط الرمادي الخلفي (الثابت)
                 Box(
                     modifier = Modifier
                         .width(2.dp)
@@ -373,6 +378,7 @@ fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
                 )
 
                 if (block.isCurrentHour && isViewingToday) {
+                    // الخط الذهبي الأمامي (المتغير حسب الدقائق)
                     Box(
                         modifier = Modifier
                             .width(2.dp)
@@ -380,17 +386,21 @@ fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
                             .background(AppGold)
                     )
 
+                    // 🔥 التنفيذ المظبوط للمؤشر العائم
+                    // نستخدم Box بملء الطول المتاح حتى الدقيقة الحالية
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .fillMaxHeight(fractionOfHour),
                         contentAlignment = Alignment.BottomCenter
                     ) {
+                        // هالة التوهج (Glow)
                         Box(
                             modifier = Modifier
                                 .size(14.dp)
                                 .background(AppGold.copy(alpha = glowAlpha), CircleShape)
                         )
+                        // النقطة الذهبية المركزية
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
@@ -402,6 +412,7 @@ fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
             }
         }
 
+        // عمود الأحداث (التصميم العائم Floating)
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -413,7 +424,6 @@ fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
         }
     }
 }
-
 @Composable
 fun TimelineScreen(viewModel: TimelineViewModel = viewModel()) {
     val events by viewModel.timelineEvents.collectAsState()
@@ -422,6 +432,7 @@ fun TimelineScreen(viewModel: TimelineViewModel = viewModel()) {
     val isLoading by viewModel.isLoading.collectAsState(initial = false)
     val listState = rememberLazyListState()
 
+    // ترتيب الساعات
     val timeBlocks = remember(events) {
         val currentH = LocalTime.now().hour
         events.groupBy {
@@ -432,6 +443,7 @@ fun TimelineScreen(viewModel: TimelineViewModel = viewModel()) {
         }.sortedBy { it.hour }
     }
 
+    // 🔥 الـ Scroll التلقائي للساعة الحالية أول ما يفتح
     LaunchedEffect(timeBlocks) {
         if (isViewingToday && timeBlocks.isNotEmpty()) {
             val nowHour = LocalTime.now().hour
@@ -462,7 +474,7 @@ fun TimelineScreen(viewModel: TimelineViewModel = viewModel()) {
                 LazyColumn(
                     state = listState,
                     modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                    contentPadding = PaddingValues(bottom = 120.dp)
+                    contentPadding = PaddingValues(bottom = 150.dp)
                 ) {
                     items(timeBlocks.size) { index ->
                         TimelineRow(timeBlocks[index], isViewingToday)
