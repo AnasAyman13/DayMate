@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.day.mate.R
 import com.day.mate.data.authUiState.AuthUiState
+import com.day.mate.utils.getLocalizedErrorMessage
 import com.day.mate.viewmodel.AuthViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -34,8 +35,6 @@ fun SignUpScreen(
     viewModel: AuthViewModel,
     onSignedUp: () -> Unit,
     onNavigateToSignIn: () -> Unit,
-
-    // shared from AuthActivity/AuthNavGraph
     t: (Int) -> String,
     isArabic: Boolean,
     onToggleLang: () -> Unit
@@ -53,12 +52,10 @@ fun SignUpScreen(
     val primaryColor = Color(0xFF13DAEC)
     val context = LocalContext.current
 
-    // ✅ IMPORTANT: init Google client once (required for idToken in Release APK)
     LaunchedEffect(Unit) {
         viewModel.initGoogleClient(context, context.getString(R.string.default_web_client_id))
     }
 
-    // Google Sign-In Launcher
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -66,30 +63,29 @@ fun SignUpScreen(
         try {
             val account: GoogleSignInAccount? = task.getResult(ApiException::class.java)
             account?.idToken?.let { viewModel.firebaseAuthWithGoogle(it, context) } ?: run {
-                Toast.makeText(
-                    context,
-                    if (isArabic) "فشل التسجيل بجوجل: التوكن غير موجود" else "Google Sign-up failed: Token missing",
-                    Toast.LENGTH_SHORT
-                ).show()
+                val msg = if (isArabic) "فشل التسجيل: التوكن مفقود" else "Google Sign-up failed: Token missing"
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             }
         } catch (e: ApiException) {
-            Toast.makeText(
-                context,
-                if (isArabic) "فشل التسجيل بجوجل: ${e.statusCode}" else "Google Sign-up failed: ${e.statusCode}",
-                Toast.LENGTH_LONG
-            ).show()
+            val msg = if (isArabic) "فشل التسجيل بجوجل: ${e.statusCode}" else "Google Sign-up failed: ${e.statusCode}"
+            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
         }
     }
 
-    // Handle auth state changes
+    // ✅ مراقبة الحالة مع منع التكرار (Reset State)
     LaunchedEffect(uiState) {
         when (uiState) {
-            is AuthUiState.Success -> onSignedUp()
-            is AuthUiState.Error -> Toast.makeText(
-                context,
-                (uiState as AuthUiState.Error).message,
-                Toast.LENGTH_SHORT
-            ).show()
+            is AuthUiState.Success -> {
+                onSignedUp()
+                viewModel.resetState() // ✅ تصفير الحالة لمنع التكرار
+            }
+            is AuthUiState.Error -> {
+                val rawError = (uiState as AuthUiState.Error).message
+                val translatedError = getLocalizedErrorMessage(rawError, isArabic)
+                Toast.makeText(context, translatedError, Toast.LENGTH_SHORT).show()
+
+                viewModel.resetState() // ✅ تصفير الحالة لمنع ظهور التوست مرة أخرى عند التدوير أو تغيير اللغة
+            }
             else -> Unit
         }
     }
@@ -110,165 +106,80 @@ fun SignUpScreen(
         ) {
             Spacer(modifier = Modifier.height(20.dp))
 
-            // ---------- Header (moves naturally with RTL/LTR, text alignment fixed) ----------
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 6.dp)
-            ) {
+            Box(modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.Center),
+                    modifier = Modifier.fillMaxWidth().align(Alignment.Center),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.forgrnd),
-                        contentDescription = null,
-                        tint = Color.Unspecified,
-                        modifier = Modifier.size(64.dp)
-                    )
-
+                    Icon(painter = painterResource(id = R.drawable.forgrnd), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(64.dp))
                     Spacer(Modifier.width(12.dp))
-
-                    // ✅ key fix: weight + Alignment.Start (Start becomes Right in RTL automatically)
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.Start
-                    ) {
-                        Text(
-                            text = t(R.string.signup_header_title),
-                            color = Color.White,
-                            fontSize = 28.sp,
-                            style = MaterialTheme.typography.headlineSmall
-                        )
-                        Text(
-                            text = t(R.string.signup_create_account),
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 16.sp
-                        )
+                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
+                        Text(text = t(R.string.signup_header_title), color = Color.White, fontSize = 28.sp, style = MaterialTheme.typography.headlineSmall)
+                        Text(text = t(R.string.signup_create_account), color = Color.White.copy(alpha = 0.7f), fontSize = 16.sp)
                     }
                 }
-
-                // ✅ End becomes left in RTL automatically (like SignIn behavior)
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .offset(y = (-10).dp)
-                ) {
-                    LanguageToggleButton(
-                        isArabic = isArabic,
-                        primaryColor = primaryColor,
-                        onClick = onToggleLang
-                    )
+                Box(modifier = Modifier.align(Alignment.TopEnd).offset(y = (-10).dp)) {
+                    LanguageToggleButton(isArabic = isArabic, primaryColor = primaryColor, onClick = onToggleLang)
                 }
             }
 
-            // ---------- Input Fields ----------
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedTextFieldComposable(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = t(R.string.fullname_label),
-                    leadingIconRes = R.drawable.ic_person
-                )
-
-                OutlinedTextFieldComposable(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = t(R.string.email_label),
-                    leadingIconRes = R.drawable.ic_email
-                )
-
-                OutlinedTextFieldComposable(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = t(R.string.password_label),
-                    leadingIconRes = R.drawable.ic_lock,
-                    isPassword = true,
-                    visible = passwordVisible,
-                    onToggleVisibility = { passwordVisible = !passwordVisible }
-                )
-
-                OutlinedTextFieldComposable(
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
-                    label = t(R.string.confirm_password_label),
-                    leadingIconRes = R.drawable.ic_lock,
-                    isPassword = true,
-                    visible = confirmPasswordVisible,
-                    onToggleVisibility = { confirmPasswordVisible = !confirmPasswordVisible }
-                )
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextFieldComposable(value = name, onValueChange = { name = it }, label = t(R.string.fullname_label), leadingIconRes = R.drawable.ic_person)
+                OutlinedTextFieldComposable(value = email, onValueChange = { email = it }, label = t(R.string.email_label), leadingIconRes = R.drawable.ic_email)
+                OutlinedTextFieldComposable(value = password, onValueChange = { password = it }, label = t(R.string.password_label), leadingIconRes = R.drawable.ic_lock, isPassword = true, visible = passwordVisible, onToggleVisibility = { passwordVisible = !passwordVisible })
+                OutlinedTextFieldComposable(value = confirmPassword, onValueChange = { confirmPassword = it }, label = t(R.string.confirm_password_label), leadingIconRes = R.drawable.ic_lock, isPassword = true, visible = confirmPasswordVisible, onToggleVisibility = { confirmPasswordVisible = !confirmPasswordVisible })
             }
 
-            // ---------- Sign up Button ----------
             Button(
-                onClick = { viewModel.signUp(context, name, email, password, confirmPassword) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+                onClick = {
+                    if (name.isBlank() || email.isBlank() || password.isBlank()) {
+                        val msg = if (isArabic) "يرجى ملء جميع الحقول" else "Please fill all fields"
+                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                    } else if (password != confirmPassword) {
+                        val msg = if (isArabic) "كلمات المرور غير متطابقة" else "Passwords do not match"
+                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                    } else {
+                        viewModel.signUp(context, name, email, password, confirmPassword)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
             ) {
-                Text(
-                    text = t(R.string.signup_button),
-                    color = backgroundDark,
-                    fontSize = 18.sp
-                )
+                Text(text = t(R.string.signup_button), color = backgroundDark, fontSize = 18.sp)
             }
 
-            // ---------- Google Button ----------
             OutlinedButton(
-                onClick = {
-                    viewModel.googleSignOut {
-                        googleSignInLauncher.launch(viewModel.getGoogleSignInIntent())
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
+                onClick = { viewModel.googleSignOut { googleSignInLauncher.launch(viewModel.getGoogleSignInIntent()) } },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = Color.White.copy(alpha = 0.05f),
-                    contentColor = Color.White
-                )
+                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White.copy(alpha = 0.05f), contentColor = Color.White)
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.googlelogo),
-                    contentDescription = "Google",
-                    modifier = Modifier.size(20.dp)
-                )
+                Image(painter = painterResource(id = R.drawable.googlelogo), contentDescription = "Google", modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(t(R.string.google_button))
             }
 
-            // ---------- Footer ----------
             TextButton(onClick = onNavigateToSignIn) {
-                Text(
-                    text = t(R.string.already_have_account),
-                    color = primaryColor,
-                    fontSize = 14.sp
-                )
+                Text(text = t(R.string.already_have_account), color = primaryColor, fontSize = 14.sp)
             }
+
+            // ✅ رسالة السبام المترجمة
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 color = Color.White.copy(alpha = 0.04f),
                 border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.35f)),
-                tonalElevation = 0.dp
             ) {
                 Text(
                     text = if (isArabic)
-                        "تنبيه: قد تصل رسالة التفعيل إلى البريد غير المرغوب فيه (Spam). لو مش لاقيها في الوارد، راجع Spam وعلّمها كـ “ليست مزعجة”."
+                        "⚠️ تنبيه هام: قد تصل رسالة التفعيل إلى صندوق (Spam/Junk). يرجى التحقق منه وتفعيل الحساب."
                     else
-                        "Heads up: Your verification email may land in your Spam folder. If you don’t see it in your inbox, please check there and mark it as ‘Not spam’.",
+                        "⚠️ Heads up: Verification email usually lands in 'Spam' or 'Junk' folder due to security policies. Please check there.",
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                    color = Color.White.copy(alpha = 0.85f),
+                    color = Color.White.copy(alpha = 0.9f),
                     fontSize = 12.sp,
-                    lineHeight = 16.sp
+                    lineHeight = 18.sp
                 )
             }
         }
@@ -277,67 +188,24 @@ fun SignUpScreen(
 
 @Composable
 fun OutlinedTextFieldComposable(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    leadingIconRes: Int,
-    isPassword: Boolean = false,
-    visible: Boolean = false,
-    onToggleVisibility: (() -> Unit)? = null
+    value: String, onValueChange: (String) -> Unit, label: String, leadingIconRes: Int,
+    isPassword: Boolean = false, visible: Boolean = false, onToggleVisibility: (() -> Unit)? = null
 ) {
     val primaryColor = Color(0xFF13DAEC)
-
     OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        leadingIcon = {
-            Icon(
-                painter = painterResource(id = leadingIconRes),
-                contentDescription = null,
-                tint = Color.White.copy(alpha = 0.7f)
-            )
-        },
-        trailingIcon = if (isPassword && onToggleVisibility != null) {
-            {
-                val icon = if (visible) R.drawable.ic_visibility_off else R.drawable.ic_visibility
-                IconButton(onClick = onToggleVisibility) {
-                    Icon(
-                        painter = painterResource(id = icon),
-                        contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.7f)
-                    )
-                }
-            }
-        } else null,
+        value = value, onValueChange = onValueChange, label = { Text(label) },
+        leadingIcon = { Icon(painter = painterResource(id = leadingIconRes), contentDescription = null, tint = Color.White.copy(alpha = 0.7f)) },
+        trailingIcon = if (isPassword && onToggleVisibility != null) { {
+            val icon = if (visible) R.drawable.ic_visibility_off else R.drawable.ic_visibility
+            IconButton(onClick = onToggleVisibility) { Icon(painter = painterResource(id = icon), contentDescription = null, tint = Color.White.copy(alpha = 0.7f)) }
+        } } else null,
         singleLine = true,
-        visualTransformation =
-            if (isPassword && !visible) PasswordVisualTransformation() else VisualTransformation.None,
+        visualTransformation = if (isPassword && !visible) PasswordVisualTransformation() else VisualTransformation.None,
         modifier = Modifier.fillMaxWidth(),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = primaryColor,
-            unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
-            focusedLabelColor = primaryColor,
-            unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
-            cursorColor = primaryColor,
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White
+            focusedBorderColor = primaryColor, unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+            focusedLabelColor = primaryColor, unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
+            cursorColor = primaryColor, focusedTextColor = Color.White, unfocusedTextColor = Color.White
         )
     )
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun PreviewSignUpScreen() {
-    val fakeViewModel = remember { AuthViewModel() }
-    MaterialTheme {
-        SignUpScreen(
-            viewModel = fakeViewModel,
-            onSignedUp = {},
-            onNavigateToSignIn = {},
-            t = { "Preview" },
-            isArabic = false,
-            onToggleLang = {}
-        )
-    }
 }

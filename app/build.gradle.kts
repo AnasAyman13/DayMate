@@ -24,7 +24,7 @@ android {
         applicationId = "com.day.mate"
         minSdk = 29
         targetSdk = 36
-        versionCode = 2
+        versionCode = 3
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -76,6 +76,8 @@ android {
 
 
 dependencies {
+
+
     // ==========================================================
     // Core AndroidX and Lifecycle Libraries
     // ==========================================================
@@ -127,6 +129,7 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore") // Cloud Firestore database
 
+    implementation ("com.google.android.gms:play-services-auth")
 
     // ==========================================================
     // Networking

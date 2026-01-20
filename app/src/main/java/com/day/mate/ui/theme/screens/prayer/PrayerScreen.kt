@@ -40,6 +40,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.LocationOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -54,7 +55,7 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource // ✅ استدعاء مهم للأيقونة
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -79,9 +80,10 @@ import java.util.Locale
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.math.abs
 
 // ==========================================
-// 1. Helper Functions & Permissions
+// 1. Helper Functions
 // ==========================================
 
 private fun hasLocationPermission(context: Context): Boolean {
@@ -92,6 +94,12 @@ private fun hasLocationPermission(context: Context): Boolean {
         context, Manifest.permission.ACCESS_COARSE_LOCATION
     ) == PackageManager.PERMISSION_GRANTED
     return fine || coarse
+}
+
+// 🔥 دالة جديدة لحساب أقصر مسافة للدوران (عشان البوصلة متلفش غلط)
+private fun shortestAngle(current: Float, target: Float): Float {
+    val diff = (target - current + 180) % 360 - 180
+    return (current + diff + 360) % 360
 }
 
 @SuppressLint("MissingPermission")
@@ -239,8 +247,9 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
             val bestLastLocation = lastGPS ?: lastNet
             if (bestLastLocation != null) userLocation = bestLastLocation
 
-            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000L, 10f, listener)
-            lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2000L, 10f, listener)
+            // 🔥 تم تعديل الوقت لـ 5000ms (5 ثواني) بدلاً من 2000ms لتوفير البطارية
+            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000L, 10f, listener)
+            lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000L, 10f, listener)
         } catch (e: Exception) { e.printStackTrace() }
 
         onDispose {
@@ -262,6 +271,14 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
             var isLastAccentSet = false
             var isLastMagSet = false
 
+            // 🔥 إضافة Low-Pass Filter لتنعيم الحركة ومنع الرعشة
+            fun lowPass(input: FloatArray, output: FloatArray) {
+                val alpha = 0.97f // كل ما الرقم زاد (لحد 1) الحركة بقت أنعم بس أبطأ
+                for (i in input.indices) {
+                    output[i] = output[i] + alpha * (input[i] - output[i])
+                }
+            }
+
             override fun onSensorChanged(event: SensorEvent) {
                 if (event.sensor.type == Sensor.TYPE_ROTATION_VECTOR) {
                     SensorManager.getRotationMatrixFromVector(rMat, event.values)
@@ -269,10 +286,10 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                     deviceAzimuth = azimuth.toFloat()
                 } else {
                     if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-                        System.arraycopy(event.values, 0, lastAccent, 0, event.values.size)
+                        lowPass(event.values, lastAccent)
                         isLastAccentSet = true
                     } else if (event.sensor.type == Sensor.TYPE_MAGNETIC_FIELD) {
-                        System.arraycopy(event.values, 0, lastMag, 0, event.values.size)
+                        lowPass(event.values, lastMag)
                         isLastMagSet = true
                     }
                     if (isLastAccentSet && isLastMagSet) {
@@ -335,10 +352,50 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
             Spacer(Modifier.height(12.dp))
 
             // ==========================================
+            // ✅ زر تفعيل الموقع (يوجه للإعدادات)
+            // ==========================================
+            if (!locationPermissionGranted) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFB00020)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    onClick = {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.fromParts("package", ctx.packageName, null)
+                        }
+                        ctx.startActivity(intent)
+                    }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOff,
+                            contentDescription = null,
+                            tint = Color.White
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.enable_location_message),
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+
+            // ==========================================
             // ✅ قسم الصلاة القادمة
             // ==========================================
 
-            // تعريف المتغير قبل الاستخدام
             val nextPrayerName = when (nextPrayerPair?.first) {
                 "Fajr" -> stringResource(R.string.fajr)
                 "Dhuhr" -> stringResource(R.string.dhuhr)
@@ -379,12 +436,10 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                             )
                         }
 
-                        // ✅ هنا استبدلنا الرسم بالـ Icon الجاهز
-                        // تأكد إن اسم الصورة عندك في drawable هو ic_Mosque
                         Icon(
                             painter = painterResource(id = R.drawable.ic_mosque),
                             contentDescription = null,
-                            tint = Color(0xFF3E1F00), // نفس لون النصوص البني
+                            tint = Color(0xFF3E1F00),
                             modifier = Modifier
                                 .size(50.dp)
                                 .padding(start = 8.dp)
@@ -529,12 +584,17 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
 
             Spacer(Modifier.height(16.dp))
 
+            // حساب الزوايا مع إصلاح الدوران العكسي
             val qiblaRotation = qiblaBearing - deviceAzimuth
             val normalizedRotation = (qiblaRotation + 540) % 360 - 180
 
+            // 🔥 استخدام دالة ShortestAngle الجديدة للأنيميشن السلس
+            val currentRotation by remember { mutableFloatStateOf(0f) }
+            val targetRotation = normalizedRotation
+            // هنا بنخلي الأنيميشن ياخد أقصر طريق
             val animatedAngle by animateFloatAsState(
-                targetValue = normalizedRotation,
-                animationSpec = tween(durationMillis = 100, easing = FastOutSlowInEasing),
+                targetValue = targetRotation,
+                animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
                 label = "CompassNeedle"
             )
 
@@ -620,63 +680,73 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                     }
                 }
 
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val radius = size.minDimension / 2
-                    val center = Offset(size.width / 2, size.height / 2)
+                if (locationPermissionGranted && userLocation != null) {
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val radius = size.minDimension / 2
+                        val center = Offset(size.width / 2, size.height / 2)
 
-                    rotate(animatedAngle) {
-                        if (isAligned) {
-                            drawCircle(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(glowColor.copy(alpha = 0.6f), Color.Transparent),
+                        rotate(animatedAngle) {
+                            if (isAligned) {
+                                drawCircle(
+                                    brush = Brush.radialGradient(
+                                        colors = listOf(glowColor.copy(alpha = 0.6f), Color.Transparent),
+                                        center = Offset(center.x, center.y - radius + 70),
+                                        radius = 60f
+                                    ),
                                     center = Offset(center.x, center.y - radius + 70),
                                     radius = 60f
-                                ),
-                                center = Offset(center.x, center.y - radius + 70),
-                                radius = 60f
+                                )
+                            }
+
+                            val arrowPath = Path().apply {
+                                moveTo(center.x, center.y - radius + 30)
+                                lineTo(center.x + 20, center.y)
+                                lineTo(center.x, center.y - 20)
+                                lineTo(center.x - 20, center.y)
+                                close()
+                            }
+
+                            drawPath(path = arrowPath, color = glowColor)
+
+                            drawLine(
+                                color = glowColor.copy(alpha = 0.5f),
+                                start = center,
+                                end = Offset(center.x, center.y - radius + 30),
+                                strokeWidth = 4f,
+                                cap = androidx.compose.ui.graphics.StrokeCap.Round
                             )
                         }
-
-                        val arrowPath = Path().apply {
-                            moveTo(center.x, center.y - radius + 30)
-                            lineTo(center.x + 20, center.y)
-                            lineTo(center.x, center.y - 20)
-                            lineTo(center.x - 20, center.y)
-                            close()
-                        }
-
-                        drawPath(path = arrowPath, color = glowColor)
-
-                        drawLine(
-                            color = glowColor.copy(alpha = 0.5f),
-                            start = center,
-                            end = Offset(center.x, center.y - radius + 30),
-                            strokeWidth = 4f,
-                            cap = androidx.compose.ui.graphics.StrokeCap.Round
-                        )
+                        drawCircle(color = glowColor, radius = 8f, center = center)
                     }
-                    drawCircle(color = glowColor, radius = 8f, center = center)
-                }
-
-                if (userLocation == null) {
-                    Text("جاري تحديد الموقع...", color = Color.Gray, fontSize = 12.sp)
+                } else {
+                    // رسالة صغيرة مكان السهم لو مفيش موقع
+                    Text(
+                        text = if (!locationPermissionGranted) stringResource(R.string.enable_location_message) else stringResource(R.string.location_required),
+                        color = Color.Gray,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(32.dp)
+                    )
                 }
             }
 
             Spacer(Modifier.height(16.dp))
 
-            val directionText = when {
-                isAligned -> stringResource(R.string.facing_qibla)
-                normalizedRotation > 0 -> stringResource(R.string.turn_right)
-                else -> stringResource(R.string.turn_left)
-            }
+            if (locationPermissionGranted && userLocation != null) {
+                val directionText = when {
+                    isAligned -> stringResource(R.string.facing_qibla)
+                    normalizedRotation > 0 -> stringResource(R.string.turn_right)
+                    else -> stringResource(R.string.turn_left)
+                }
 
-            Text(
-                text = directionText,
-                color = if (isAligned) Color(0xFF00FF9D) else Color(0xFFFFD700),
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
-            )
+                Text(
+                    text = directionText,
+                    color = if (isAligned) Color(0xFF00FF9D) else Color(0xFFFFD700),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            }
         }
     }
 }

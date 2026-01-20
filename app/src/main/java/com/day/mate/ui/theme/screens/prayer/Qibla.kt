@@ -18,18 +18,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOff
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
-// ✅ هام جداً: ده الـ import الوحيد الصحيح عشان الرسم يشتغل
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -47,27 +46,36 @@ fun QiblaCompass(
     compassSize: Dp = 300.dp
 ) {
     val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("qibla_prefs", Context.MODE_PRIVATE) }
 
-    // بيانات الحالة
+    // 🔥 1. التأكد من الصلاحية أولاً قبل أي حاجة
+    val hasPermission = remember {
+        ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    }
+
+    // 🔥 2. تحميل البيانات المحفوظة "فقط" لو فيه صلاحية
+    // لو مفيش صلاحية، بنصفر القيم عشان السهم يختفي
+    val savedQibla = if (hasPermission) prefs.getFloat("last_qibla", 0f) else 0f
+    val savedDist = if (hasPermission) prefs.getInt("last_dist", 0) else 0
+
+    // State Variables
+    var qiblaDirection by remember { mutableFloatStateOf(savedQibla) }
+    var distanceToKaaba by remember { mutableIntStateOf(savedDist) }
     var currentAzimuth by remember { mutableFloatStateOf(0f) }
-    var qiblaDirection by remember { mutableFloatStateOf(0f) }
-    var distanceToKaaba by remember { mutableStateOf(0) }
     var location by remember { mutableStateOf<Location?>(null) }
     var isSensorUnreliable by remember { mutableStateOf(false) }
 
-    // أنيميشن ناعم للإبرة
+    // 🔥 3. تحديد هل الموقع معروف بناءً على الصلاحية والبيانات
+    var isLocationKnown by remember { mutableStateOf(hasPermission && savedQibla != 0f) }
+
+    // Compass Animation
     val animatedAzimuth by animateFloatAsState(
         targetValue = currentAzimuth,
         animationSpec = tween(durationMillis = 200),
         label = "CompassSmoother"
     )
 
-    // التأكد من الصلاحيات
-    val hasPermission = remember {
-        ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-    }
-
-    // 1. تشغيل الموقع (Location)
+    // تشغيل الـ Location Updates
     DisposableEffect(Unit) {
         if (hasPermission) {
             val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
@@ -77,6 +85,13 @@ fun QiblaCompass(
                     val (bearing, dist) = calculateQiblaData(loc)
                     qiblaDirection = bearing
                     distanceToKaaba = dist
+                    isLocationKnown = true // الموقع اتعرف خلاص
+
+                    // حفظ البيانات الجديدة
+                    prefs.edit()
+                        .putFloat("last_qibla", bearing)
+                        .putInt("last_dist", dist)
+                        .apply()
                 }
                 @Deprecated("Deprecated") override fun onStatusChanged(p: String?, s: Int, e: Bundle?) {}
                 override fun onProviderEnabled(p: String) {}
@@ -93,6 +108,7 @@ fun QiblaCompass(
                     val (bearing, dist) = calculateQiblaData(bestLoc)
                     qiblaDirection = bearing
                     distanceToKaaba = dist
+                    isLocationKnown = true
                 }
 
                 lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000L, 10f, locListener)
@@ -101,11 +117,14 @@ fun QiblaCompass(
 
             onDispose { lm.removeUpdates(locListener) }
         } else {
+            // ⛔ إذا مفيش صلاحية، بنخلي الموقع غير معروف فوراً
+            isLocationKnown = false
+            qiblaDirection = 0f
             onDispose { }
         }
     }
 
-    // 2. تشغيل الحساسات (Sensors)
+    // Sensor Logic (زي ما هو)
     DisposableEffect(Unit) {
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
@@ -122,15 +141,15 @@ fun QiblaCompass(
                     var azimuth = Math.toDegrees(orientation[0].toDouble()).toFloat()
                     azimuth = (azimuth + 360) % 360
 
-                    location?.let {
+                    // تصحيح الانحراف المغناطيسي لو الموقع معروف
+                    if (isLocationKnown && location != null) {
                         val geoField = GeomagneticField(
-                            it.latitude.toFloat(), it.longitude.toFloat(),
-                            it.altitude.toFloat(), System.currentTimeMillis()
+                            location!!.latitude.toFloat(), location!!.longitude.toFloat(),
+                            location!!.altitude.toFloat(), System.currentTimeMillis()
                         )
                         azimuth += geoField.declination
                     }
 
-                    // Smart Smoothing (منع الدوران العكسي)
                     var delta = azimuth - currentAzimuth
                     while (delta < -180) delta += 360
                     while (delta > 180) delta -= 360
@@ -150,8 +169,7 @@ fun QiblaCompass(
         onDispose { sensorManager.unregisterListener(listener) }
     }
 
-    // 3. الرسم (UI)
-    // ✅ ضفت خلفية متدرجة عشان العناصر البيضاء تظهر فوراً
+    // UI Drawing
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -166,30 +184,58 @@ fun QiblaCompass(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Coordinates Box
-        InfoCapsule(
-            text = formatCoordinates(location)
-        )
+        // 🔥 التحكم في الرسائل بناءً على الصلاحية والموقع
+        if (!hasPermission) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFB00020)),
+                modifier = Modifier.fillMaxWidth().padding(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.LocationOff, contentDescription = null, tint = Color.White)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "تم رفض الصلاحية. لا يمكن تحديد القبلة.",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        } else {
+            InfoCapsule(
+                text = if(isLocationKnown) formatCoordinates(location) else "جاري البحث عن الموقع..."
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Info Row (Distance & Direction)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            InfoBox(
-                modifier = Modifier.weight(1f),
-                value = "$distanceToKaaba KM",
-                label = "البعد عن الكعبة",
-                icon = "🕋"
-            )
-            InfoBox(
-                modifier = Modifier.weight(1f),
-                value = String.format("%.1f°", qiblaDirection),
-                label = "زاوية القبلة",
-                icon = "📐"
-            )
+        if (isLocationKnown && hasPermission) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                InfoBox(
+                    modifier = Modifier.weight(1f),
+                    value = "$distanceToKaaba KM",
+                    label = "البعد عن الكعبة",
+                    icon = "🕋"
+                )
+                InfoBox(
+                    modifier = Modifier.weight(1f),
+                    value = String.format("%.1f°", qiblaDirection),
+                    label = "زاوية القبلة",
+                    icon = "📐"
+                )
+            }
+        } else {
+            // مكان فاضي أو رسالة انتظار
+            Box(modifier = Modifier.height(90.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                val msg = if(!hasPermission) "الخدمة متوقفة لعدم وجود صلاحية" else "في انتظار إشارة GPS..."
+                Text(msg, color = Color.White.copy(alpha = 0.5f))
+            }
         }
 
         Spacer(modifier = Modifier.height(40.dp))
@@ -203,11 +249,11 @@ fun QiblaCompass(
                 val radius = size.minDimension / 2
                 val center = Offset(size.width / 2, size.height / 2)
 
-                // 1. Background Circle
+                // Background
                 drawCircle(Color(0xFFF5F5F5), radius)
                 drawCircle(Color.Black, radius, style = androidx.compose.ui.graphics.drawscope.Stroke(4f))
 
-                // 2. Ticks
+                // Compass Ticks & North (Always visible)
                 rotate(-animatedAzimuth) {
                     for (i in 0 until 360 step 30) {
                         val angle = Math.toRadians(i.toDouble())
@@ -231,7 +277,7 @@ fun QiblaCompass(
                         )
                     }
 
-                    // N Indicator
+                    // North Indicator
                     drawLine(
                         color = Color.Red,
                         start = center,
@@ -241,23 +287,25 @@ fun QiblaCompass(
                     )
                 }
 
-                // 3. Qibla Arrow (Gold)
-                rotate(-animatedAzimuth + qiblaDirection) {
-                    val arrowPath = Path().apply {
-                        moveTo(center.x, center.y - radius + 60)
-                        lineTo(center.x - 18, center.y)
-                        lineTo(center.x + 18, center.y)
-                        close()
-                    }
-                    drawPath(arrowPath, Color(0xFFFFD700))
+                // 🔥🔥 القبلة (ترسم فقط لو فيه بيرميشن + موقع معروف) 🔥🔥
+                if (isLocationKnown && hasPermission) {
+                    rotate(-animatedAzimuth + qiblaDirection) {
+                        val arrowPath = Path().apply {
+                            moveTo(center.x, center.y - radius + 60)
+                            lineTo(center.x - 18, center.y)
+                            lineTo(center.x + 18, center.y)
+                            close()
+                        }
+                        drawPath(arrowPath, Color(0xFFFFD700))
 
-                    drawLine(
-                        color = Color(0xFFFFD700),
-                        start = center,
-                        end = Offset(center.x, center.y - radius + 60),
-                        strokeWidth = 12f,
-                        cap = StrokeCap.Round
-                    )
+                        drawLine(
+                            color = Color(0xFFFFD700),
+                            start = center,
+                            end = Offset(center.x, center.y - radius + 60),
+                            strokeWidth = 12f,
+                            cap = StrokeCap.Round
+                        )
+                    }
                 }
             }
 
@@ -269,8 +317,19 @@ fun QiblaCompass(
                     .border(2.dp, Color.White, CircleShape)
             )
 
-            // Warning Icon
-            if (isSensorUnreliable) {
+            // Warning Icons
+            if (!hasPermission) {
+                Icon(
+                    imageVector = Icons.Default.LocationOff,
+                    contentDescription = "No Permission",
+                    tint = Color.Red,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(64.dp)
+                        .background(Color.White.copy(alpha=0.8f), CircleShape)
+                        .padding(12.dp)
+                )
+            } else if (isSensorUnreliable) {
                 Icon(
                     imageVector = Icons.Default.Warning,
                     contentDescription = "Calibrate",
@@ -280,15 +339,14 @@ fun QiblaCompass(
                         .padding(20.dp)
                         .size(36.dp)
                         .background(Color.White, CircleShape)
-                        .padding(4.dp)
+                        .padding(6.dp)
                 )
             }
         }
     }
 }
 
-// ================= Helpers =================
-
+// Helpers (زي ما هما)
 @Composable
 fun InfoCapsule(text: String, modifier: Modifier = Modifier) {
     Surface(
@@ -344,7 +402,7 @@ fun calculateQiblaData(loc: Location): Pair<Float, Int> {
 }
 
 fun formatCoordinates(loc: Location?): String {
-    if (loc == null) return "جاري تحديد الموقع..."
+    if (loc == null) return "موقع محفوظ"
     fun toDMS(v: Double): String {
         val d = abs(v).toInt()
         val m = ((abs(v) - d) * 60).toInt()
@@ -356,7 +414,6 @@ fun formatCoordinates(loc: Location?): String {
     return "$lat  $lon"
 }
 
-// ✅ Preview عشان تشوف النتيجة حالاً في Android Studio
 @Preview
 @Composable
 fun QiblaPreview() {

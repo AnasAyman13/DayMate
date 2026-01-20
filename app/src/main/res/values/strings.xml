@@ -300,8 +300,8 @@
 
     <string name="delete_category_confirmation">Are you sure you want to delete the \'%1$s\' category?</string>
     <string name="add_new_category_hint">Add new category...</string>
-
-
+    <string name="enable_location_message">Enable location to adjust prayer times and Qibla</string>
+    <string name="location_required">Location required to show Qibla</string>
 
 
 </resources>
