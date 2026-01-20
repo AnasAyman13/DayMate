@@ -288,11 +288,13 @@ fun CreateTaskScreen(
     }
 
     if (showDatePicker) {
+        // 🔥🔥 تم تعديل نطاق السنوات هنا لزيادة السكرول 🔥🔥
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = remember {
                 val utcToday = LocalDate.now().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
                 utcToday
-            }
+            },
+            yearRange = 2020..2060 // ✅ نطاق واسع يسمح بالسكرول المريح
         )
 
         DatePickerDialog(
@@ -310,17 +312,24 @@ fun CreateTaskScreen(
                 TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.dialog_cancel), color = hintColor) }
             }
         ) {
-            DatePicker(
-                state = datePickerState,
-                colors = DatePickerDefaults.colors(
-                    titleContentColor = accentColor,
-                    selectedDayContainerColor = accentColor,
-                    selectedDayContentColor = Color.Black,
-                    todayContentColor = accentColor,
-                    todayDateBorderColor = accentColor,
-                    headlineContentColor = textColor
+            // 🔥🔥 وضعنا DatePicker داخل Box بـ Scroll عشان لو الشاشة صغيرة 🔥🔥
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                DatePicker(
+                    state = datePickerState,
+                    colors = DatePickerDefaults.colors(
+                        titleContentColor = accentColor,
+                        selectedDayContainerColor = accentColor,
+                        selectedDayContentColor = Color.Black,
+                        todayContentColor = accentColor,
+                        todayDateBorderColor = accentColor,
+                        headlineContentColor = textColor
+                    )
                 )
-            )
+            }
         }
     }
 

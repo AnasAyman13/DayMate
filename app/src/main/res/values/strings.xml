@@ -300,4 +300,8 @@
 
     <string name="delete_category_confirmation">Are you sure you want to delete the \'%1$s\' category?</string>
     <string name="add_new_category_hint">Add new category...</string>
+
+
+
+
 </resources>

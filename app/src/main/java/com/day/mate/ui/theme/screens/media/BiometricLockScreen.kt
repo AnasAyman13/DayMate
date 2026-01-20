@@ -1,6 +1,20 @@
 package com.day.mate.ui.theme.screens.media
 
+import android.content.Intent
+import android.os.Build
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
+import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.outlined.Fingerprint
@@ -8,7 +22,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -16,24 +30,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import android.content.Intent
-import android.os.Build
-import android.provider.Settings
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.scale
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import com.day.mate.R
 import com.day.mate.ui.theme.AppGold
-import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
-import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 
 @Composable
 fun BiometricLockScreen(
@@ -81,17 +79,24 @@ fun BiometricLockScreen(
                 }
             }
             is BiometricPromptManager.BiometricResult.AuthenticationError -> {
-                errorMessage = (biometricResult as BiometricPromptManager.BiometricResult.AuthenticationError).error
+                // التعديل هنا:
+                // بدلاً من عرض رسالة النظام (التي قد تكون بالعربية)
+                // errorMessage = (biometricResult as BiometricPromptManager.BiometricResult.AuthenticationError).error
+
+                // نستخدم رسالة عامة من التطبيق لتلتزم بلغة التطبيق
+                errorMessage = context.getString(R.string.biometric_auth_failed)
             }
             BiometricPromptManager.BiometricResult.AuthenticationFailed -> {
-                errorMessage = "فشل التحقق، حاول مرة أخرى"
+                errorMessage = context.getString(R.string.biometric_auth_failed)
             }
             BiometricPromptManager.BiometricResult.AuthenticationSuccess -> {
                 onUnlockSuccess()
             }
-            BiometricPromptManager.BiometricResult.FeatureUnavailable,
+            BiometricPromptManager.BiometricResult.FeatureUnavailable -> {
+                errorMessage = context.getString(R.string.biometric_feature_unavailable)
+            }
             BiometricPromptManager.BiometricResult.HardwareUnavailable -> {
-                errorMessage = "الميزة غير متوفرة على هذا الجهاز"
+                errorMessage = context.getString(R.string.biometric_hardware_unavailable)
             }
             else -> Unit
         }
@@ -103,12 +108,13 @@ fun BiometricLockScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .safeDrawingPadding() // مهم جداً للتعامل مع الـ Landscape والـ Notch
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp)
-                .verticalScroll(scrollState),
+                .verticalScroll(scrollState) // إضافة السكرول لضمان ظهور كل العناصر في الوضع الأفقي
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {

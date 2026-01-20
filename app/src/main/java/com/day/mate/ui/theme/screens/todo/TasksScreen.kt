@@ -2,6 +2,10 @@
 
 package com.day.mate.ui.theme.screens.todo
 
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import kotlin.math.abs
+import android.widget.Toast
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -81,6 +85,7 @@ fun TasksScreen(
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    val context = LocalContext.current
 
     val backgroundColor = MaterialTheme.colorScheme.background
     val surfaceColor = MaterialTheme.colorScheme.surface
@@ -89,7 +94,7 @@ fun TasksScreen(
     val neutralCardColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
 
     val today = LocalDate.now()
-    val weekDays = (-3L..3L).map { today.plusDays(it) }
+    val weekDays = remember { (-3L..3L).map { today.plusDays(it) } }
     var selectedDate by remember { mutableStateOf(today) }
 
     var showDatePicker by remember { mutableStateOf(false) }
@@ -118,9 +123,9 @@ fun TasksScreen(
 
     var showCategoryErrorDialog by remember { mutableStateOf(false) }
     var categoryErrorMessage by remember { mutableStateOf("") }
-    val context = LocalContext.current
 
     if (isLandscape) {
+        // --- وضع Landscape ---
         Row(
             Modifier
                 .fillMaxSize()
@@ -128,7 +133,7 @@ fun TasksScreen(
         ) {
             Column(
                 Modifier
-                    .width(300.dp)
+                    .width(320.dp)
                     .fillMaxHeight()
                     .background(surfaceColor)
                     .verticalScroll(rememberScrollState())
@@ -150,32 +155,31 @@ fun TasksScreen(
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
 
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     weekDays.forEach { day ->
                         DateButton(
                             date = day,
                             isSelected = selectedDate == day,
                             onClick = { selectedDate = day },
-                            isVertical = true,
+                            isVertical = false,
                             taskCount = tasksPerDay[day.toString()] ?: 0,
                             neutralColor = neutralCardColor
                         )
                     }
 
-                    Box(
+                    IconButton(
+                        onClick = { showDatePicker = true },
                         modifier = Modifier
-                            .fillMaxWidth()
                             .clip(RoundedCornerShape(18.dp))
                             .background(neutralCardColor)
-                            .clickable { showDatePicker = true }
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        contentAlignment = Alignment.Center
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                            Icon(Icons.Default.CalendarToday, contentDescription = null, tint = onBackgroundColor, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.go_to_date), color = onBackgroundColor, fontSize = 13.sp)
-                        }
+                        Icon(Icons.Default.CalendarToday, contentDescription = null, tint = onBackgroundColor)
                     }
                 }
 
@@ -231,6 +235,7 @@ fun TasksScreen(
             }
         }
     } else {
+        // --- وضع Portrait ---
         Column(
             Modifier
                 .fillMaxSize()
@@ -277,17 +282,36 @@ fun TasksScreen(
 
     if (showDatePicker) {
         val todayMillis = remember { LocalDate.now().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli() }
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = todayMillis)
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = todayMillis,
+            yearRange = 2020..2060
+        )
+
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = { TextButton(onClick = { datePickerState.selectedDateMillis?.let { selectedDate = Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate() }; showDatePicker = false }) { Text(stringResource(R.string.dialog_ok), color = AppGold, fontWeight = FontWeight.Bold) } },
             dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.dialog_cancel), color = onSurfaceVariant) } }
         ) {
-            DatePicker(state = datePickerState, colors = DatePickerDefaults.colors(titleContentColor = AppGold, headlineContentColor = onBackgroundColor, selectedDayContainerColor = AppGold, selectedDayContentColor = Color.Black, todayContentColor = AppGold, todayDateBorderColor = AppGold))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                DatePicker(
+                    state = datePickerState,
+                    colors = DatePickerDefaults.colors(
+                        titleContentColor = AppGold,
+                        headlineContentColor = onBackgroundColor,
+                        selectedDayContainerColor = AppGold,
+                        selectedDayContentColor = Color.Black,
+                        todayContentColor = AppGold,
+                        todayDateBorderColor = AppGold
+                    )
+                )
+            }
         }
     }
 
-    // 🔥🔥 التعديل: إزالة windowInsets وإصلاح تعريف sheetState 🔥🔥
     if (showManageCategoriesSheet) {
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -295,7 +319,6 @@ fun TasksScreen(
             onDismissRequest = { showManageCategoriesSheet = false },
             sheetState = sheetState,
             containerColor = MaterialTheme.colorScheme.surface
-            // ❌ تم إزالة windowInsets لحل مشكلة التوافق
         ) {
             ManageCategoriesSheetContent(
                 viewModel = viewModel,
@@ -321,7 +344,6 @@ fun TasksScreen(
     }
 }
 
-// 🔥🔥 ManageCategoriesSheetContent (بتستخدم Scaffold عشان الزرار يثبت) 🔥🔥
 @Composable
 fun ManageCategoriesSheetContent(
     viewModel: TodoViewModel,
@@ -329,112 +351,89 @@ fun ManageCategoriesSheetContent(
     onError: (String) -> Unit
 ) {
     val categories by viewModel.categories.collectAsState()
+    val context = LocalContext.current
 
     var categoryToDelete by remember { mutableStateOf<String?>(null) }
     var newCategoryName by remember { mutableStateOf("") }
     val maxChar = 20
     val hintColor = MaterialTheme.colorScheme.onSurfaceVariant
 
-    Scaffold(
-        containerColor = Color.Transparent,
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight(0.9f),
-        topBar = {
-            Column(
+            .padding(horizontal = 24.dp)
+            .padding(top = 16.dp, bottom = 16.dp)
+            .navigationBarsPadding()
+            .imePadding()
+    ) {
+        Text(
+            text = stringResource(R.string.dialog_manage_categories),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Top
+        ) {
+            OutlinedTextField(
+                value = newCategoryName,
+                onValueChange = { if (it.length <= maxChar) newCategoryName = it },
+                label = { Text(stringResource(R.string.add_new_category_hint), fontSize = 12.sp) },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .padding(top = 16.dp, bottom = 8.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.dialog_manage_categories),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    OutlinedTextField(
-                        value = newCategoryName,
-                        onValueChange = { if (it.length <= maxChar) newCategoryName = it },
-                        label = { Text(stringResource(R.string.add_new_category_hint), fontSize = 12.sp) },
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 8.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AppGold,
-                            focusedLabelColor = AppGold,
-                            cursorColor = AppGold
-                        ),
-                        supportingText = {
-                            Text(
-                                text = "${newCategoryName.length}/$maxChar",
-                                color = hintColor,
-                                fontSize = 10.sp,
-                                textAlign = TextAlign.End,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
+                    .weight(1f)
+                    .padding(end = 8.dp),
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = AppGold,
+                    focusedLabelColor = AppGold,
+                    cursorColor = AppGold
+                ),
+                supportingText = {
+                    Text(
+                        text = "${newCategoryName.length}/$maxChar",
+                        color = hintColor,
+                        fontSize = 10.sp,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.fillMaxWidth()
                     )
-
-                    FilledIconButton(
-                        onClick = {
-                            if (newCategoryName.isNotBlank()) {
-                                viewModel.addCategory(newCategoryName)
-                                newCategoryName = ""
-                            }
-                        },
-                        modifier = Modifier
-                            .padding(top = 8.dp)
-                            .size(48.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = AppGold,
-                            contentColor = Color.Black
-                        )
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = "Add")
-                    }
                 }
-                Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), modifier = Modifier.padding(top = 8.dp))
-            }
-        },
-        bottomBar = {
-            Button(
-                onClick = onDismiss,
+            )
+
+            FilledIconButton(
+                onClick = {
+                    if (newCategoryName.isNotBlank()) {
+                        viewModel.addCategory(newCategoryName)
+                        Toast.makeText(context, "Category added", Toast.LENGTH_SHORT).show()
+                        newCategoryName = ""
+                    }
+                },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp)
-                    .height(50.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
+                    .padding(top = 10.dp)
+                    .size(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = IconButtonDefaults.filledIconButtonColors(
                     containerColor = AppGold,
                     contentColor = Color.Black
                 )
             ) {
-                Text(
-                    text = stringResource(R.string.dialog_done),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Icon(Icons.Default.Add, contentDescription = "Add")
             }
         }
-    ) { innerPadding ->
+
+        Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
+
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .weight(1f)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(bottom = 8.dp)
         ) {
             items(categories, key = { it }) { categoryName ->
                 Surface(
@@ -475,6 +474,26 @@ fun ManageCategoriesSheetContent(
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Button(
+            onClick = onDismiss,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = AppGold,
+                contentColor = Color.Black
+            )
+        ) {
+            Text(
+                text = stringResource(R.string.dialog_done),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 
     if (categoryToDelete != null) {
@@ -491,7 +510,6 @@ fun ManageCategoriesSheetContent(
     }
 }
 
-// ... (Baqi el code zay ma howa: ModernCategoryChip, ListHeader, SwipeToDeleteTaskItem, TaskItem, DateButton)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModernCategoryChip(text: String, isSelected: Boolean, onClick: () -> Unit, isVertical: Boolean = false, neutralColor: Color) {
@@ -510,25 +528,90 @@ fun ListHeader(text: String) {
     Text(text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(bottom = 8.dp, top = 8.dp))
 }
 
+
 @Composable
-fun SwipeToDeleteTaskItem(todo: Todo, onToggle: () -> Unit, onDelete: () -> Unit, onEdit: () -> Unit, isCompact: Boolean = false, neutralColor: Color) {
+fun SwipeToDeleteTaskItem(
+    todo: Todo,
+    onToggle: () -> Unit,
+    onDelete: () -> Unit,
+    onEdit: () -> Unit,
+    isCompact: Boolean = false,
+    neutralColor: Color
+) {
+    // 1. نجيب اتجاه اللغة الحالي
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+
     var offsetX by remember { mutableStateOf(0f) }
-    val animatedOffsetX by animateFloatAsState(targetValue = offsetX, animationSpec = tween(durationMillis = 100, easing = LinearEasing), label = "swipe_animation")
+    val animatedOffsetX by animateFloatAsState(
+        targetValue = offsetX,
+        animationSpec = tween(durationMillis = 100, easing = LinearEasing),
+        label = "swipe_animation"
+    )
+
     val density = LocalDensity.current
     val swipeThreshold = with(density) { 100.dp.toPx() }
     val maxSwipe = with(density) { 200.dp.toPx() }
+
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxWidth().padding(vertical = if (isCompact) 4.dp else 8.dp)) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = if (isCompact) 4.dp else 8.dp)
+    ) {
+        // الخلفية الحمراء (تظهر لما نسحب)
         if (animatedOffsetX < -10f) {
-            Box(modifier = Modifier.matchParentSize().clip(RoundedCornerShape(if (isCompact) 12.dp else 16.dp)).background(Color(0xFF8B0000)), contentAlignment = Alignment.CenterEnd) {
-                Icon(Icons.Default.Delete, contentDescription = null, tint = Color.White, modifier = Modifier.padding(end = 24.dp))
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(RoundedCornerShape(if (isCompact) 12.dp else 16.dp))
+                    .background(Color(0xFF8B0000)),
+                contentAlignment = Alignment.CenterEnd // الأيقونة دايماً في اليمين عشان السحب لليسار
+            ) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.padding(end = 24.dp)
+                )
             }
         }
-        Box(modifier = Modifier.fillMaxWidth().offset { IntOffset(animatedOffsetX.roundToInt(), 0) }.pointerInput(todo.id) {
-            detectHorizontalDragGestures(onDragEnd = { if (offsetX < -swipeThreshold) showDeleteDialog = true; offsetX = 0f }, onDragCancel = { offsetX = 0f }, onHorizontalDrag = { _, dragAmount -> val newOffset = (offsetX + dragAmount); offsetX = if (newOffset > 0) 0f else if (newOffset < -maxSwipe) -maxSwipe else newOffset })
-        }) {
-            TaskItem(todo = todo, onToggle = onToggle, onDelete = onDelete, onEdit = onEdit, neutralColor = neutralColor)
+
+        // الكارد الأمامي
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                // 🔥 التعديل السحري هنا 🔥
+                // لو عربي (RTL) بنعكس الإشارة عشان السالب يمشي شمال زي الإنجليزي
+                .offset {
+                    val x = if (isRtl) -animatedOffsetX.roundToInt() else animatedOffsetX.roundToInt()
+                    IntOffset(x, 0)
+                }
+                .pointerInput(todo.id) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            if (offsetX < -swipeThreshold) showDeleteDialog = true
+                            offsetX = 0f
+                        },
+                        onDragCancel = { offsetX = 0f },
+                        onHorizontalDrag = { _, dragAmount ->
+                            val newOffset = (offsetX + dragAmount)
+                            // بنسمح بس بالقيم السالبة (يعني السحب لليسار فيزيائياً)
+                            offsetX = if (newOffset > 0) 0f
+                            else if (newOffset < -maxSwipe) -maxSwipe
+                            else newOffset
+                        }
+                    )
+                }
+        ) {
+            TaskItem(
+                todo = todo,
+                onToggle = onToggle,
+                onDelete = onDelete,
+                onEdit = onEdit,
+                neutralColor = neutralColor
+            )
         }
     }
 
@@ -537,8 +620,16 @@ fun SwipeToDeleteTaskItem(todo: Todo, onToggle: () -> Unit, onDelete: () -> Unit
             onDismissRequest = { showDeleteDialog = false },
             title = { Text(stringResource(R.string.dialog_delete), color = MaterialTheme.colorScheme.onSurface) },
             text = { Text(stringResource(R.string.delete_toast), color = MaterialTheme.colorScheme.onSurface) },
-            confirmButton = { TextButton(onClick = { onDelete(); showDeleteDialog = false }) { Text(stringResource(R.string.dialog_ok), color = Color(0xFF8B0000)) } },
-            dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text(stringResource(R.string.dialog_cancel), color = MaterialTheme.colorScheme.onSurfaceVariant) } },
+            confirmButton = {
+                TextButton(onClick = { onDelete(); showDeleteDialog = false }) {
+                    Text(stringResource(R.string.dialog_ok), color = Color(0xFF8B0000))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text(stringResource(R.string.dialog_cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
             containerColor = MaterialTheme.colorScheme.surface
         )
     }
@@ -587,7 +678,10 @@ fun DateButton(date: LocalDate, isSelected: Boolean, onClick: () -> Unit, isVert
     val dayNumber = date.dayOfMonth.toString()
     val containerColor = if (isSelected) AppGold else neutralColor
     val contentColor = if (isSelected) Color.Black else (if (date == LocalDate.now()) AppGold else MaterialTheme.colorScheme.onBackground)
-    val scale by animateFloatAsState(targetValue = if (isSelected) 1.05f else 1f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow), label = "scale")
+
+    // 🔥🔥 هنا قللت النسبة من 1.2f إلى 1.1f عشان يكون التكبير بسيط ومناسب 🔥🔥
+    val scale by animateFloatAsState(targetValue = if (isSelected) 1.1f else 1f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow), label = "scale")
+
     Box(modifier = Modifier.then(if (isVertical) Modifier.fillMaxWidth() else Modifier.padding(end = 8.dp)).scale(scale).clip(RoundedCornerShape(18.dp)).background(containerColor).clickable { onClick() }.padding(horizontal = 16.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
         if (isVertical) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {

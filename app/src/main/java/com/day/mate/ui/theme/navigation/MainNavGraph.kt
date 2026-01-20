@@ -9,6 +9,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
@@ -142,7 +143,7 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
                             start = 0.dp,
                             top = 0.dp,
                             end = 0.dp,
-                            bottom = floatingNavSpace + navOffset + 16.dp
+                            bottom = floatingNavSpace + navOffset + 4.dp
                         ),
                         onClick = {
                             todoViewModel.clearForm()
@@ -151,8 +152,11 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
                         containerColor = AppGold,
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Task")
-                    }
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add Task",
+                            modifier = Modifier.size(18.dp) // ⬅️ تصغير الأيقونة سنة
+                        )                    }
                 }
             }
         ) { innerPadding ->
