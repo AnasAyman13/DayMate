@@ -31,6 +31,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.day.mate.data.local.media.VaultItem
 import com.day.mate.data.local.media.VaultType
+import com.day.mate.ui.theme.AppGold // ✅ استدعاء اللون الأصفر الخاص بالتطبيق
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -83,10 +84,6 @@ fun VaultScreen(
     val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
-
-    val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val buttonColor = if (isDarkTheme) Color(0xFFD4AF37) else MaterialTheme.colorScheme.primaryContainer
-    val buttonContentColor = if (isDarkTheme) Color.Black else MaterialTheme.colorScheme.onPrimaryContainer
 
     LaunchedEffect(isArabic) {
         val currentFilter = selectedFilter
@@ -147,37 +144,55 @@ fun VaultScreen(
 
     Scaffold(
         containerColor = backgroundColor,
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { picker.launch(arrayOf("image/*", "video/*", "audio/*", "application/pdf")) },
-                containerColor = buttonColor,
-                contentColor = buttonContentColor,
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = strings.add)
-            }
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = strings.title,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
+                actions = {
+                    // ✅ الزرار الجديد: أصفر (AppGold) وأيقونة سوداء
+                    FilledIconButton(
+                        onClick = { picker.launch(arrayOf("image/*", "video/*", "audio/*", "application/pdf")) },
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = AppGold, // اللون الأصفر بتاع السناك بار
+                            contentColor = Color.Black // الأيقونة سوداء عشان تبقى واضحة
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .padding(end = 16.dp)
+                            .size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = strings.add,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = backgroundColor,
+                    titleContentColor = onSurfaceColor
+                )
+            )
         },
         modifier = Modifier.fillMaxSize()
     ) { padding ->
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 150.dp),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(
+                top = padding.calculateTopPadding() + 16.dp,
+                start = 16.dp,
+                end = 16.dp,
+                bottom = 120.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+            modifier = Modifier.fillMaxSize()
         ) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Text(
-                    text = strings.title,
-                    color = onSurfaceColor,
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
-
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),

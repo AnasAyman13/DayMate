@@ -4,11 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
-import android.hardware.GeomagneticField
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
+import android.hardware.*
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -16,20 +12,31 @@ import android.os.Bundle
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+// ✅ هام جداً: ده الـ import الوحيد الصحيح عشان الرسم يشتغل
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import kotlin.math.*
 
@@ -41,227 +48,317 @@ fun QiblaCompass(
 ) {
     val context = LocalContext.current
 
-    // ✅ Azimuth (0..360) بعد الفلترة
+    // بيانات الحالة
     var currentAzimuth by remember { mutableFloatStateOf(0f) }
+    var qiblaDirection by remember { mutableFloatStateOf(0f) }
+    var distanceToKaaba by remember { mutableStateOf(0) }
+    var location by remember { mutableStateOf<Location?>(null) }
+    var isSensorUnreliable by remember { mutableStateOf(false) }
 
-    // ✅ أنيميشن ناعم
+    // أنيميشن ناعم للإبرة
     val animatedAzimuth by animateFloatAsState(
         targetValue = currentAzimuth,
-        animationSpec = tween(durationMillis = 140),
-        label = "CompassAnimation"
+        animationSpec = tween(durationMillis = 200),
+        label = "CompassSmoother"
     )
 
-    // ✅ اتجاه القبلة (0..360)
-    var qiblaDirection by remember { mutableFloatStateOf(0f) }
-
-    // ✅ Location + Magnetic declination
-    var location by remember { mutableStateOf<Location?>(null) }
-    var geomagneticField by remember { mutableStateOf<GeomagneticField?>(null) }
-
-    val hasLocationPermission = remember {
-        ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
-                PackageManager.PERMISSION_GRANTED
+    // التأكد من الصلاحيات
+    val hasPermission = remember {
+        ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
     }
 
-    // =========================
-    // 1) LOCATION
-    // =========================
-    DisposableEffect(context, hasLocationPermission) {
-        if (!hasLocationPermission) {
-            // ✅ لازم نرجع onDispose دايمًا
-            return@DisposableEffect onDispose { }
-        }
-
-        val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-
-        val listener = object : LocationListener {
-            override fun onLocationChanged(loc: Location) {
-                location = loc
-                geomagneticField = GeomagneticField(
-                    loc.latitude.toFloat(),
-                    loc.longitude.toFloat(),
-                    loc.altitude.toFloat(),
-                    System.currentTimeMillis()
-                )
+    // 1. تشغيل الموقع (Location)
+    DisposableEffect(Unit) {
+        if (hasPermission) {
+            val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            val locListener = object : LocationListener {
+                override fun onLocationChanged(loc: Location) {
+                    location = loc
+                    val (bearing, dist) = calculateQiblaData(loc)
+                    qiblaDirection = bearing
+                    distanceToKaaba = dist
+                }
+                @Deprecated("Deprecated") override fun onStatusChanged(p: String?, s: Int, e: Bundle?) {}
+                override fun onProviderEnabled(p: String) {}
+                override fun onProviderDisabled(p: String) {}
             }
 
-            @Deprecated("Deprecated in Java")
-            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+            try {
+                val lastGPS = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                val lastNet = lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+                val bestLoc = lastGPS ?: lastNet
 
-            override fun onProviderEnabled(provider: String) {}
-            override fun onProviderDisabled(provider: String) {}
-        }
+                if (bestLoc != null) {
+                    location = bestLoc
+                    val (bearing, dist) = calculateQiblaData(bestLoc)
+                    qiblaDirection = bearing
+                    distanceToKaaba = dist
+                }
 
-        try {
-            val last = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                ?: lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+                lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000L, 10f, locListener)
+                lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2000L, 10f, locListener)
+            } catch (e: Exception) { e.printStackTrace() }
 
-            if (last != null) {
-                location = last
-                geomagneticField = GeomagneticField(
-                    last.latitude.toFloat(),
-                    last.longitude.toFloat(),
-                    last.altitude.toFloat(),
-                    System.currentTimeMillis()
-                )
-            }
-
-            lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10_000L, 10f, listener)
-            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10_000L, 10f, listener)
-        } catch (_: Exception) {}
-
-        onDispose {
-            try { lm.removeUpdates(listener) } catch (_: Exception) {}
+            onDispose { lm.removeUpdates(locListener) }
+        } else {
+            onDispose { }
         }
     }
 
-    // =========================
-    // 2) QIBLA BEARING (stable)
-    // =========================
-    LaunchedEffect(location) {
-        val loc = location ?: return@LaunchedEffect
-
-        val kaabaLat = Math.toRadians(21.4225)
-        val kaabaLon = Math.toRadians(39.8262)
-
-        val userLat = Math.toRadians(loc.latitude)
-        val userLon = Math.toRadians(loc.longitude)
-
-        val dLon = kaabaLon - userLon
-
-        val y = sin(dLon) * cos(kaabaLat)
-        val x = cos(userLat) * sin(kaabaLat) - sin(userLat) * cos(kaabaLat) * cos(dLon)
-
-        val bearing = Math.toDegrees(atan2(y, x))
-        qiblaDirection = ((bearing + 360.0) % 360.0).toFloat()
-    }
-
-    // =========================
-    // 3) SENSORS
-    // =========================
-    DisposableEffect(context) {
+    // 2. تشغيل الحساسات (Sensors)
+    DisposableEffect(Unit) {
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        val rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
-
-        if (rotationSensor == null) {
-            // ✅ لازم نرجع onDispose دايمًا
-            return@DisposableEffect onDispose { }
-        }
-
-        val rotationMatrix = FloatArray(9)
-        val adjustedMatrix = FloatArray(9)
-        val orientation = FloatArray(3)
+        val sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+            ?: sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION)
 
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
-                try {
+                if (event.sensor.type == Sensor.TYPE_ROTATION_VECTOR) {
+                    val rotationMatrix = FloatArray(9)
                     SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
-
-                    // ✅ Remap for portrait stability
-                    SensorManager.remapCoordinateSystem(
-                        rotationMatrix,
-                        SensorManager.AXIS_X,
-                        SensorManager.AXIS_Z,
-                        adjustedMatrix
-                    )
-
-                    SensorManager.getOrientation(adjustedMatrix, orientation)
+                    val orientation = FloatArray(3)
+                    SensorManager.getOrientation(rotationMatrix, orientation)
 
                     var azimuth = Math.toDegrees(orientation[0].toDouble()).toFloat()
-                    azimuth = (azimuth + 360f) % 360f
+                    azimuth = (azimuth + 360) % 360
 
-                    geomagneticField?.let {
-                        azimuth = (azimuth + it.declination + 360f) % 360f
+                    location?.let {
+                        val geoField = GeomagneticField(
+                            it.latitude.toFloat(), it.longitude.toFloat(),
+                            it.altitude.toFloat(), System.currentTimeMillis()
+                        )
+                        azimuth += geoField.declination
                     }
 
-                    // ✅ Circular low-pass
-                    val alpha = 0.12f
-                    val diff = ((azimuth - currentAzimuth + 540f) % 360f) - 180f
-                    currentAzimuth = (currentAzimuth + alpha * diff + 360f) % 360f
-                } catch (_: Exception) {}
+                    // Smart Smoothing (منع الدوران العكسي)
+                    var delta = azimuth - currentAzimuth
+                    while (delta < -180) delta += 360
+                    while (delta > 180) delta -= 360
+                    currentAzimuth += delta
+
+                    isSensorUnreliable = (event.accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE || event.accuracy == 0)
+                }
             }
-
-            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+                isSensorUnreliable = (accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE || accuracy == SensorManager.SENSOR_STATUS_ACCURACY_LOW)
+            }
         }
 
-        sensorManager.registerListener(listener, rotationSensor, SensorManager.SENSOR_DELAY_UI)
-
-        onDispose {
-            try { sensorManager.unregisterListener(listener) } catch (_: Exception) {}
+        if (sensor != null) {
+            sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_GAME)
         }
+        onDispose { sensorManager.unregisterListener(listener) }
     }
 
-    // =========================
-    // 4) UI
-    // =========================
+    // 3. الرسم (UI)
+    // ✅ ضفت خلفية متدرجة عشان العناصر البيضاء تظهر فوراً
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(Color(0xFF042825), Color(0xFF073B3A))
+                )
+            )
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            "Qibla Direction",
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-            color = Color.White
-        )
-        Spacer(Modifier.height(12.dp))
 
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Coordinates Box
+        InfoCapsule(
+            text = formatCoordinates(location)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Info Row (Distance & Direction)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            InfoBox(
+                modifier = Modifier.weight(1f),
+                value = "$distanceToKaaba KM",
+                label = "البعد عن الكعبة",
+                icon = "🕋"
+            )
+            InfoBox(
+                modifier = Modifier.weight(1f),
+                value = String.format("%.1f°", qiblaDirection),
+                label = "زاوية القبلة",
+                icon = "📐"
+            )
+        }
+
+        Spacer(modifier = Modifier.height(40.dp))
+
+        // Compass Draw
         Box(
             modifier = Modifier.size(compassSize),
             contentAlignment = Alignment.Center
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
+                val radius = size.minDimension / 2
                 val center = Offset(size.width / 2, size.height / 2)
-                val radius = size.minDimension / 2.6f
 
-                drawCircle(
-                    color = Color.White.copy(alpha = 0.10f),
-                    radius = radius + 28f,
-                    center = center
-                )
-                drawCircle(
-                    color = Color.White.copy(alpha = 0.05f),
-                    radius = radius + 8f,
-                    center = center
-                )
+                // 1. Background Circle
+                drawCircle(Color(0xFFF5F5F5), radius)
+                drawCircle(Color.Black, radius, style = androidx.compose.ui.graphics.drawscope.Stroke(4f))
 
-                // North reference
+                // 2. Ticks
                 rotate(-animatedAzimuth) {
+                    for (i in 0 until 360 step 30) {
+                        val angle = Math.toRadians(i.toDouble())
+                        val isCardinal = i % 90 == 0
+                        val startLen = if (isCardinal) 30f else 15f
+
+                        val start = Offset(
+                            (center.x + (radius - startLen) * sin(angle)).toFloat(),
+                            (center.y - (radius - startLen) * cos(angle)).toFloat()
+                        )
+                        val end = Offset(
+                            (center.x + radius * sin(angle)).toFloat(),
+                            (center.y - radius * cos(angle)).toFloat()
+                        )
+                        drawLine(
+                            color = if (isCardinal) Color.Black else Color.Gray,
+                            start = start,
+                            end = end,
+                            strokeWidth = if (isCardinal) 5f else 2f,
+                            cap = StrokeCap.Round
+                        )
+                    }
+
+                    // N Indicator
                     drawLine(
                         color = Color.Red,
                         start = center,
-                        end = Offset(center.x, center.y - radius),
+                        end = Offset(center.x, center.y - radius + 40),
                         strokeWidth = 6f,
                         cap = StrokeCap.Round
                     )
                 }
 
-                // Qibla arrow
+                // 3. Qibla Arrow (Gold)
                 rotate(-animatedAzimuth + qiblaDirection) {
+                    val arrowPath = Path().apply {
+                        moveTo(center.x, center.y - radius + 60)
+                        lineTo(center.x - 18, center.y)
+                        lineTo(center.x + 18, center.y)
+                        close()
+                    }
+                    drawPath(arrowPath, Color(0xFFFFD700))
+
                     drawLine(
                         color = Color(0xFFFFD700),
                         start = center,
-                        end = Offset(center.x, center.y - radius),
-                        strokeWidth = 14f,
+                        end = Offset(center.x, center.y - radius + 60),
+                        strokeWidth = 12f,
                         cap = StrokeCap.Round
                     )
-
-                    val head = Offset(center.x, center.y - radius)
-                    val left = Offset(head.x - 18f, head.y + 26f)
-                    val right = Offset(head.x + 18f, head.y + 26f)
-                    drawLine(Color(0xFFFFD700), head, left, strokeWidth = 10f, cap = StrokeCap.Round)
-                    drawLine(Color(0xFFFFD700), head, right, strokeWidth = 10f, cap = StrokeCap.Round)
                 }
             }
-        }
 
-        Spacer(Modifier.height(8.dp))
+            // Center Dot
+            Box(
+                modifier = Modifier
+                    .size(16.dp)
+                    .background(Color.Red, CircleShape)
+                    .border(2.dp, Color.White, CircleShape)
+            )
+
+            // Warning Icon
+            if (isSensorUnreliable) {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = "Calibrate",
+                    tint = Color.Red,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(20.dp)
+                        .size(36.dp)
+                        .background(Color.White, CircleShape)
+                        .padding(4.dp)
+                )
+            }
+        }
+    }
+}
+
+// ================= Helpers =================
+
+@Composable
+fun InfoCapsule(text: String, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.border(1.dp, Color.Black, RoundedCornerShape(50)),
+        shape = RoundedCornerShape(50),
+        color = Color.White
+    ) {
         Text(
-            text = if (location != null)
-                "Heading: ${currentAzimuth.toInt()}° | Qibla: ${qiblaDirection.toInt()}°"
-            else
-                "Locating...",
-            color = Color.White,
-            style = MaterialTheme.typography.bodySmall
+            text = text,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp),
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+            color = Color.Black
         )
     }
+}
+
+@Composable
+fun InfoBox(modifier: Modifier = Modifier, value: String, label: String, icon: String) {
+    Surface(
+        modifier = modifier
+            .height(90.dp)
+            .border(1.dp, Color.Black, RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(8.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(icon, fontSize = 28.sp)
+            Spacer(Modifier.height(4.dp))
+            Text(text = value, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
+            Text(text = label, fontSize = 11.sp, color = Color.Gray)
+        }
+    }
+}
+
+fun calculateQiblaData(loc: Location): Pair<Float, Int> {
+    val kaabaLat = 21.422487
+    val kaabaLon = 39.826206
+    val userLatRad = Math.toRadians(loc.latitude)
+    val kaabaLatRad = Math.toRadians(kaabaLat)
+    val lonDiff = Math.toRadians(kaabaLon - loc.longitude)
+    val y = sin(lonDiff) * cos(kaabaLatRad)
+    val x = cos(userLatRad) * sin(kaabaLatRad) - sin(userLatRad) * cos(kaabaLatRad) * cos(lonDiff)
+    var bearing = Math.toDegrees(atan2(y, x)).toFloat()
+    bearing = (bearing + 360) % 360
+
+    val results = FloatArray(1)
+    Location.distanceBetween(loc.latitude, loc.longitude, kaabaLat, kaabaLon, results)
+    return Pair(bearing, (results[0] / 1000).toInt())
+}
+
+fun formatCoordinates(loc: Location?): String {
+    if (loc == null) return "جاري تحديد الموقع..."
+    fun toDMS(v: Double): String {
+        val d = abs(v).toInt()
+        val m = ((abs(v) - d) * 60).toInt()
+        val s = ((abs(v) - d - m / 60.0) * 3600).toInt()
+        return "$d°$m'$s\""
+    }
+    val lat = toDMS(loc.latitude) + if (loc.latitude >= 0) " N" else " S"
+    val lon = toDMS(loc.longitude) + if (loc.longitude >= 0) " E" else " W"
+    return "$lat  $lon"
+}
+
+// ✅ Preview عشان تشوف النتيجة حالاً في Android Studio
+@Preview
+@Composable
+fun QiblaPreview() {
+    QiblaCompass()
 }

@@ -60,7 +60,6 @@ data class TimeBlock(
 
 // --- Utility Functions ---
 
-// 🔥 دالة جديدة لترجمة الكاتيجوري
 @Composable
 fun getTranslatedCategory(category: String): String {
     return when (category.lowercase(Locale.ROOT)) {
@@ -162,6 +161,8 @@ fun TimelineMenu(
 ) {
     val selectedDate by viewModel.selectedDate.collectAsState()
     val hideCompleted by viewModel.hideCompleted.collectAsState()
+    val events by viewModel.timelineEvents.collectAsState()
+
     var isMenuExpanded by remember { mutableStateOf(false) }
     val isRtl = LocalConfiguration.current.locales[0].language == "ar"
 
@@ -183,28 +184,47 @@ fun TimelineMenu(
                 text = stringResource(if (isTomorrow) R.string.menu_view_today else R.string.menu_view_tomorrow),
                 icon = Icons.Filled.EventNote,
                 onClick = {
+                    isMenuExpanded = false // ✅ يقفل فوراً
                     if (isTomorrow) viewModel.viewToday() else viewModel.viewTomorrow()
-                    isMenuExpanded = false
                 }
             )
+
             ModernDropdownItem(
                 text = stringResource(if (hideCompleted) R.string.menu_show_completed else R.string.menu_hide_completed),
                 icon = Icons.Filled.VisibilityOff,
                 onClick = {
+                    isMenuExpanded = false // ✅ يقفل فوراً
                     viewModel.toggleHideCompleted()
-                    isMenuExpanded = false
                 }
             )
+
             Divider(Modifier.padding(horizontal = 16.dp), color = Color.Gray.copy(alpha = 0.2f))
+
             ModernDropdownItem(
                 text = stringResource(R.string.menu_mark_all_done),
                 icon = Icons.Filled.DoneAll,
                 onClick = {
+                    isMenuExpanded = false // ✅ يقفل فوراً قبل التنفيذ
+
                     coroutineScope.launch {
-                        if (!viewModel.markAllTasksAsDone(selectedDate)) {
-                            snackbarHostState.showSnackbar(context.getString(R.string.all_tasks_already_done))
+                        val tasks = events.filter { it.type == EventType.TODO_TASK }
+                        val totalTasks = tasks.size
+                        val completedTasks = tasks.count { it.isDone }
+
+                        if (totalTasks == 0) {
+                            snackbarHostState.showSnackbar(
+                                message = if(isRtl) "لا توجد مهام لهذا اليوم" else "No tasks for this day"
+                            )
+                        } else if (completedTasks == totalTasks) {
+                            snackbarHostState.showSnackbar(
+                                message = if(isRtl) "جميع المهام مكتملة بالفعل!" else "All tasks are already completed!"
+                            )
+                        } else {
+                            viewModel.markAllTasksAsDone(selectedDate)
+                            snackbarHostState.showSnackbar(
+                                message = if(isRtl) "تم تحديد جميع المهام كمكتملة" else "All tasks marked as done"
+                            )
                         }
-                        isMenuExpanded = false
                     }
                 }
             )
@@ -318,7 +338,6 @@ fun TimelineItem(event: TimelineEvent) {
                     val categoryText = event.category ?: ""
                     if (categoryText.isNotEmpty()) {
                         Spacer(Modifier.height(4.dp))
-                        // 🔥 هنا استخدمنا الدالة الجديدة لترجمة الكاتيجوري
                         CategoryTag(text = getTranslatedCategory(categoryText))
                     }
                 } else if (event.type == EventType.PRAYER) {
@@ -386,8 +405,7 @@ fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
                             .background(AppGold)
                     )
 
-                    // 🔥 التنفيذ المظبوط للمؤشر العائم
-                    // نستخدم Box بملء الطول المتاح حتى الدقيقة الحالية
+                    // التنفيذ المظبوط للمؤشر العائم
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -443,7 +461,6 @@ fun TimelineScreen(viewModel: TimelineViewModel = viewModel()) {
         }.sortedBy { it.hour }
     }
 
-    // 🔥 الـ Scroll التلقائي للساعة الحالية أول ما يفتح
     LaunchedEffect(timeBlocks) {
         if (isViewingToday && timeBlocks.isNotEmpty()) {
             val nowHour = LocalTime.now().hour
@@ -452,8 +469,23 @@ fun TimelineScreen(viewModel: TimelineViewModel = viewModel()) {
         }
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
     Scaffold(
-        topBar = { DayMateTopBar(viewModel, LocalContext.current, rememberCoroutineScope(), remember { SnackbarHostState() }) }
+        topBar = { DayMateTopBar(viewModel, LocalContext.current, rememberCoroutineScope(), snackbarHostState) },
+        snackbarHost = {
+            // 🔥 تعديل لون السناك بار ليكون AppGold
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.padding(bottom = 110.dp)
+            ) { data ->
+                Snackbar(
+                    snackbarData = data,
+                    containerColor = AppGold, // الخلفية ذهبي
+                    contentColor = Color.Black // النص أسود عشان التباين
+                )
+            }
+        }
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             val lang = LocalConfiguration.current.locales[0].language

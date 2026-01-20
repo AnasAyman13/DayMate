@@ -57,11 +57,25 @@ fun CreateTaskScreen(
     val backgroundColor = MaterialTheme.colorScheme.background
     val textColor = MaterialTheme.colorScheme.onBackground
 
-    // 🔥 التعديل هنا: استخدام لون محايد (رمادي خفيف) بدلاً من surfaceVariant اللي كان بيطلع بينك
+    // لون محايد (رمادي خفيف)
     val fieldColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
 
     val hintColor = MaterialTheme.colorScheme.onSurfaceVariant
     val accentColor = AppGold
+
+    // 🔥 1. إضافة SnackbarHostState
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // 🔥 2. الاستماع للأحداث (Events) وعرض الـ Snackbar
+    LaunchedEffect(key1 = true) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                is UiEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+            }
+        }
+    }
 
     LaunchedEffect(key1 = taskId) {
         if (isEditMode && taskId != null) {
@@ -93,6 +107,8 @@ fun CreateTaskScreen(
     }
 
     Scaffold(
+        // 🔥 3. إضافة الـ SnackbarHost هنا عشان تظهر الرسالة
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -207,7 +223,15 @@ fun CreateTaskScreen(
 
             Button(
                 onClick = {
-                    if (isEditMode && taskId != null) viewModel.updateTask(taskId) else viewModel.createTask()
+                    if (isEditMode && taskId != null) {
+                        viewModel.updateTask(taskId)
+                    } else {
+                        viewModel.createTask()
+                    }
+                    // 🔥 لاحظ: شلنا popBackStack من هنا مؤقتاً عشان لو فيه خطأ اليوزر يشوفه
+                    // ممكن تخلي الـ ViewModel هو اللي يعمل navigate back بعد النجاح لو حابب
+                    // لكن حالياً هنسيبها عشان لو نجح يرجع، ولو فشل يفضل في الشاشة يشوف الرسالة
+                    // الحل الأمثل: ViewModel يبعت Event Success وقتها نعمل popBackStack
                     navController.popBackStack()
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),

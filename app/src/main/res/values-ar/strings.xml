@@ -286,5 +286,8 @@
 
 
 
-    <string name="all_tasks_already_done">مهام هذا اليوم منجزة بالفعل!</string>
+    <string name="all_tasks_marked_done">مهام هذا اليوم منجزة بالفعل!</string>
+    <string name="no_tasks_message">لا توجد مهام</string>
+    <string name="all_tasks_completed">جميع المهام مكتملة بالفعل</string>
+
 </resources>

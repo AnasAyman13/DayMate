@@ -97,8 +97,9 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
     }
 
     val isTaskScreen = currentRoute?.startsWith("task_screen") == true
-    val showFab = (activeBottomNavRoute == BottomNavItem.TimeLine.route ||
-            activeBottomNavRoute == BottomNavItem.Todo.route) && !isTaskScreen
+
+    // 🔥🔥🔥 التعديل هنا: شيلنا شرط الـ Timeline عشان الزرار يختفي من هناك 🔥🔥🔥
+    val showFab = (activeBottomNavRoute == BottomNavItem.Todo.route) && !isTaskScreen
 
     // Floating nav sizes
     val floatingNavSpace = 92.dp
@@ -110,9 +111,10 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
     val timelineRoute = BottomNavItem.TimeLine.route
     val todoRoute = BottomNavItem.Todo.route
     val createtaskscreenRoute = BottomNavItem.CreateTaskScreen.route
+    val mediaRoute =BottomNavItem.Media.route
     val navHostBottomPadding =
         if (activeBottomNavRoute == prayerRoute || activeBottomNavRoute == settingsRoute || activeBottomNavRoute == todoRoute ||
-            activeBottomNavRoute == timelineRoute || createtaskscreenRoute== timelineRoute) 0.dp
+            activeBottomNavRoute == timelineRoute || createtaskscreenRoute== timelineRoute ||activeBottomNavRoute==mediaRoute ) 0.dp
         else bottomClearance
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -142,7 +144,6 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
         ) { innerPadding ->
 
             // 🔥 الأنيميشن السينمائي (Fade + Scale) 🔥
-            // التوقيت: 600ms (وسط ومثالي)
             val animDuration = 600
 
             NavHost(
@@ -157,15 +158,13 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
                         end = 0.dp,
                         bottom = navHostBottomPadding
                     ),
-                // دخول الصفحة: تظهر (Fade) وتكبر (Scale) من 90% لـ 100%
                 enterTransition = {
                     fadeIn(animationSpec = tween(animDuration, easing = FastOutSlowInEasing)) +
                             scaleIn(
-                                initialScale = 0.90f, // تبدأ بحجم 90% عشان التكبير يكون ملحوظ
+                                initialScale = 0.90f,
                                 animationSpec = tween(animDuration, easing = FastOutSlowInEasing)
                             )
                 },
-                // خروج الصفحة: تختفي (Fade) وتصغر (Scale) لـ 90%
                 exitTransition = {
                     fadeOut(animationSpec = tween(animDuration, easing = FastOutSlowInEasing)) +
                             scaleOut(
@@ -173,7 +172,6 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
                                 animationSpec = tween(animDuration, easing = FastOutSlowInEasing)
                             )
                 },
-                // الرجوع للخلف: نفس التأثير
                 popEnterTransition = {
                     fadeIn(animationSpec = tween(animDuration, easing = FastOutSlowInEasing)) +
                             scaleIn(
