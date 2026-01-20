@@ -228,10 +228,6 @@ fun CreateTaskScreen(
                     } else {
                         viewModel.createTask()
                     }
-                    // 🔥 لاحظ: شلنا popBackStack من هنا مؤقتاً عشان لو فيه خطأ اليوزر يشوفه
-                    // ممكن تخلي الـ ViewModel هو اللي يعمل navigate back بعد النجاح لو حابب
-                    // لكن حالياً هنسيبها عشان لو نجح يرجع، ولو فشل يفضل في الشاشة يشوف الرسالة
-                    // الحل الأمثل: ViewModel يبعت Event Success وقتها نعمل popBackStack
                     navController.popBackStack()
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -248,16 +244,33 @@ fun CreateTaskScreen(
 
     if (showAddCategoryDialog) {
         var newCategoryName by remember { mutableStateOf("") }
+        val maxChar = 30
+
         AlertDialog(
             onDismissRequest = { showAddCategoryDialog = false },
             title = { Text(stringResource(R.string.dialog_add_category), color = textColor) },
             text = {
-                OutlinedTextField(
-                    value = newCategoryName, onValueChange = { newCategoryName = it },
-                    label = { Text(stringResource(R.string.dialog_category_name)) },
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = accentColor, focusedLabelColor = accentColor),
-                    singleLine = true
-                )
+                Column {
+                    OutlinedTextField(
+                        value = newCategoryName,
+                        onValueChange = {
+                            if (it.length <= maxChar) newCategoryName = it // 🔥 منع الكتابة بعد 20
+                        },
+                        label = { Text(stringResource(R.string.dialog_category_name)) },
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = accentColor, focusedLabelColor = accentColor),
+                        singleLine = true,
+                        // 🔥 عداد الحروف تحت التيكست فيلد
+                        supportingText = {
+                            Text(
+                                text = "${newCategoryName.length}/$maxChar",
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.End,
+                                color = hintColor,
+                                fontSize = 12.sp
+                            )
+                        }
+                    )
+                }
             },
             confirmButton = {
                 TextButton(onClick = {
