@@ -6,26 +6,19 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
-@Database(entities = [VaultItem::class], version = 1, exportSchema = false) // ✅ exportSchema = false
+@Database(entities = [VaultItem::class], version = 2, exportSchema = false)
 @TypeConverters(VaultTypeConverter::class)
 abstract class VaultDatabase : RoomDatabase() {
     abstract fun vaultDao(): VaultDao
 
     companion object {
-        @Volatile
-        private var INSTANCE: VaultDatabase? = null
+        @Volatile private var INSTANCE: VaultDatabase? = null
 
         fun getDatabase(context: Context): VaultDatabase {
             return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    VaultDatabase::class.java,
-                    "vault_database"
-                )
-                    .fallbackToDestructiveMigration() // 🚨 الحل: السماح بحذف القاعدة وإعادة بنائها
-                    .build()
-                INSTANCE = instance
-                instance
+                Room.databaseBuilder(context.applicationContext, VaultDatabase::class.java, "vault_database")
+                    .fallbackToDestructiveMigration() // هيمسح الداتا القديمة عشان غيرنا الهيكل
+                    .build().also { INSTANCE = it }
             }
         }
     }
