@@ -116,6 +116,8 @@ fun DayMateTopBar(
 ) {
     val primary = MaterialTheme.colorScheme.primary
     val quoteBrush = remember { Brush.linearGradient(colors = listOf(AppGold, primary)) }
+
+    // الاقتباسات
     val quotes = listOf(
         stringResource(R.string.topbar_quote_1),
         stringResource(R.string.topbar_quote_2),
@@ -124,29 +126,43 @@ fun DayMateTopBar(
     )
     val randomQuote = remember { quotes[Random.nextInt(quotes.size)] }
 
-    Surface(color = MaterialTheme.colorScheme.background, tonalElevation = 0.dp) {
+    Surface(
+        color = MaterialTheme.colorScheme.background,
+        tonalElevation = 0.dp
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 12.dp), // زيادة الـ Padding الرأسي
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // 1. اللوجو (تم تصغيره قليلاً ليعطي مساحة للنص)
             Icon(
                 painterResource(id = R.drawable.forgrnd),
-                null,
+                contentDescription = null,
                 tint = Color.Unspecified,
-                modifier = Modifier.size(56.dp)
+                modifier = Modifier.size(48.dp)
             )
-            Spacer(Modifier.width(12.dp))
+
+            Spacer(Modifier.width(8.dp))
+
+            // 2. نص الاقتباس (تم إزالة maxLines = 1 وتعديل الوزن)
             Text(
                 text = randomQuote,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(1f),
+                fontSize = 13.sp, // تقليل الخط قليلاً لضمان الاحتواء
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 4.dp),
                 textAlign = TextAlign.Center,
                 style = TextStyle(brush = quoteBrush),
-                maxLines = 1
+                lineHeight = 16.sp, // ضبط المسافة بين السطور لو نزل لسطرين
+                softWrap = true    // السماح للنص بالالتفاف بدلاً من الاختفاء
             )
+
+            Spacer(Modifier.width(4.dp))
+
+            // 3. المنيو
             TimelineMenu(viewModel, context, coroutineScope, snackbarHostState)
         }
     }

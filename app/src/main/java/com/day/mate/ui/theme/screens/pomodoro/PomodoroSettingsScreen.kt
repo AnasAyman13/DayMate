@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.LocalCafe
@@ -33,7 +35,6 @@ import androidx.compose.ui.unit.*
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
-
 @Composable
 fun PomodoroSettingsScreen(
     onCancel: () -> Unit,
@@ -43,6 +44,7 @@ fun PomodoroSettingsScreen(
     initialLong: Int
 ) {
     val context = LocalContext.current
+    val scrollState = rememberScrollState() // 1. أضفنا حالة السكرول هنا
 
     fun parseTime(secs: Int): Triple<Int, Int, Int> =
         Triple(secs / 3600, (secs % 3600) / 60, secs % 60)
@@ -73,8 +75,8 @@ fun PomodoroSettingsScreen(
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
-    val cardWidthFraction = if (isLandscape) 0.9f else 0.95f
-    val horizontalPadding = if (isLandscape) 32.dp else 16.dp
+    val cardWidthFraction = if (isLandscape) 0.85f else 0.95f // تقليل العرض قليلاً في اللاندسكيب لجمالية أفضل
+    val horizontalPadding = if (isLandscape) 48.dp else 16.dp
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -86,10 +88,14 @@ fun PomodoroSettingsScreen(
             tonalElevation = 6.dp,
             modifier = Modifier
                 .fillMaxWidth(cardWidthFraction)
-                .padding(vertical = 8.dp)
+                .padding(vertical = 12.dp)
+                .statusBarsPadding() // ضمان عدم التداخل مع النوتش أو الحالة
+                .navigationBarsPadding()
         ) {
+            // 2. أضفنا verticalScroll هنا لتمكين التمرير
             Column(
                 modifier = Modifier
+                    .verticalScroll(scrollState)
                     .padding(horizontal = horizontalPadding, vertical = 24.dp)
                     .fillMaxWidth()
             ) {
@@ -115,7 +121,7 @@ fun PomodoroSettingsScreen(
                     onSecondsChange = { focusSeconds = it }
                 )
 
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 TimeRow(
                     label = stringResource(R.string.short_break_label),
@@ -129,7 +135,7 @@ fun PomodoroSettingsScreen(
                     onSecondsChange = { shortSeconds = it }
                 )
 
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 TimeRow(
                     label = stringResource(R.string.long_break_label),
@@ -159,10 +165,7 @@ fun PomodoroSettingsScreen(
                             contentColor = MaterialTheme.colorScheme.onSurface
                         )
                     ) {
-                        Text(
-                            stringResource(R.string.cancel_button),
-                            fontSize = 18.sp
-                        )
+                        Text(stringResource(R.string.cancel_button), fontSize = 18.sp)
                     }
                     Button(
                         onClick = {
@@ -171,33 +174,18 @@ fun PomodoroSettingsScreen(
                             val longSecs = longHours * 3600 + longMinutes * 60 + longSeconds
 
                             when {
-                                !isValidTime(focusHours, focusMinutes, focusSeconds) -> {
-                                    showToast("Focus time must be more than 0 seconds")
-                                }
-                                !isValidTime(shortHours, shortMinutes, shortSeconds) -> {
-                                    showToast("Short break must be more than 0 seconds")
-                                }
-                                !isValidTime(longHours, longMinutes, longSeconds) -> {
-                                    showToast("Long break must be more than 0 seconds")
-                                }
-                                else -> {
-                                    onSave(focusSecs, shortSecs, longSecs)
-                                }
+                                !isValidTime(focusHours, focusMinutes, focusSeconds) -> showToast("Focus time must be more than 0 seconds")
+                                !isValidTime(shortHours, shortMinutes, shortSeconds) -> showToast("Short break must be more than 0 seconds")
+                                !isValidTime(longHours, longMinutes, longSeconds) -> showToast("Long break must be more than 0 seconds")
+                                else -> onSave(focusSecs, shortSecs, longSecs)
                             }
                         },
                         shape = CircleShape,
                         modifier = Modifier
                             .weight(1f)
-                            .height(50.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        )
+                            .height(50.dp)
                     ) {
-                        Text(
-                            stringResource(R.string.save_button),
-                            fontSize = 18.sp
-                        )
+                        Text(stringResource(R.string.save_button), fontSize = 18.sp)
                     }
                 }
             }

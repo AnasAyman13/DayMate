@@ -12,15 +12,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -78,10 +70,11 @@ fun BottomNavigationBar(
         MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
     }
 
+    // --- تعديل المسافة السفلية هنا ---
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 16.dp, bottom = 22.dp)
+            .padding(start = 16.dp, end = 16.dp, bottom = 40.dp) // رفعت الشريط من 22 إلى 40
     ) {
         Surface(
             modifier = Modifier
@@ -131,9 +124,9 @@ fun CustomBottomNavItem(
     isDark: Boolean,
     onClick: () -> Unit
 ) {
-    // 🔥 خليت الوقت 700ms عشان الحركة تبان ناعمة وبطيئة شوية (زي ما طلبت)
+    // أنيميشن تكبير الأيقونة (700ms)
     val scale by animateFloatAsState(
-        targetValue = if (selected) 1.0f else 0.85f, // زودت نسبة التصغير شوية عشان الفرق يبان
+        targetValue = if (selected) 1.1f else 0.9f,
         animationSpec = tween(
             durationMillis = 700,
             easing = FastOutSlowInEasing
@@ -155,13 +148,13 @@ fun CustomBottomNavItem(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
             ) { onClick() }
-            .padding(4.dp),
+            .padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Box(
             modifier = Modifier
-                .size(width = 44.dp, height = 34.dp)
+                .size(width = 46.dp, height = 34.dp)
                 .background(
                     color = indicatorColor,
                     shape = RoundedCornerShape(18.dp)
@@ -178,7 +171,7 @@ fun CustomBottomNavItem(
             )
         }
 
-        // أنيميشن ظهور النص: خليته بطيء برضه (700ms)
+        // أنيميشن ظهور النص (700ms)
         AnimatedVisibility(
             visible = selected,
             enter = fadeIn(animationSpec = tween(700)) + expandVertically(animationSpec = tween(700)),
@@ -186,7 +179,7 @@ fun CustomBottomNavItem(
         ) {
             Text(
                 text = stringResource(item.titleRes),
-                fontSize = 9.sp,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 color = selectedContentColor,
                 maxLines = 1,

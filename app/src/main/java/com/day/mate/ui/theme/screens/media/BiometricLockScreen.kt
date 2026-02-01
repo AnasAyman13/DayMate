@@ -1,6 +1,7 @@
 package com.day.mate.ui.theme.screens.media
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -23,6 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +44,10 @@ fun BiometricLockScreen(
     val promptManager = remember { BiometricPromptManager(context as AppCompatActivity) }
     val biometricResult by promptManager.promptResults.collectAsState(initial = null)
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // كشف وضع الشاشة (طول أم عرض)
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     val enrollLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult(),
@@ -79,11 +85,6 @@ fun BiometricLockScreen(
                 }
             }
             is BiometricPromptManager.BiometricResult.AuthenticationError -> {
-                // التعديل هنا:
-                // بدلاً من عرض رسالة النظام (التي قد تكون بالعربية)
-                // errorMessage = (biometricResult as BiometricPromptManager.BiometricResult.AuthenticationError).error
-
-                // نستخدم رسالة عامة من التطبيق لتلتزم بلغة التطبيق
                 errorMessage = context.getString(R.string.biometric_auth_failed)
             }
             BiometricPromptManager.BiometricResult.AuthenticationFailed -> {
@@ -102,26 +103,36 @@ fun BiometricLockScreen(
         }
     }
 
+    // تفعيل السكرول
     val scrollState = rememberScrollState()
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .safeDrawingPadding() // مهم جداً للتعامل مع الـ Landscape والـ Notch
+            .safeDrawingPadding() // يحمي من النوتش والبارات
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(scrollState) // إضافة السكرول لضمان ظهور كل العناصر في الوضع الأفقي
-                .padding(24.dp),
+                .verticalScroll(scrollState) // ✅ السكرول مفعل هنا
+                .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            // في اللاندسكيب ابدأ من فوق عشان السكرول يشتغل صح، في البورتريه خليه سنتر
+            verticalArrangement = if (isLandscape) Arrangement.Top else Arrangement.Center
         ) {
+
+            // تقليل الأحجام في اللاندسكيب لتوفير مساحة
+            val iconSize = if (isLandscape) 80.dp else 120.dp
+            val iconInnerSize = if (isLandscape) 40.dp else 56.dp
+            val spacerLarge = if (isLandscape) 16.dp else 32.dp
+            val spacerMedium = if (isLandscape) 12.dp else 24.dp
+            val spacerHuge = if (isLandscape) 24.dp else 48.dp
+
             // أيقونة القفل المتحركة
             Box(
                 modifier = Modifier
-                    .size(120.dp)
+                    .size(iconSize)
                     .scale(scale)
                     .background(
                         color = AppGold.copy(alpha = 0.2f),
@@ -133,21 +144,21 @@ fun BiometricLockScreen(
                     imageVector = Icons.Default.Lock,
                     contentDescription = stringResource(R.string.desc_lock_icon),
                     tint = AppGold,
-                    modifier = Modifier.size(56.dp)
+                    modifier = Modifier.size(iconInnerSize)
                 )
             }
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(spacerLarge))
 
             Text(
                 text = stringResource(R.string.media_vault_locked),
                 color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Bold,
-                fontSize = 24.sp,
+                fontSize = if (isLandscape) 20.sp else 24.sp,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
 
             Text(
                 text = stringResource(R.string.media_vault_description),
@@ -159,7 +170,7 @@ fun BiometricLockScreen(
 
             // رسالة الخطأ
             errorMessage?.let { message ->
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(16.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -177,7 +188,7 @@ fun BiometricLockScreen(
                 }
             }
 
-            Spacer(Modifier.height(48.dp))
+            Spacer(Modifier.height(spacerHuge))
 
             // زر فتح الخزن
             Button(
@@ -195,7 +206,7 @@ fun BiometricLockScreen(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
+                    .height(50.dp),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Icon(
@@ -228,7 +239,7 @@ fun BiometricLockScreen(
                 )
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(spacerMedium))
 
             Text(
                 text = stringResource(R.string.biometric_helper_text),
@@ -237,6 +248,9 @@ fun BiometricLockScreen(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 32.dp)
             )
+
+            // 🔥 مساحة إضافية كبيرة جداً في اللاندسكيب لإجبار السكرول على العمل
+            Spacer(Modifier.height(if (isLandscape) 120.dp else 24.dp))
         }
     }
 }

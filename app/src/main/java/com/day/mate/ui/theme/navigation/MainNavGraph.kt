@@ -143,7 +143,9 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
                             start = 0.dp,
                             top = 0.dp,
                             end = 0.dp,
-                            bottom = floatingNavSpace + navOffset + 4.dp
+                            // 🔥 قمنا بزيادة المسافة من (floatingNavSpace + navOffset + 4.dp)
+                            // لتصبح القيمة الإجمالية حوالي 120dp إلى 130dp لضمان الارتفاع الكافي
+                            bottom = floatingNavSpace + navOffset + 30.dp
                         ),
                         onClick = {
                             todoViewModel.clearForm()
@@ -155,8 +157,9 @@ fun MainNavGraph(startRouteFromIntent: String? = null) {
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = "Add Task",
-                            modifier = Modifier.size(18.dp) // ⬅️ تصغير الأيقونة سنة
-                        )                    }
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
         ) { innerPadding ->

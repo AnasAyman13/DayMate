@@ -25,6 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import com.day.mate.R
 import com.day.mate.ui.theme.AppGold
@@ -32,7 +34,7 @@ import java.time.*
 import java.util.Locale
 import java.time.format.DateTimeFormatter
 
-// 🔥 دالة مساعدة لترجمة الكاتيجوري
+// دالة مساعدة لترجمة الكاتيجوري
 @Composable
 fun getCategoryLabel(category: String): String {
     return when (category.lowercase(Locale.ROOT)) {
@@ -56,23 +58,16 @@ fun CreateTaskScreen(
 
     val backgroundColor = MaterialTheme.colorScheme.background
     val textColor = MaterialTheme.colorScheme.onBackground
-
-    // لون محايد (رمادي خفيف)
     val fieldColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
-
     val hintColor = MaterialTheme.colorScheme.onSurfaceVariant
     val accentColor = AppGold
 
-    // 🔥 1. إضافة SnackbarHostState
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // 🔥 2. الاستماع للأحداث (Events) وعرض الـ Snackbar
     LaunchedEffect(key1 = true) {
         viewModel.uiEvent.collect { event ->
-            when (event) {
-                is UiEvent.ShowSnackbar -> {
-                    snackbarHostState.showSnackbar(event.message)
-                }
+            if (event is UiEvent.ShowSnackbar) {
+                snackbarHostState.showSnackbar(event.message)
             }
         }
     }
@@ -107,7 +102,6 @@ fun CreateTaskScreen(
     }
 
     Scaffold(
-        // 🔥 3. إضافة الـ SnackbarHost هنا عشان تظهر الرسالة
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
@@ -223,11 +217,8 @@ fun CreateTaskScreen(
 
             Button(
                 onClick = {
-                    if (isEditMode && taskId != null) {
-                        viewModel.updateTask(taskId)
-                    } else {
-                        viewModel.createTask()
-                    }
+                    if (isEditMode && taskId != null) viewModel.updateTask(taskId)
+                    else viewModel.createTask()
                     navController.popBackStack()
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -238,39 +229,25 @@ fun CreateTaskScreen(
                 Text(stringResource(if (isEditMode) R.string.form_save_changes else R.string.todo_create_task), fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
 
-            Spacer(Modifier.height(100.dp))
+            // 🔥 سكرول زيادة 160dp لضمان الراحة عند الكتابة أو وجود بارات النظام
+            Spacer(Modifier.height(160.dp))
         }
     }
 
     if (showAddCategoryDialog) {
         var newCategoryName by remember { mutableStateOf("") }
-        val maxChar = 30
-
         AlertDialog(
             onDismissRequest = { showAddCategoryDialog = false },
             title = { Text(stringResource(R.string.dialog_add_category), color = textColor) },
             text = {
-                Column {
-                    OutlinedTextField(
-                        value = newCategoryName,
-                        onValueChange = {
-                            if (it.length <= maxChar) newCategoryName = it // 🔥 منع الكتابة بعد 20
-                        },
-                        label = { Text(stringResource(R.string.dialog_category_name)) },
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = accentColor, focusedLabelColor = accentColor),
-                        singleLine = true,
-                        // 🔥 عداد الحروف تحت التيكست فيلد
-                        supportingText = {
-                            Text(
-                                text = "${newCategoryName.length}/$maxChar",
-                                modifier = Modifier.fillMaxWidth(),
-                                textAlign = TextAlign.End,
-                                color = hintColor,
-                                fontSize = 12.sp
-                            )
-                        }
-                    )
-                }
+                OutlinedTextField(
+                    value = newCategoryName,
+                    onValueChange = { if (it.length <= 30) newCategoryName = it },
+                    label = { Text(stringResource(R.string.dialog_category_name)) },
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = accentColor, focusedLabelColor = accentColor),
+                    singleLine = true,
+                    supportingText = { Text("${newCategoryName.length}/30", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.End) }
+                )
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -288,15 +265,7 @@ fun CreateTaskScreen(
     }
 
     if (showDatePicker) {
-        // 🔥🔥 تم تعديل نطاق السنوات هنا لزيادة السكرول 🔥🔥
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = remember {
-                val utcToday = LocalDate.now().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-                utcToday
-            },
-            yearRange = 2020..2060 // ✅ نطاق واسع يسمح بالسكرول المريح
-        )
-
+        val datePickerState = rememberDatePickerState(yearRange = 2020..2060)
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
@@ -312,51 +281,46 @@ fun CreateTaskScreen(
                 TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.dialog_cancel), color = hintColor) }
             }
         ) {
-            // 🔥🔥 وضعنا DatePicker داخل Box بـ Scroll عشان لو الشاشة صغيرة 🔥🔥
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-            ) {
-                DatePicker(
-                    state = datePickerState,
-                    colors = DatePickerDefaults.colors(
-                        titleContentColor = accentColor,
-                        selectedDayContainerColor = accentColor,
-                        selectedDayContentColor = Color.Black,
-                        todayContentColor = accentColor,
-                        todayDateBorderColor = accentColor,
-                        headlineContentColor = textColor
-                    )
-                )
+            Box(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                DatePicker(state = datePickerState)
             }
         }
     }
 
     if (showTimePicker) {
         val timePickerState = rememberTimePickerState(initialHour = LocalTime.now().hour, initialMinute = LocalTime.now().minute)
-        AlertDialog(
+
+        // استخدام Dialog بدلاً من AlertDialog لتجنب القيود في الـ Landscape
+        Dialog(
             onDismissRequest = { showTimePicker = false },
-            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+            properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
             Surface(
                 shape = RoundedCornerShape(28.dp),
-                modifier = Modifier.width(IntrinsicSize.Min).background(MaterialTheme.colorScheme.surface)
+                modifier = Modifier
+                    .width(IntrinsicSize.Min)
+                    .padding(24.dp)
+                    .background(MaterialTheme.colorScheme.surface)
             ) {
-                Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                // 🔥 سكرول داخلي خاص باختيار التوقيت للاندسكيب
+                Column(
+                    modifier = Modifier
+                        .padding(24.dp)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text(stringResource(R.string.select_time), Modifier.align(Alignment.Start), fontWeight = FontWeight.Bold, color = accentColor)
                     Spacer(Modifier.height(20.dp))
+
                     TimePicker(
                         state = timePickerState,
                         colors = TimePickerDefaults.colors(
                             selectorColor = accentColor,
                             periodSelectorSelectedContainerColor = accentColor,
-                            periodSelectorSelectedContentColor = Color.Black,
-                            timeSelectorSelectedContainerColor = accentColor.copy(alpha = 0.3f),
-                            timeSelectorSelectedContentColor = accentColor,
-                            clockDialSelectedContentColor = Color.Black
+                            periodSelectorSelectedContentColor = Color.Black
                         )
                     )
+
                     Row(Modifier.fillMaxWidth().padding(top = 20.dp), horizontalArrangement = Arrangement.End) {
                         TextButton(onClick = { showTimePicker = false }) { Text(stringResource(R.string.dialog_cancel), color = hintColor) }
                         TextButton(onClick = {
