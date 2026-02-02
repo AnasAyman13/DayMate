@@ -19,7 +19,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
@@ -39,6 +38,7 @@ import com.day.mate.R
 import com.day.mate.data.model.EventType
 import com.day.mate.data.model.TimelineEvent
 import com.day.mate.ui.theme.AppGold
+import com.day.mate.utils.LoadingManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -94,7 +94,9 @@ fun formatTimeForDisplayFixed(time24h: String): String {
         )
         val formatted = time.format(DateTimeFormatter.ofPattern("h:mm a", Locale(currentLanguage)))
         if (currentLanguage == "ar") translateNumerals(formatted) else formatted
-    } catch (e: Exception) { time24h }
+    } catch (e: Exception) {
+        time24h
+    }
 }
 
 fun translateNumerals(text: String): String {
@@ -117,7 +119,6 @@ fun DayMateTopBar(
     val primary = MaterialTheme.colorScheme.primary
     val quoteBrush = remember { Brush.linearGradient(colors = listOf(AppGold, primary)) }
 
-    // الاقتباسات
     val quotes = listOf(
         stringResource(R.string.topbar_quote_1),
         stringResource(R.string.topbar_quote_2),
@@ -133,10 +134,9 @@ fun DayMateTopBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 12.dp), // زيادة الـ Padding الرأسي
+                .padding(horizontal = 12.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 1. اللوجو (تم تصغيره قليلاً ليعطي مساحة للنص)
             Icon(
                 painterResource(id = R.drawable.forgrnd),
                 contentDescription = null,
@@ -146,23 +146,20 @@ fun DayMateTopBar(
 
             Spacer(Modifier.width(8.dp))
 
-            // 2. نص الاقتباس (تم إزالة maxLines = 1 وتعديل الوزن)
             Text(
                 text = randomQuote,
-                fontSize = 13.sp, // تقليل الخط قليلاً لضمان الاحتواء
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 4.dp),
                 textAlign = TextAlign.Center,
                 style = TextStyle(brush = quoteBrush),
-                lineHeight = 16.sp, // ضبط المسافة بين السطور لو نزل لسطرين
-                softWrap = true    // السماح للنص بالالتفاف بدلاً من الاختفاء
+                lineHeight = 16.sp,
+                softWrap = true
             )
 
             Spacer(Modifier.width(4.dp))
-
-            // 3. المنيو
             TimelineMenu(viewModel, context, coroutineScope, snackbarHostState)
         }
     }
@@ -200,7 +197,7 @@ fun TimelineMenu(
                 text = stringResource(if (isTomorrow) R.string.menu_view_today else R.string.menu_view_tomorrow),
                 icon = Icons.Filled.EventNote,
                 onClick = {
-                    isMenuExpanded = false // ✅ يقفل فوراً
+                    isMenuExpanded = false
                     if (isTomorrow) viewModel.viewToday() else viewModel.viewTomorrow()
                 }
             )
@@ -209,7 +206,7 @@ fun TimelineMenu(
                 text = stringResource(if (hideCompleted) R.string.menu_show_completed else R.string.menu_hide_completed),
                 icon = Icons.Filled.VisibilityOff,
                 onClick = {
-                    isMenuExpanded = false // ✅ يقفل فوراً
+                    isMenuExpanded = false
                     viewModel.toggleHideCompleted()
                 }
             )
@@ -220,8 +217,7 @@ fun TimelineMenu(
                 text = stringResource(R.string.menu_mark_all_done),
                 icon = Icons.Filled.DoneAll,
                 onClick = {
-                    isMenuExpanded = false // ✅ يقفل فوراً قبل التنفيذ
-
+                    isMenuExpanded = false
                     coroutineScope.launch {
                         val tasks = events.filter { it.type == EventType.TODO_TASK }
                         val totalTasks = tasks.size
@@ -229,16 +225,16 @@ fun TimelineMenu(
 
                         if (totalTasks == 0) {
                             snackbarHostState.showSnackbar(
-                                message = if(isRtl) "لا توجد مهام لهذا اليوم" else "No tasks for this day"
+                                message = if (isRtl) "لا توجد مهام لهذا اليوم" else "No tasks for this day"
                             )
                         } else if (completedTasks == totalTasks) {
                             snackbarHostState.showSnackbar(
-                                message = if(isRtl) "جميع المهام مكتملة بالفعل!" else "All tasks are already completed!"
+                                message = if (isRtl) "جميع المهام مكتملة بالفعل!" else "All tasks are already completed!"
                             )
                         } else {
                             viewModel.markAllTasksAsDone(selectedDate)
                             snackbarHostState.showSnackbar(
-                                message = if(isRtl) "تم تحديد جميع المهام كمكتملة" else "All tasks marked as done"
+                                message = if (isRtl) "تم تحديد جميع المهام كمكتملة" else "All tasks marked as done"
                             )
                         }
                     }
@@ -301,7 +297,6 @@ fun TimelineItem(event: TimelineEvent) {
         border = BorderStroke(0.5.dp, event.iconColor.copy(alpha = 0.3f))
     ) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            // 1. Icon Box
             Box(
                 Modifier
                     .size(42.dp)
@@ -318,7 +313,6 @@ fun TimelineItem(event: TimelineEvent) {
             }
             Spacer(Modifier.width(12.dp))
 
-            // 2. Content
             Column(Modifier.weight(1f)) {
                 Text(
                     text = getTranslatedTitle(event),
@@ -337,7 +331,6 @@ fun TimelineItem(event: TimelineEvent) {
                 )
             }
 
-            // 3. Checkbox & Category
             Column(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.Center,
@@ -365,7 +358,6 @@ fun TimelineItem(event: TimelineEvent) {
     }
 }
 
-
 @Composable
 fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
     val currentMinute = LocalTime.now().minute
@@ -378,7 +370,8 @@ fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
         animationSpec = infiniteRepeatable(
             animation = tween(1200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
-        ), label = "glowAlpha"
+        ),
+        label = "glowAlpha"
     )
 
     Row(
@@ -397,14 +390,12 @@ fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
                 fontWeight = if (block.isCurrentHour && isViewingToday) FontWeight.Bold else FontWeight.Normal
             )
 
-            // الحاوية الخاصة بالخط والمؤشر المتحرك
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .width(12.dp),
                 contentAlignment = Alignment.TopCenter
             ) {
-                // الخط الرمادي الخلفي (الثابت)
                 Box(
                     modifier = Modifier
                         .width(2.dp)
@@ -413,7 +404,6 @@ fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
                 )
 
                 if (block.isCurrentHour && isViewingToday) {
-                    // الخط الذهبي الأمامي (المتغير حسب الدقائق)
                     Box(
                         modifier = Modifier
                             .width(2.dp)
@@ -421,20 +411,17 @@ fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
                             .background(AppGold)
                     )
 
-                    // التنفيذ المظبوط للمؤشر العائم
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .fillMaxHeight(fractionOfHour),
                         contentAlignment = Alignment.BottomCenter
                     ) {
-                        // هالة التوهج (Glow)
                         Box(
                             modifier = Modifier
                                 .size(14.dp)
                                 .background(AppGold.copy(alpha = glowAlpha), CircleShape)
                         )
-                        // النقطة الذهبية المركزية
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
@@ -446,7 +433,6 @@ fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
             }
         }
 
-        // عمود الأحداث (التصميم العائم Floating)
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -458,6 +444,7 @@ fun TimelineRow(block: TimeBlock, isViewingToday: Boolean) {
         }
     }
 }
+
 @Composable
 fun TimelineScreen(viewModel: TimelineViewModel = viewModel()) {
     val events by viewModel.timelineEvents.collectAsState()
@@ -466,7 +453,11 @@ fun TimelineScreen(viewModel: TimelineViewModel = viewModel()) {
     val isLoading by viewModel.isLoading.collectAsState(initial = false)
     val listState = rememberLazyListState()
 
-    // ترتيب الساعات
+    // ✅ اربط Loading المحلي باللودنج العالمي
+    LaunchedEffect(isLoading) {
+        if (isLoading) LoadingManager.show() else LoadingManager.hide()
+    }
+
     val timeBlocks = remember(events) {
         val currentH = LocalTime.now().hour
         events.groupBy {
@@ -486,24 +477,30 @@ fun TimelineScreen(viewModel: TimelineViewModel = viewModel()) {
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val ctx = LocalContext.current
 
     Scaffold(
-        topBar = { DayMateTopBar(viewModel, LocalContext.current, rememberCoroutineScope(), snackbarHostState) },
+        topBar = { DayMateTopBar(viewModel, ctx, coroutineScope, snackbarHostState) },
         snackbarHost = {
-            // 🔥 تعديل لون السناك بار ليكون AppGold
             SnackbarHost(
                 hostState = snackbarHostState,
                 modifier = Modifier.padding(bottom = 110.dp)
             ) { data ->
                 Snackbar(
                     snackbarData = data,
-                    containerColor = AppGold, // الخلفية ذهبي
-                    contentColor = Color.Black // النص أسود عشان التباين
+                    containerColor = AppGold,
+                    contentColor = Color.Black
                 )
             }
         }
     ) { padding ->
-        Column(Modifier.padding(padding).fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        Column(
+            Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
             val lang = LocalConfiguration.current.locales[0].language
             val dateStr = selectedDate.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale(lang)))
 
@@ -514,14 +511,17 @@ fun TimelineScreen(viewModel: TimelineViewModel = viewModel()) {
                 fontWeight = FontWeight.ExtraBold
             )
 
-            if (isLoading) {
-                Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = AppGold) }
-            } else if (timeBlocks.isEmpty()) {
-                Box(Modifier.fillMaxSize(), Alignment.Center) { Text(stringResource(R.string.no_events_message)) }
+            // ✅ مفيش CircularProgressIndicator هنا نهائيًا
+            if (timeBlocks.isEmpty() && !isLoading) {
+                Box(Modifier.fillMaxSize(), Alignment.Center) {
+                    Text(stringResource(R.string.no_events_message))
+                }
             } else {
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
                     contentPadding = PaddingValues(bottom = 150.dp)
                 ) {
                     items(timeBlocks.size) { index ->

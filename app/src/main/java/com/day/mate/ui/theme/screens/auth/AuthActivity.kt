@@ -24,8 +24,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.day.mate.ui.components.GlobalLoadingOverlay
 import com.day.mate.ui.screens.LoginScreen
-import com.day.mate.ui.screens.SignUpScreen
+import com.day.mate.ui.theme.screens.auth.SignUpScreen
+import com.day.mate.utils.LoadingManager
 import com.day.mate.viewmodel.AuthViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
@@ -67,6 +69,9 @@ class AuthActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 var showForgotPasswordDialog by remember { mutableStateOf(false) }
 
+                // ✅ Global loading state
+                val isLoading by LoadingManager.isLoading.collectAsState()
+
                 // ✅ Shared language state for BOTH signin/signup
                 val context = LocalContext.current
                 val systemLangIsArabic = LocalConfiguration.current.locales[0].language == "ar"
@@ -84,51 +89,56 @@ class AuthActivity : ComponentActivity() {
                 val toggleLang = { langTag = if (isArabic) "en" else "ar" }
 
                 CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-                    Surface {
-                        NavHost(
-                            navController = navController,
-                            startDestination = "signin"
-                        ) {
-                            composable("signin") {
-                                LoginScreen(
-                                    viewModel = authViewModel,
-                                    onLoggedIn = { navigateToMainActivity() },
-                                    onNavigateToSignUp = { navController.navigate("signup") },
-                                    onForgotPassword = { showForgotPasswordDialog = true },
-                                    onGoogleSignInClicked = { startGoogleSignIn() },
 
-                                    // ✅ shared translation
-                                    t = t,
-                                    isArabic = isArabic,
-                                    onToggleLang = toggleLang
-                                )
+                    // ✅ Box علشان نحط Overlay فوق كل الشاشة
+                    Box(modifier = Modifier.fillMaxSize()) {
+
+                        Surface {
+                            NavHost(
+                                navController = navController,
+                                startDestination = "signin"
+                            ) {
+                                composable("signin") {
+                                    LoginScreen(
+                                        viewModel = authViewModel,
+                                        onLoggedIn = { navigateToMainActivity() },
+                                        onNavigateToSignUp = { navController.navigate("signup") },
+                                        onForgotPassword = { showForgotPasswordDialog = true },
+                                        onGoogleSignInClicked = { startGoogleSignIn() },
+                                        t = t,
+                                        isArabic = isArabic,
+                                        onToggleLang = toggleLang
+                                    )
+                                }
+
+                                composable("signup") {
+                                    SignUpScreen(
+                                        viewModel = authViewModel,
+                                        onSignedUp = { navigateToMainActivity() },
+                                        onNavigateToSignIn = { navController.popBackStack() },
+                                        t = t,
+                                        isArabic = isArabic,
+                                        onToggleLang = toggleLang
+                                    )
+                                }
                             }
 
-                            composable("signup") {
-                                SignUpScreen(
-                                    viewModel = authViewModel,
-                                    onSignedUp = {
-                                        // Google signup/login -> main
-                                        navigateToMainActivity()
-                                    },
-                                    onNavigateToSignIn = { navController.popBackStack() },
-
-                                    // ✅ shared translation
-                                    t = t,
-                                    isArabic = isArabic,
-                                    onToggleLang = toggleLang
+                            // Forgot Password Dialog
+                            if (showForgotPasswordDialog) {
+                                ForgotPasswordDialog(
+                                    onDismiss = { showForgotPasswordDialog = false },
+                                    onConfirm = { email ->
+                                        authViewModel.resetPassword(this@AuthActivity, email)
+                                        showForgotPasswordDialog = false
+                                    }
                                 )
                             }
                         }
 
-                        // Forgot Password Dialog
-                        if (showForgotPasswordDialog) {
-                            ForgotPasswordDialog(
-                                onDismiss = { showForgotPasswordDialog = false },
-                                onConfirm = { email ->
-                                    authViewModel.resetPassword(this@AuthActivity, email)
-                                    showForgotPasswordDialog = false
-                                }
+                        // ✅ Global Loading Overlay فوق أي Dialog/Nav
+                        if (isLoading) {
+                            GlobalLoadingOverlay(
+                                message = if (isArabic) "استنى شوية..." else "Please wait..."
                             )
                         }
                     }
@@ -218,9 +228,7 @@ fun ForgotPasswordDialog(
                     }
 
                     Button(
-                        onClick = {
-                            if (email.isNotBlank()) onConfirm(email)
-                        },
+                        onClick = { if (email.isNotBlank()) onConfirm(email) },
                         modifier = Modifier.weight(1f),
                         enabled = email.isNotBlank()
                     ) {

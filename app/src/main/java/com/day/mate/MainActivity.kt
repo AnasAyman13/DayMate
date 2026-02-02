@@ -11,17 +11,14 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.view.View
 import android.view.WindowManager
-import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
@@ -31,6 +28,7 @@ import com.day.mate.data.local.prayer.AppDatabase
 import com.day.mate.data.local.reminder.ReminderConstants
 import com.day.mate.data.local.reminder.ReminderScheduler
 import com.day.mate.data.repository.TodoRepository
+import com.day.mate.ui.components.GlobalLoadingOverlay
 import com.day.mate.ui.screens.AuthNavGraph
 import com.day.mate.ui.screens.settings.SettingsViewModel
 import com.day.mate.ui.screens.settings.SettingsViewModelFactory
@@ -39,6 +37,7 @@ import com.day.mate.ui.theme.screens.media.MainNavGraph
 import com.day.mate.ui.theme.screens.todo.TodoViewModel
 import com.day.mate.ui.theme.screens.todo.TodoViewModelFactory
 import com.day.mate.util.LocaleUtils
+import com.day.mate.utils.LoadingManager
 import com.day.mate.viewmodel.AuthViewModel
 
 class MainActivity : AppCompatActivity() {
@@ -68,10 +67,10 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 1. ✅ تفعيل الرسم خلف حواف النظام (Edge-to-edge)
+        // ✅ Edge-to-edge
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        // 2. ✅ إعدادات الشفافية ومنع الـ Scrim
+        // ✅ شفافية شريط الحالة والتنقل
         window.apply {
             addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
             statusBarColor = Color.TRANSPARENT
@@ -82,23 +81,21 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // 3. ✅ تفعيل الوضع الغامر (Immersive Mode) لإخفاء بارات التليفون
+        // ✅ Immersive Mode
         val controller = WindowInsetsControllerCompat(window, window.decorView)
         controller.apply {
-            // إخفاء الـ System Bars (أزرار التحكم وشريط الحالة)
             hide(WindowInsetsCompat.Type.systemBars())
+            systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 
-            // جعل البارات تظهر بشكل عابر عند السحب وتختفي تلقائياً (مثل الألعاب)
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-
-            // تحديد لون الأيقونات بناءً على وضع النهار/الليل
-            val isDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-                    Configuration.UI_MODE_NIGHT_YES
+            val isDark =
+                (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+                        Configuration.UI_MODE_NIGHT_YES
             isAppearanceLightStatusBars = !isDark
             isAppearanceLightNavigationBars = !isDark
         }
 
-        // --- تهيئة البيانات (Repository & DB) ---
+        // --- Database & Repository ---
         val db = AppDatabase.getInstance(this)
         todoRepository = TodoRepository(
             todoDao = db.todoDao(),
@@ -106,42 +103,66 @@ class MainActivity : AppCompatActivity() {
         )
         todoViewModel.initReminderScheduler(this)
 
-        // --- التعامل مع الإشعارات والمنبهات ---
+        // --- Permissions ---
         setupPermissions()
 
         val scheduler = ReminderScheduler(applicationContext)
         scheduler.scheduleDailyReminder(hour = 10, minute = 0)
 
-        val startDestination = intent.getStringExtra(ReminderConstants.EXTRA_NAVIGATION_DESTINATION)
+        val startDestination =
+            intent.getStringExtra(ReminderConstants.EXTRA_NAVIGATION_DESTINATION)
 
-        // --- محتوى التطبيق ---
+        // --- UI ---
         setContent {
             val isDarkMode by settingsViewModel.isDarkMode.collectAsState()
-            var isLoggedIn by remember { mutableStateOf(authViewModel.getCurrentUser() != null) }
+            var isLoggedIn by remember {
+                mutableStateOf(authViewModel.getCurrentUser() != null)
+            }
+
+            // ✅ Global Loading State
+            val isLoading by LoadingManager.isLoading.collectAsState()
 
             DayMateTheme(darkTheme = isDarkMode) {
-                if (isLoggedIn) {
-                    MainNavGraph(startRouteFromIntent = startDestination)
-                } else {
-                    AuthNavGraph(
-                        viewModel = authViewModel,
-                        onAuthDone = { isLoggedIn = true }
-                    )
+                Box(modifier = Modifier.fillMaxSize()) {
+
+                    if (isLoggedIn) {
+                        MainNavGraph(startRouteFromIntent = startDestination)
+                    } else {
+                        AuthNavGraph(
+                            viewModel = authViewModel,
+                            onAuthDone = { isLoggedIn = true }
+                        )
+                    }
+
+                    // ✅ Global Loading Overlay (اللوجو بيلف)
+                    if (isLoading) {
+                        GlobalLoadingOverlay()
+                    }
                 }
             }
         }
     }
 
+    // ---------------- Permissions ----------------
+
     private fun setupPermissions() {
-        // إذن الإشعارات لأندرويد 13+
+        // إشعارات Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val permission = Manifest.permission.POST_NOTIFICATIONS
-            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, arrayOf(permission), 101)
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    permission
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(permission),
+                    101
+                )
             }
         }
 
-        // إذن المنبه الدقيق لأندرويد 12+
+        // Exact Alarm Android 12+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val alarmManager = getSystemService(AlarmManager::class.java)
             if (!alarmManager.canScheduleExactAlarms()) {

@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.day.mate.ui.theme.screens.auth.SignUpScreen
 import com.day.mate.viewmodel.AuthViewModel
 import java.util.Locale
 

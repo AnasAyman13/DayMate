@@ -2,6 +2,7 @@ package com.day.mate.ui.screens
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -45,6 +46,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
@@ -54,6 +56,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
+import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.day.mate.R
@@ -88,6 +91,30 @@ private fun hasLocationPermission(context: Context): Boolean {
     return fine || coarse
 }
 
+// ✅ جديد: هل الـ GPS / Location service شغال؟
+private fun isLocationEnabled(context: Context): Boolean {
+    val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        lm.isLocationEnabled
+    } else {
+        try {
+            lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                    lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+        } catch (_: Exception) {
+            false
+        }
+    }
+}
+
+// ✅ جديد: يفتح صفحة إعدادات التطبيق (ومنها Permissions)
+private fun openAppSettings(context: Context) {
+    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+        data = Uri.fromParts("package", context.packageName, null)
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    context.startActivity(intent)
+}
+
 // دالة حساب القبلة الدقيقة
 private fun calculateQiblaBearingInternal(loc: Location): Float {
     val kaabaLat = Math.toRadians(21.422487)
@@ -106,6 +133,8 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
     val ctx = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    val isArabic = LocalConfiguration.current.locales[0].language == "ar"
+
     // ✅ 1. تعريف حالة السكرول
     val scroll = rememberScrollState()
 
@@ -113,10 +142,15 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
 
     var locationPermissionGranted by remember { mutableStateOf(hasLocationPermission(ctx)) }
 
+    // ✅ جديد
+    var locationEnabled by remember { mutableStateOf(isLocationEnabled(ctx)) }
+    var showPermissionHelpDialog by remember { mutableStateOf(false) }
+
     DisposableEffect(lifecycleOwner) {
         val obs = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 locationPermissionGranted = hasLocationPermission(ctx)
+                locationEnabled = isLocationEnabled(ctx)
             }
         }
         lifecycleOwner.lifecycle.addObserver(obs)
@@ -127,19 +161,73 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         locationPermissionGranted = isGranted
-        if (isGranted) viewModel.loadPrayerTimes(ctx = ctx)
+        locationEnabled = isLocationEnabled(ctx)
+
+        // ✅ لو رفض: افتح Dialog يرشدّه للأذونات
+        if (!isGranted) {
+            showPermissionHelpDialog = true
+        } else {
+            // لو اتوافق والـGPS شغال
+            if (locationEnabled) viewModel.loadPrayerTimes(ctx = ctx)
+        }
     }
 
+    // ✅ ده كان عندك — سيبناه للـ exact alarm + إعادة التحميل
     val settingsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { viewModel.loadPrayerTimes(ctx = ctx) }
 
+    // ✅ جديد: Launcher لإعدادات الـ Location
+    val locationSettingsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) {
+        locationEnabled = isLocationEnabled(ctx)
+        locationPermissionGranted = hasLocationPermission(ctx)
+        if (locationPermissionGranted && locationEnabled) {
+            viewModel.loadPrayerTimes(ctx = ctx)
+        }
+    }
+
     LaunchedEffect(Unit) {
+        locationPermissionGranted = hasLocationPermission(ctx)
+        locationEnabled = isLocationEnabled(ctx)
+
         if (!locationPermissionGranted) {
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         } else {
             viewModel.loadPrayerTimes(ctx = ctx)
         }
+    }
+
+    // ✅ Dialog يرشد المستخدم للأذونات (مش بيكسر حاجة)
+    if (showPermissionHelpDialog) {
+        AlertDialog(
+            onDismissRequest = { showPermissionHelpDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showPermissionHelpDialog = false
+                    openAppSettings(ctx)
+                }) {
+                    Text(if (isArabic) "افتح الأذونات" else "Open permissions")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPermissionHelpDialog = false }) {
+                    Text(if (isArabic) "إلغاء" else "Cancel")
+                }
+            },
+            title = {
+                Text(if (isArabic) "تفعيل إذن الموقع" else "Enable location permission")
+            },
+            text = {
+                Text(
+                    if (isArabic)
+                        "فعّل إذن الموقع من: Permissions > Location\nعلشان نقدر نعرض اتجاه القبلة."
+                    else
+                        "Enable location permission from: Permissions > Location\nso we can show Qibla direction."
+                )
+            }
+        )
     }
 
     // Time Ticker
@@ -207,8 +295,8 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
     var qiblaBearing by remember { mutableFloatStateOf(0f) }
     var isGPSPrecise by remember { mutableStateOf(false) }
 
-    DisposableEffect(locationPermissionGranted) {
-        if (!locationPermissionGranted) {
+    DisposableEffect(locationPermissionGranted, locationEnabled) {
+        if (!locationPermissionGranted || !locationEnabled) {
             onDispose { }
             return@DisposableEffect onDispose { }
         }
@@ -324,8 +412,8 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
 
             Spacer(Modifier.height(12.dp))
 
-            // زر التفعيل الأحمر
-            if (!locationPermissionGranted) {
+            // ✅ الكارت الأحمر: يظهر لو permission ناقص أو GPS مقفول
+            if (!locationPermissionGranted || !locationEnabled) {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFB00020)),
                     shape = RoundedCornerShape(12.dp),
@@ -333,7 +421,38 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
                     onClick = {
-                        permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                        // تحديث سريع
+                        locationPermissionGranted = hasLocationPermission(ctx)
+                        locationEnabled = isLocationEnabled(ctx)
+
+                        when {
+                            // 1) Permission ناقص
+                            !locationPermissionGranted -> {
+                                val activity = ctx as? Activity
+                                if (activity == null) {
+                                    showPermissionHelpDialog = true
+                                    return@Card
+                                }
+
+                                val canAskAgain = shouldShowRequestPermissionRationale(
+                                    activity,
+                                    Manifest.permission.ACCESS_FINE_LOCATION
+                                )
+
+                                if (canAskAgain) {
+                                    permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                                } else {
+                                    // Don’t ask again / رفض كتير → Settings + إرشاد
+                                    showPermissionHelpDialog = true
+                                }
+                            }
+
+                            // 2) Permission موجود بس GPS مقفول
+                            !locationEnabled -> {
+                                val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                                locationSettingsLauncher.launch(intent)
+                            }
+                        }
                     }
                 ) {
                     Row(
@@ -346,7 +465,16 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                         Icon(Icons.Default.TouchApp, null, tint = Color.White)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "اضغط لتفعيل الموقع والقبلة",
+                            text = when {
+                                !locationPermissionGranted && isArabic ->
+                                    "فعّل إذن الموقع علشان القبلة — اضغط هنا"
+                                !locationPermissionGranted && !isArabic ->
+                                    "Enable location permission for Qibla — tap here"
+                                locationPermissionGranted && !locationEnabled && isArabic ->
+                                    "فعّل GPS علشان القبلة — اضغط هنا"
+                                else ->
+                                    "Enable GPS for Qibla — tap here"
+                            },
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
@@ -356,7 +484,7 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                 }
             }
 
-            // كارت الصلاة القادمة
+            // كارت الصلاة القادمة (زي ما هو)
             val nextPrayerName = when (nextPrayerPair?.first) {
                 "Fajr" -> stringResource(R.string.fajr)
                 "Dhuhr" -> stringResource(R.string.dhuhr)
@@ -535,7 +663,7 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                     }
                 }
 
-                if (locationPermissionGranted && isGPSPrecise) {
+                if (locationPermissionGranted && locationEnabled && isGPSPrecise) {
                     Canvas(modifier = Modifier.fillMaxSize()) {
                         val radius = size.minDimension / 2
                         val center = Offset(size.width / 2, size.height / 2)
@@ -556,8 +684,16 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                         drawCircle(glowColor, 8f, center)
                     }
                 } else {
+                    // ✅ تعديل النص فقط (ترجمة + GPS)
                     Text(
-                        text = if (!locationPermissionGranted) "اضغط بالأعلى" else "جاري تحديد الموقع...",
+                        text = when {
+                            !locationPermissionGranted && isArabic -> "فعّل إذن الموقع من الأعلى"
+                            !locationPermissionGranted && !isArabic -> "Enable location permission from above"
+                            locationPermissionGranted && !locationEnabled && isArabic -> "فعّل GPS من الأعلى"
+                            locationPermissionGranted && !locationEnabled && !isArabic -> "Enable GPS from above"
+                            isArabic -> "جاري تحديد الموقع..."
+                            else -> "Getting location..."
+                        },
                         color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold
                     )
                 }
@@ -571,7 +707,7 @@ fun PrayerScreen(viewModel: PrayerViewModel = androidx.lifecycle.viewmodel.compo
                 else -> stringResource(R.string.turn_left)
             }
             Text(
-                text = if(locationPermissionGranted && isGPSPrecise) directionText else "",
+                text = if(locationPermissionGranted && locationEnabled && isGPSPrecise) directionText else "",
                 color = if (isAligned) Color(0xFF00FF9D) else Color(0xFFFFD700),
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
