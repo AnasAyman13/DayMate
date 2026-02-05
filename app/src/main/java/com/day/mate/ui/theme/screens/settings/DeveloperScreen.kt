@@ -11,6 +11,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -45,6 +46,8 @@ val developersList = listOf(
 @Composable
 fun DeveloperScreen(onBack: () -> Unit = {}) {
     val context = LocalContext.current
+    val scrollState = rememberLazyListState()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -76,19 +79,23 @@ fun DeveloperScreen(onBack: () -> Unit = {}) {
         }
     ) { padding ->
         LazyColumn(
+            state = scrollState,
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(padding)
-                .padding(horizontal = 10.dp), // بادينج الجوانب
+                .padding(horizontal = 10.dp),
 
-            // 🔥 الحل: إضافة مساحة 80dp في أسفل القائمة لرفع العناصر فوق الـ Bar
-            contentPadding = PaddingValues(top = 10.dp, bottom = 80.dp),
+            // تم زيادة المساحة السفلية هنا لتعطي مدى أكبر للسكرول
+            contentPadding = PaddingValues(top = 16.dp, bottom = 160.dp),
 
-            verticalArrangement = Arrangement.Top,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            items(developersList) { dev ->
+            items(
+                items = developersList,
+                key = { it.github } // استخدام مفتاح فريد لجعل السكرول أنعم
+            ) { dev ->
                 DeveloperCard(
                     dev = dev,
                     onGitHub = {
@@ -116,7 +123,6 @@ fun DeveloperCard(
         elevation = CardDefaults.elevatedCardElevation(3.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
             .border(
                 2.dp,
                 if (dev.isTeamLeader) Color(0xFFD4AF37) else Color.Transparent,
@@ -199,11 +205,10 @@ private fun SocialButton(
     Surface(
         shape = RoundedCornerShape(50),
         color = color.copy(alpha = 0.13f),
-        shadowElevation = 1.dp,
         modifier = Modifier
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = ripple(), // إضافة تأثير عند الضغط لتحسين تجربة المستخدم
                 onClick = onClick
             )
     ) {
