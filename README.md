@@ -60,6 +60,8 @@ Play](https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badg
 -   Translation
 -   Dark & Light Mode
 -   Managing & Organization
+-   Modern Nav bar
+-   Qibla-direction & Azkar 
 
 ## Mohamed Yousry
 
